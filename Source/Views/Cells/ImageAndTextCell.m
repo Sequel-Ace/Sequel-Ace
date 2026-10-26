@@ -140,7 +140,9 @@
 
 		imageFrame.size = imageSize;
 
-		imageFrame.origin.y += ceilf((cellFrame.size.height - imageFrame.size.height) / 2) - 1;
+		// 1pt above centre, but never above the frame: an image as tall as the expansion frame (the tables list's
+		// 20pt chip) would lose its top row.
+		imageFrame.origin.y += MAX(0, ceilf((cellFrame.size.height - imageFrame.size.height) / 2) - 1);
 
 		[image drawInRect:imageFrame fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0f respectFlipped:YES hints:nil];
 	} else

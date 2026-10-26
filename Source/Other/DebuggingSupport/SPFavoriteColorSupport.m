@@ -42,8 +42,13 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 
 - (instancetype)init
 {
+    return [self initWithDefaults:[NSUserDefaults standardUserDefaults]];
+}
+
+- (instancetype)initWithDefaults:(NSUserDefaults *)defaults
+{
     if ((self = [super init])) {
-        prefs = [NSUserDefaults standardUserDefaults];
+        prefs = defaults;
         userColorList = [self populateUserColorList];
 
         // I doubt the colours will ever change in prefs, but just in case....
@@ -54,6 +59,11 @@ static SPFavoriteColorSupport *_colorSupport = nil;
     }
 
     return self;
+}
+
+- (void)dealloc
+{
+    [prefs removeObserver:self forKeyPath:SPFavoriteColorList];
 }
 
 + (SPFavoriteColorSupport *)sharedInstance
@@ -76,55 +86,21 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 
 - (NSArray<NSColor *>*)populateUserColorList
 {
-
-	if (@available(macOS 10.13, *)) {
-		return @[
-			[NSColor colorNamed:@"favoriteRed"],
-			[NSColor colorNamed:@"favoriteOrange"],
-			[NSColor colorNamed:@"favoriteYellow"],
-			[NSColor colorNamed:@"favoriteGreen"],
-			[NSColor colorNamed:@"favoriteBlue"],
-			[NSColor colorNamed:@"favoritePurple"],
-			[NSColor colorNamed:@"favoriteGraphite"]
-		];
-	}
-	
-	NSArray *archivedColors = [prefs objectForKey:SPFavoriteColorList];
-	NSMutableArray *colorList = [NSMutableArray arrayWithCapacity:[archivedColors count]];
-
-	for (NSData *archivedColor in archivedColors)
-	{
-		NSColor *color = [SAArchiving colorFromData:archivedColor];
-
-		[colorList addObject:color];
-	}
-	
-	return [colorList copy];
+	// The vivid palette, one colour per stored index; it replaces the preference-archived list.
+	return [SAFavoritePalette assetColours];
 }
 
 #pragma mark -
 #pragma mark Key Value Observing
 
 /**
- * I doubt the colours will ever change in prefs, but just in case....
+ * A change to the old archived list (a defaults write, a preferences import) reloads the vivid palette:
+ * the old 7-colour list never comes back, so Teal, Blue and Pink (indices 7-9) keep their colour.
  */
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    // reload the colours, when the observer detected a change in them
-    //
     if ([keyPath isEqualToString:SPFavoriteColorList]) {
-
-        NSArray *archivedColors = [prefs objectForKey:SPFavoriteColorList];
-        NSMutableArray *colorList = [NSMutableArray arrayWithCapacity:[archivedColors count]];
-
-        for (NSData *archivedColor in archivedColors)
-        {
-            NSColor *color = [SAArchiving colorFromData:archivedColor];
-
-            [colorList addObject:color];
-        }
-
-        userColorList = [colorList copy];
+        userColorList = [self populateUserColorList];
     }
 }
 

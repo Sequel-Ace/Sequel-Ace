@@ -50,9 +50,11 @@
 //			   type: a NSString of: "text", "html", or "image"; no type - 'text' is default
 //	 displayOptions: a NSDictionary with the following keys (all values must be of type NSString):
 //	                       fontname, fontsize, backgroundcolor (as #RRGGBB), transparent (any value)
-//	                 if no displayOptions are passed or if a key doesn't exist the following default
-//	                 are taken:
-//	                       "Lucida Grande", "10", "#F9FBC5", NO
+//	                 if no displayOptions are passed or if a key doesn't exist the tooltip is drawn
+//	                 as the Claude hint card (see SAClaudeTooltipHTML): text as 12px system prose
+//	                 (10px when only a fontname is passed) on the theme's card colours, html on the
+//	                 theme's card when plain (no colours or fonts of its own), else on the light
+//	                 paper; not transparent
 //
 //	See more possible syntaxa in SPTooltip to init a tooltip
 
@@ -71,7 +73,7 @@ static CGFloat slow_in_out (CGFloat t)
 
 @interface SPTooltip ()
 
-- (void)setContent:(NSString *)content withOptions:(NSDictionary *)displayOptions;
+- (void)setContent:(NSString *)content ofType:(NSString *)type withOptions:(NSDictionary *)displayOptions;
 - (void)beginDismissalMonitoring;
 - (void)stopAnimation:(id)sender;
 - (void)sizeToContent;
@@ -193,25 +195,17 @@ static CGFloat slow_in_out (CGFloat t)
 
 		if(text)
 		{
-			int fontSize = ([displayOptions objectForKey:@"fontsize"]) ? [[displayOptions objectForKey:@"fontsize"] intValue] : 10;
-			if(fontSize < 5) fontSize = 5;
-			[text replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:NSMakeRange(0, [text length])];
-			[text replaceOccurrencesOfString:@"<" withString:@"&lt;" options:0 range:NSMakeRange(0, [text length])];
-			[text insertString:[NSString stringWithFormat:@"<pre style=\"font-family:'%@'; font-size: %dpx\">",
-							([displayOptions objectForKey:@"fontname"]) ? [displayOptions objectForKey:@"fontname"] : @"Lucida Grande", fontSize]
-							atIndex:0];
-			[text appendString:@"</pre>"];
-			html = text;
+			html = [SAClaudeTooltipCard textBody:text options:displayOptions];
             SPLog(@"html: %@", html);
 		}
 		else
 		{
 			html = @"Error";
 		}
-		[self setContent:html withOptions:displayOptions];
+		[self setContent:html ofType:type withOptions:displayOptions];
 	}
 	else if([type isEqualToString:@"html"]) {
-		[self setContent:(NSString*)content withOptions:displayOptions];
+		[self setContent:(NSString*)content ofType:type withOptions:displayOptions];
 	}
 	else if([type isEqualToString:@"image"]) {
 		[self setBackgroundColor:[NSColor clearColor]];
@@ -220,36 +214,18 @@ static CGFloat slow_in_out (CGFloat t)
 		[self setExcludedFromWindowsMenu:YES];
 		[self setAlphaValue:1];
 
-		NSSize s = [(NSImage *)content size];
-		
-		// Downsize a large image
-		NSInteger w = s.width;
-		NSInteger h = s.height;
-		if(w>h) {
-			if(s.width > 200) {
-				w = 200;
-				h = 200/s.width*s.height;
-			}
-		} else {
-			if(s.height > 200) {
-				h = 200;
-				w = 200/s.height*s.width;
-			}
-		}
-		
-		// Show image in a NSImageView
-		NSImageView *backgroundImageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0,0,w, h)];
-		[backgroundImageView setImage:(NSImage *)content];
-		[backgroundImageView setFrameSize:NSMakeSize(w, h)];
-		[self setContentView:backgroundImageView];
-		[self setContentSize:NSMakeSize(w,h)];
+		// The image (downsized as before) on the hint card
+		NSView *imageCard = [SAClaudeTooltipCard cardForImage:(NSImage *)content];
+		NSSize cardSize = [imageCard frame].size; // setContentView: resizes it to the window
+		[self setContentView:imageCard];
+		[self setContentSize:cardSize];
 		[self setFrameTopLeftPoint:point];
 		[self sizeToContent];
 		[self orderFront:self];
 		[self beginDismissalMonitoring];
 	}
 	else {
-		[self setContent:(NSString*)content withOptions:displayOptions];
+		[self setContent:(NSString*)content ofType:type withOptions:displayOptions];
 		NSBeep();
 		NSLog(@"SPTooltip: Type '%@' is not supported. Please use 'text' or 'html'. Tooltip is displayed as type 'html'", type);
 	}
@@ -277,7 +253,7 @@ static CGFloat slow_in_out (CGFloat t)
 	[wkWebView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 	wkWebView.navigationDelegate = self;
 	
-	[self setContentView:wkWebView];
+	[self setContentView:[SAClaudeTooltipCard cardWrappingView:wkWebView]];
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation {
@@ -347,33 +323,10 @@ static CGFloat slow_in_out (CGFloat t)
 // ===========
 // = Webview =
 // ===========
-- (void)setContent:(NSString *)content withOptions:(NSDictionary *)displayOptions
+- (void)setContent:(NSString *)content ofType:(NSString *)type withOptions:(NSDictionary *)displayOptions
 {
-
-	NSString *fullContent =	@"<html>"
-				@"<head>"
-				@"  <style type='text/css' media='screen'>"
-				@"      body {"
-				@"          background: %@;"
-				@"          margin: 0;"
-				@"          padding: 2px;"
-				@"          overflow: hidden;"
-				@"          display: table-cell;"
-				@"          max-width: 800px;"
-				@"      }"
-				@"      pre { white-space: pre-wrap; }"
-				@"  </style>"
-				@"</head>"
-				@"<body>%@</body>"
-				@"</html>";
-
-	NSString *tooltipColor = @"#F0F0F0";
-	NSString *bgColor = ([displayOptions objectForKey:@"backgroundcolor"]) ? [displayOptions objectForKey:@"backgroundcolor"] : tooltipColor;
-	BOOL isTransparent = ([displayOptions objectForKey:@"transparent"]) ? YES : NO;
-
-	fullContent = [NSString stringWithFormat:fullContent, isTransparent ? @"transparent" : bgColor, content];
-	[wkWebView loadHTMLString:fullContent baseURL:nil];
-
+	// The page is styled as the Claude hint card; see SAClaudeTooltipHTML.
+	[wkWebView loadHTMLString:[SAClaudeTooltipCard documentWithBody:content type:type options:displayOptions] baseURL:nil];
 }
 
 - (void)sizeToContent
@@ -387,8 +340,8 @@ static CGFloat slow_in_out (CGFloat t)
 	// Find the screen which we are displaying on
 	NSRect screenFrame = [NSScreen rectOfScreenAtPoint:pos];
 
-	// is contentView a webView calculate actual rendered size via JavaScript
-	if([[[[self contentView] class] description] isEqualToString:@"WKWebView"]) {
+	// is the webView shown (inside the hint card) calculate actual rendered size via JavaScript
+	if(wkWebView && [wkWebView isDescendantOf:[self contentView]]) {
 		WKWebView *measuredWebView = wkWebView;
 		SATooltipMeasurement *measurement = [[SATooltipMeasurement alloc] initWithWebView:measuredWebView];
 		// The webview is set to a large initial size and then sized down to fit the content
@@ -423,9 +376,10 @@ static CGFloat slow_in_out (CGFloat t)
 
 		if (![measurement appliesToCurrentWebView:wkWebView]) return;
 
-		[wkWebView setFrameSize:NSMakeSize(measurement.width, measurement.height)];
+		// the web view fills the card
+		[self setContentSize:NSMakeSize(measurement.width, measurement.height)];
 
-		frame = [self frameRectForContentRect:[wkWebView frame]];
+		frame = [self frame];
 	} else {
 		frame = [self frame];
 	}
@@ -435,6 +389,8 @@ static CGFloat slow_in_out (CGFloat t)
 	frame.size.height = MIN(NSHeight(frame), NSHeight(screenFrame));
 
 	[self setFrame:frame display:NO];
+	// the shadow follows the card's rounded corners
+	[self invalidateShadow];
 
 	//Adjust tooltip origin to fit into the screenFrame
 	pos.x = MAX(NSMinX(screenFrame), MIN(pos.x, NSMaxX(screenFrame)-NSWidth(frame)));

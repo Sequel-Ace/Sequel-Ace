@@ -76,8 +76,43 @@ import OSLog
     // private let simulateSandboxedEnvironment = true
     // private var authorizedThisSession = false
 
-    /// Check if the AWS directory bookmark exists and is valid
+    /// Whether AWS IAM favourites may save, test, connect and list profiles without an authorization step first:
+    /// true unless a sandboxed build still needs the ~/.aws bookmark (`directoryAccess`).
     var isAWSDirectoryAuthorized: Bool {
+        directoryAccess != .needsAuthorization
+    }
+
+    /// How ~/.aws is reached (the one `SAPrivateBuildPolicy` decision): a private build reads it directly and never
+    /// consults (or revokes) bookmarks.
+    var directoryAccess: SAAWSDirectoryAccess {
+        SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: Self.isPrivateBuild,
+                                                sandboxedAccess: { self.sandboxedDirectoryAccess },
+                                                awsFilesExist: { Self.awsFilesExist })
+    }
+
+    /// `SAPrivateBuild` in the app's Info.plist (read through the policy: this file is also in the Unit Tests target).
+    private static var isPrivateBuild: Bool {
+        SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: Bundle.main.infoDictionary)
+    }
+
+    /// A private build without ~/.aws: the connection panel shows a note in place of the profile picker.
+    var showsMissingAWSDirectoryNote: Bool {
+        // Short-circuits so the sandboxed build never resolves bookmarks for it (`.missing` is private-build only).
+        Self.isPrivateBuild && !Self.awsFilesExist
+    }
+
+    /// ~/.aws, or the credentials / config file the loader reads (`AWS_SHARED_CREDENTIALS_FILE`, `AWS_CONFIG_FILE`
+    /// may point elsewhere), exists.
+    private static var awsFilesExist: Bool {
+        let files = FileManager.default
+        return files.fileExists(atPath: awsDirectoryPath)
+            || files.fileExists(atPath: AWSCredentials.credentialsFilePath)
+            || files.fileExists(atPath: AWSCredentials.configFilePath)
+    }
+
+    /// The sandboxed build's check: the AWS directory bookmark exists and is valid, or the credentials file is
+    /// directly readable.
+    private var sandboxedDirectoryAccess: Bool {
         // DEBUG: Uncomment to simulate sandboxed environment for testing UI
         // if simulateSandboxedEnvironment && !authorizedThisSession {
         //     os_log(.info, log: Self.log, "Simulating sandboxed environment - requires authorization")
@@ -143,6 +178,16 @@ import OSLog
             let activeReferences = accessReferenceCount
             stateLock.unlock()
             os_log(.debug, log: Self.log, "Already accessing AWS directory (%{public}d active references)", activeReferences)
+            return true
+        }
+
+        // A private build reads ~/.aws directly: no bookmark to resolve (a missing file just reads as nil).
+        if !SAPrivateBuildPolicy.usesAWSDirectoryBookmark(isPrivateBuild: Self.isPrivateBuild) {
+            resolvedAWSDirectoryURL = nil
+            isAccessingAWSDirectory = true
+            accessReferenceCount = 1
+            stateLock.unlock()
+            os_log(.debug, log: Self.log, "Private build: reading the AWS directory directly")
             return true
         }
 

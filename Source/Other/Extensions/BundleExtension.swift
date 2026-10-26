@@ -47,6 +47,35 @@ import Foundation
         }
     }
 
+    /// A private build of the fork (`SAPrivateBuild` in Info.plist) — see SAPrivateBuildPolicy.
+    public var isPrivateBuild: Bool {
+        SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: infoDictionary)
+    }
+
+    /// Whether this build uses the GitHub updater at all: not App Store installs, not private builds.
+    public var offersGitHubUpdates: Bool {
+        SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: isMASVersion, isPrivateBuild: isPrivateBuild)
+    }
+
+    /// Whether to show the "App Sandbox Issue" alert for `count` stale or missing bookmarks (launch, known hosts);
+    /// never in a private build.
+    @objc(showsStaleBookmarkAlertForCount:)
+    public func showsStaleBookmarkAlert(forCount count: Int) -> Bool {
+        SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: isPrivateBuild, staleBookmarkCount: count)
+    }
+
+    /// Whether launch may auto-connect with `count` stale secure bookmarks (always in a private build).
+    @objc(staleBookmarksAllowAutoConnectForCount:)
+    public func staleBookmarksAllowAutoConnect(forCount count: Int) -> Bool {
+        SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: isPrivateBuild, staleBookmarkCount: count)
+    }
+
+    /// Whether Settings ▸ Files marks `count` stale bookmarks as stale; never in a private build.
+    @objc(marksStaleBookmarksForCount:)
+    public func marksStaleBookmarks(forCount count: Int) -> Bool {
+        SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: isPrivateBuild, staleBookmarkCount: count)
+    }
+
     public var versionString: String {
         guard
             let version: String = self.version,
@@ -75,7 +104,7 @@ import Foundation
 
     public func checkForNewVersion(isFromMenuCheck: Bool) {
 
-        if isMASVersion == false {
+        if offersGitHubUpdates {
             let isBetaBuild = isSnapshotBuild
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace",
                                                                    project: "Sequel-Ace",

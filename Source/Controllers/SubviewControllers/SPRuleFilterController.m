@@ -50,6 +50,38 @@ typedef NS_ENUM(NSInteger, RuleNodeType) {
 
 NSString * const SPRuleFilterHeightChangedNotification = @"SPRuleFilterHeightChanged";
 
+// What the filter target (SPTableContent) answers about the bar; see -_targetShowsFilterRuleEditor.
+@protocol SARuleFilterBarVisibility <NSObject>
+@optional
+- (BOOL)isFilterRuleEditorVisible;
+@end
+
+// SAClaudeFilterBarStyler is app-target Swift, but the Unit Tests target compiles this file too, so it is
+// looked up at runtime (Nil, and every call a no-op, in the tests).
+@protocol SAClaudeFilterBarStyling <NSObject>
++ (void)attachToRuleEditor:(NSRuleEditor *)ruleEditor rootConjunctionPopUp:(NSPopUpButton *)rootConjunctionPopUp applyButton:(NSButton *)applyButton addFilterButton:(NSButton *)addFilterButton;
++ (void)restyleRowsOfRuleEditor:(NSRuleEditor *)ruleEditor;
+@end
+
+static Class<SAClaudeFilterBarStyling> SAClaudeFilterBarStylerClass(void)
+{
+	return (Class<SAClaudeFilterBarStyling>)NSClassFromString(@"SAClaudeFilterBarStyler");
+}
+
+// SAContentFilterLocalScope (a window's own filters: its saved connection's, headed by its name, or its file's) is
+// app-target Swift too, looked up the same way (Nil in the tests, which keep the file's filters).
+@protocol SAContentFilterLocalScoping <NSObject>
++ (id<SAContentFilterLocalScoping>)filterScopeForDocument:(SPDatabaseDocument *)document;
+- (NSArray *)filtersOfType:(NSString *)filterType;
+- (NSString *)connectionName;
+- (NSString *)connectionHeaderToolTip;
+@end
+
+static Class<SAContentFilterLocalScoping> SAContentFilterLocalScopeClass(void)
+{
+	return (Class<SAContentFilterLocalScoping>)NSClassFromString(@"SAContentFilterLocalScope");
+}
+
 /**
  * The type of filter rule that the current item represents.
  */
@@ -383,11 +415,22 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if (container && [dropBox superview] != container) {
 		[container addSubview:dropBox];
 	}
+
+	[SAClaudeFilterBarStylerClass() attachToRuleEditor:filterRuleEditor rootConjunctionPopUp:rootConjunctionPopUp applyButton:filterButton addFilterButton:addFilterButton];
 }
 
 - (SPRuleFilterDropBox *)dropBoxView
 {
 	return dropBox;
+}
+
+- (NSArray<NSView *> *)barControls
+{
+	NSMutableArray<NSView *> *controls = [NSMutableArray arrayWithCapacity:3];
+	if (rootConjunctionPopUp) [controls addObject:rootConjunctionPopUp];
+	if (filterButton) [controls addObject:filterButton];
+	if (addFilterButton) [controls addObject:addFilterButton];
+	return controls;
 }
 
 - (CGFloat)dropBoxReservedHeight
@@ -652,6 +695,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			NSMenuItem *item;
 			if ([[[node settings] objectForKey:@"isSeparator"] boolValue]) {
 				item = [NSMenuItem separatorItem];
+			}
+			else if ([[[node settings] objectForKey:@"isHeader"] boolValue]) {
+				// a section heading (the connection's filters): a title that can't be chosen
+				item = [[NSMenuItem alloc] initWithTitle:[[node settings] objectForKey:@"title"] action:NULL keyEquivalent:@""];
+				[item setToolTip:[[node settings] objectForKey:@"tooltip"]];
+				[item setEnabled:NO];
 			}
 			else {
 				/* NOTE:
@@ -1234,10 +1283,40 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 	// if the user removed the last row in the editor by pressing "-" (and only then) we immediately want to trigger a filter reset.
 	// There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
-	if(!isDoingChangeCausedOutsideOfRuleEditor && previousRowCount > 0 && newRowCount == 0) {
+	BOOL userRemovedLastRow = (!isDoingChangeCausedOutsideOfRuleEditor && previousRowCount > 0 && newRowCount == 0);
+	if(userRemovedLastRow) {
 		[self _invokeFilterTargetActionWithObject:nil];
 	}
 	previousRowCount = newRowCount;
+
+	[SAClaudeFilterBarStylerClass() restyleRowsOfRuleEditor:filterRuleEditor];
+
+	if(userRemovedLastRow) {
+		// fall back to the blank, unchecked starter row once the deletion has settled; the facts are read
+		// again then, as the bar may have been hidden or refilled meanwhile. The starter itself is added
+		// outside the rule editor's own change, so it cannot trigger this again.
+		BOOL deletionWasUserDriven = userRemovedLastRow;
+		SPMainLoopAsync(^{
+			// `enabled` is no help as the visibility fact: the filter task started above disables the
+			// controller until the query returns, and it stays YES for a hidden bar after a table load.
+			if ([SARuleFilterVisibilityPolicy shouldReseedStarterAfterUserDeletionWithEditorIsEmpty:[self isEmpty]
+			                                                                             barVisible:[self _targetShowsFilterRuleEditor]
+			                                                                  deletionWasUserDriven:deletionWasUserDriven]) {
+				[self addStarterFilterExpression];
+			}
+		});
+	}
+}
+
+/**
+ * Asks the filter target (SPTableContent, not imported here as the Unit Tests target compiles this file
+ * too) whether the filter bar is shown; NO when the target can't say.
+ */
+- (BOOL)_targetShowsFilterRuleEditor
+{
+	id<SARuleFilterBarVisibility> visibilitySource = (id<SARuleFilterBarVisibility>)target;
+	if (![visibilitySource respondsToSelector:@selector(isFilterRuleEditorVisible)]) return NO;
+	return [visibilitySource isFilterRuleEditorVisible];
 }
 
 - (void)_updateButtonStates
@@ -1374,16 +1453,29 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[[prefs objectForKey:SPContentFilters] objectForKey:compareType]];
 	}
 
-	// Load doc-based user-defined content filters
-	if([[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]]) {
+	// Load doc-based user-defined content filters (Claude look: a window on a saved connection lists that
+	// connection's filters, under a heading with its name — SAContentFilterLocalScope)
+	id<SAContentFilterLocalScoping> localScope = [SAContentFilterLocalScopeClass() filterScopeForDocument:tableDocumentInstance];
+	NSString *localHeading = [localScope connectionName];
+	NSUInteger localStart = [[contentFilters objectForKey:definitionGroup] count];
+	if (localScope) {
+		[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[localScope filtersOfType:compareType]];
+	}
+	else if([[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]]) {
 		id filters = [[SPQueryController sharedQueryController] contentFilterForFileURL:[tableDocumentInstance fileURL]];
 		if([filters objectForKey:compareType])
 			[[contentFilters objectForKey:definitionGroup] addObjectsFromArray:[filters objectForKey:compareType]];
 	}
 
 	NSUInteger i = 0;
+	NSUInteger position = 0;
 	if([contentFilters objectForKey:definitionGroup]) {
 		for (id filter in [contentFilters objectForKey:definitionGroup]) {
+			if (localHeading && position == localStart) {
+				[compareItems addObjectsFromArray:[self _localFiltersHeadingNodes:localHeading toolTip:[localScope connectionHeaderToolTip] forColumn:colNode]];
+			}
+			position++;
+
 			// Create the tooltip
 			NSString *tooltip;
 			if ([filter objectForKey:@"Tooltip"])
@@ -1452,6 +1544,29 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 
 	return compareItems;
+}
+
+/**
+ * A separator and a disabled title item heading the window's connection filters in an operator menu (their settings
+ * differ from the closing separator's, so the nodes never compare equal to it).
+ */
+- (NSArray *)_localFiltersHeadingNodes:(NSString *)heading toolTip:(NSString *)toolTip forColumn:(ColumnNode *)colNode
+{
+	OpNode *separator = [[OpNode alloc] init];
+	[separator setParentColumn:colNode];
+	[separator setSettings:@{
+		@"isSeparator": @YES,
+		@"isLocalFiltersHeading": @YES,
+	}];
+
+	OpNode *header = [[OpNode alloc] init];
+	[header setParentColumn:colNode];
+	[header setSettings:@{
+		@"isHeader": @YES,
+		@"title": heading,
+		@"tooltip": toolTip ?: @"",
+	}];
+	return @[separator, header];
 }
 
 - (IBAction)_editFiltersAction:(id)sender

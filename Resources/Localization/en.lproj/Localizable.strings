@@ -745,6 +745,9 @@
 /* background label for color table (Prefs > Editor) */
 "Background" = "Background";
 
+/* Preferences > Query Editor > Script Output: label for the script console background colour */
+"Background colour" = "Background colour";
+
 /* backtick quote label for color table (Prefs > Editor) */
 "Backtick Quote" = "Backtick Quote";
 
@@ -985,8 +988,14 @@
  Continue button title */
 "Continue" = "Continue";
 
+/* Script console: checkbox to keep running a script after a statement fails */
+"Continue on error" = "Continue on error";
+
 /* continue to print message */
 "Continue to print?" = "Continue to print?";
+
+/* Script console: button that copies all output to the clipboard */
+"Copy All" = "Copy All";
 
 /* content tab : rule filter : drop zone context menu : copy the previewed WHERE clause */
 "Copy WHERE Clause" = "Copy WHERE Clause";
@@ -1101,6 +1110,12 @@
 
 /* create syntax for table comment */
 "Create syntax for" = "Create syntax for";
+
+/* table info : section title */
+"Create syntax" = "Create syntax";
+
+/* table info : section title */
+"Comments" = "Comments";
 
 /* Create syntax label */
 "Create syntax for %@ '%@'" = "Create syntax for %1$@ '%2$@'";
@@ -1308,6 +1323,12 @@
 /* message of panel asking for confirmation for inserting large text from dragging action */
 "Do you really want to proceed with %@ of data?" = "Do you really want to proceed with %@ of data?";
 
+/* message of panel asking for confirmation for exec query */
+"Do you really want to proceed with these queries?\n\n %@" = "Do you really want to proceed with these queries?\n\n %@";
+
+/* message of panel asking for confirmation for exec query */
+"Do you really want to proceed with this query?\n\n %@" = "Do you really want to proceed with this query?\n\n %@";
+
 /* shutdown server : confirmation dialog : title */
 "Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
 
@@ -1364,6 +1385,9 @@
 
 /* edit user-defined filter */
 "Edit user-defined Filters…" = "Edit user-defined Filters…";
+
+/* accessibility name of the editor options menu button under the query editor */
+"Editor options" = "Editor options";
 
 /* empty query message */
 "Empty query" = "Empty query";
@@ -1544,6 +1568,9 @@
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
 "exclude BLOB" = "exclude BLOB";
 
+/* Execute SQL? */
+"Execute SQL?" = "Execute SQL?";
+
 /* execution privilege label (Navigator) */
 "Execution Privilege" = "Execution Privilege";
 
@@ -1561,6 +1588,9 @@
 
 /* export selected favorites menu item */
 "Export Selected..." = "Export Selected...";
+
+/* accessibility name of the ⋯ menu button in the Query tab's bottom strip, which holds Export Result */
+"Export result" = "Export result";
 
 /* text showing that the application is importing a supplied format */
 "Exporting %@" = "Exporting %@";
@@ -1680,6 +1710,9 @@
 /* title of panel when successfully flushed privs */
 "Flushed Privileges" = "Flushed Privileges";
 
+/* Preferences > Query Editor > Script Output: label for the script console font */
+"Font" = "Font";
+
 /* For BIT fields only “1” or “0” are allowed. */
 "For BIT fields only “1” or “0” are allowed." = "For BIT fields only “1” or “0” are allowed.";
 
@@ -1700,7 +1733,8 @@
 
 /* Bundle Editor : Scope dropdown : 'general' item
  general menu item label
- general preference pane name */
+ general preference pane name
+ table info : section title */
 "General" = "General";
 
 /* general preference pane tooltip */
@@ -1745,6 +1779,9 @@
 
 /* Hide Toolbar menu item */
 "Hide Toolbar" = "Hide Toolbar";
+
+/* query editor bar: label of the query history menu button */
+"History" = "History";
 
 /* export filename host token
  export header host label */
@@ -1913,6 +1950,9 @@
 
 /* Last Error Message */
 "Last Error Message" = "Last Error Message";
+
+/* Query tab status pane title after an error */
+"Last error" = "Last error";
 
 /* Last Used entry in favorites menu */
 "Last Used" = "Last Used";
@@ -2290,6 +2330,15 @@
 /* query editor preference pane tooltip */
 "Query Editor Preferences" = "Query Editor Preferences";
 
+/* accessibility name of the query favorites menu button under the query editor */
+"Query Favorites" = "Query Favorites";
+
+/* Title of the notification posted when a query or script run finishes */
+"Query Finished" = "Query Finished";
+
+/* accessibility name of the query history menu button under the query editor */
+"Query History" = "Query History";
+
 /* query logging currently disabled label
  query logging disabled label */
 "Query logging is currently disabled" = "Query logging is currently disabled";
@@ -2305,6 +2354,9 @@
 
 /* Query Status */
 "Query Status" = "Query Status";
+
+/* Query tab status pane title when there is no error */
+"Query status" = "Query status";
 
 /* table status : row count query failed : error title */
 "Querying row count failed" = "Querying row count failed";
@@ -2481,6 +2533,9 @@
 /* delete all rows in table button */
 "Delete ALL ROWS IN TABLE" = "Delete ALL ROWS IN TABLE";
 
+/* Preferences > Query Editor > Script Output: button that copies the editor's font and colours into the script console settings */
+"Reset to Editor" = "Reset to Editor";
+
 /* Restoring session task description */
 "Restoring session..." = "Restoring session...";
 
@@ -2508,8 +2563,23 @@
 /* Table Info Section : number of rows (estimated value) */
 "rows: ~%@" = "rows: ~%@";
 
+/* query editor run button title: run all queries */
+"Run all" = "Run all";
+
+/* query editor run button title: run previous query */
+"Run previous" = "Run previous";
+
+/* query editor run button title: run current query */
+"Run current" = "Run current";
+
+/* query editor run button title: run selection */
+"Run selection" = "Run selection";
+
 /* run all button */
 "Run All" = "Run All";
+
+/* Query editor run menu: run all statements and print every result as plain text */
+"Run All as Script" = "Run All as Script";
 
 /* Run All menu item title */
 "Run All Queries" = "Run All Queries";
@@ -2565,6 +2635,9 @@
 /* Query favorite save sheet global checkbox */
 "Save globally" = "Save globally";
 
+/* Script console: button that saves all output to a text file */
+"Save Output…" = "Save Output…";
+
 /* save page as menu item title */
 "Save Page As…" = "Save Page As…";
 
@@ -2586,6 +2659,8 @@
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
 
+/* Preferences > Query Editor: section title for the Run All as Script console's appearance */
+"Script Output" = "Script Output";
 /* database picker : search field placeholder */
 "Search Databases" = "Search Databases";
 
@@ -2621,6 +2696,9 @@
 
 /* selection label for color table (Prefs > Editor) */
 "Selection" = "Selection";
+
+/* Preferences > Query Editor > Script Output: button that opens the font panel */
+"Select…" = "Select…";
 
 /* table structure : indexes : delete index : no columns error : description */
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
@@ -2798,6 +2876,9 @@
 /* Stop query string */
 "Stop query" = "Stop query";
 
+/* table info : section title */
+"Storage" = "Storage";
+
 /* description of timestamp */
 "Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.";
 
@@ -2963,6 +3044,9 @@
 
 /* text label for color table (Prefs > Editor) */
 "Text" = "Text";
+
+/* Preferences > Query Editor > Script Output: label for the script console text colour */
+"Text colour" = "Text colour";
 
 /* Text is too long. Maximum text length is set to %llu. */
 "Text is too long. Maximum text length is set to %llu." = "Text is too long. Maximum text length is set to %llu.";
@@ -3377,6 +3461,9 @@
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "Use 127.0.0.1";
+
+/* Preferences > Query Editor > Script Output: checkbox to stop the script console following the editor's font and colours */
+"Use custom font & colours for script output" = "Use custom font & colours for script output";
 
 /* use standard connection button */
 "Use Standard Connection" = "Use Standard Connection";
@@ -3906,6 +3993,9 @@
 /* AWS authorization required title */
 "AWS Authorization Required" = "AWS Authorization Required";
 
+/* AWS IAM : note in place of the profile picker when a private build finds no ~/.aws folder */
+"No ~/.aws folder found. Set up a profile with the AWS CLI (aws configure, or aws sso login) to connect with AWS IAM." = "No ~/.aws folder found. Set up a profile with the AWS CLI (aws configure, or aws sso login) to connect with AWS IAM.";
+
 /* IAM auth error */
 "AWS credentials are invalid" = "AWS credentials are invalid";
 
@@ -4431,6 +4521,648 @@
 /* rename database: the column signatures of the views could not be read, so the source database is kept; %1$@ target database, %2$@ source database, %3$@ server error, %4$@ and %5$@ source database */
 "The columns of the recreated views in '%@' could not be compared with those in '%@': %@ The objects were moved, and '%@' was kept; check the views and remove '%@' yourself once you are satisfied." = "The columns of the recreated views in '%1$@' could not be compared with those in '%2$@': %3$@ The objects were moved, and '%4$@' was kept; check the views and remove '%5$@' yourself once you are satisfied.";
 
+/* accessibility name of the view icon in the tables list */
+"ViewIconAccessibilityName" = "View";
+
+/* accessibility name of the stored procedure icon in the tables list */
+"Procedure" = "Procedure";
+
+/* accessibility name of the stored function icon in the tables list */
+"Function" = "Function";
+
+/* accessibility name of the add table button below the tables list */
+"Add table" = "Add table";
+
+/* accessibility name of the table actions menu button below the tables list */
+"Table actions" = "Table actions";
+
+/* accessibility name of the refresh button below the tables list */
+"Refresh table list" = "Refresh table list";
+
+/* accessibility name of the button that shows or hides the table information panel */
+"Toggle information panel" = "Toggle information panel";
+
+/* header for table & views list */
+"Tables and views" = "Tables and views";
+
+/* header for procs & funcs list */
+"Procedures and functions" = "Procedures and functions";
+
+/* header for pinned tables */
+"Pinned" = "Pinned";
+
+/* header for table info pane */
+"Table information" = "Table information";
+
+/* header for activities pane */
+"Activities" = "Activities";
+
+/* header for blank info pane */
+"Information" = "Information";
+
+/* info pane text shown when several tables are selected */
+"Multiple selection" = "Multiple selection";
+
+/* header for procedure info pane */
+"Procedure information" = "Procedure information";
+
+/* header for function info pane */
+"Function information" = "Function information";
+
+/* header for view info pane */
+"View information" = "View information";
+
+/* View menu item that hides the table list sidebar */
+"Hide Table List" = "Hide Table List";
+
+/* View menu item that shows the table list sidebar */
+"Show Table List" = "Show Table List";
+
+/* Preferences > Query Editor: section title for choosing editor themes per light/dark appearance */
+"Theme Appearance" = "Theme Appearance";
+
+/* Preferences > Query Editor > Theme Appearance: checkbox making the editor theme follow light/dark mode */
+"Match system appearance" = "Match system appearance";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in light mode */
+"Light theme" = "Light theme";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in dark mode */
+"Dark theme" = "Dark theme";
+
+/* Preferences > Query Editor > Theme Appearance: a chosen theme whose file no longer exists */
+"%@ (missing)" = "%@ (missing)";
+
+/* Preferences > Query Editor: accessibility label of the Follow macOS / Customise choice */
+"Colours" = "Colours";
+
+/* Preferences > Query Editor: label before the Follow macOS / Customise choice */
+"Colours:" = "Colours:";
+
+/* Preferences > Query Editor: colours follow the macOS light/dark appearance with the Claude themes */
+"Follow macOS" = "Follow macOS";
+
+/* Preferences > Query Editor: the user's own editor colours */
+"Customise" = "Customise";
+
+/* Preferences > Query Editor: hint under Follow macOS */
+"Claude Light in light mode, Claude Dark in dark mode. Editor, results and console all follow." = "Claude Light in light mode, Claude Dark in dark mode. Editor, results and console all follow.";
+
+/* Preferences > Query Editor: caption of the light-mode theme preview */
+"Light" = "Light";
+
+/* Preferences > Query Editor: caption of the dark-mode theme preview */
+"Dark" = "Dark";
+
+/* Preferences > Query Editor: hint under Customise */
+"Your colours, the same in light and dark mode." = "Your colours, the same in light and dark mode.";
+
+/* Preferences > Query Editor > Customise: label of the theme to start from */
+"Start from:" = "Start from:";
+
+/* Preferences > Query Editor > Customise: save the current colours as a theme file */
+"Save as theme…" = "Save as theme…";
+
+/* Preferences > Query Editor > Customise: import a theme file */
+"Import theme…" = "Import theme…";
+
+/* Preferences > Query Editor > Customise: export the current colours as a theme file */
+"Export current theme…" = "Export current theme…";
+
+/* Preferences > Query Editor > Customise: rename, duplicate or remove theme files */
+"Edit theme list…" = "Edit theme list…";
+
+/* Preferences > Query Editor: label of the accent colour well */
+"Accent colour" = "Accent colour";
+
+/* Preferences > Query Editor: puts the accent colour back to the default clay */
+"Reset to clay" = "Reset to clay";
+
+/* Run All console: a long statement is cut after 6 lines; this many lines are not shown */
+"… %ld more lines" = "… %ld more lines";
+
+/* Run All console: a statement failed and the script went on */
+"failed · continued" = "failed · continued";
+
+/* Run All console: a statement failed and the script stopped */
+"failed · stopped" = "failed · stopped";
+
+/* Run All console: the statement was stopped by the user */
+"cancelled" = "cancelled";
+
+/* Run All console: a query returned no rows */
+"Empty set" = "Empty set";
+
+/* Run All console: a query returned one row */
+"1 row" = "1 row";
+
+/* Run All console: a query returned this many rows */
+"%llu rows" = "%llu rows";
+
+/* Run All console: a statement changed one row */
+"1 row affected" = "1 row affected";
+
+/* Run All console: a statement changed this many rows */
+"%llu rows affected" = "%llu rows affected";
+
+/* Run All console: button that copies all output; accessibility name of the Run All console's Copy all button */
+"Copy all" = "Copy all";
+
+/* Run All console: button that saves all output to a text file */
+"Save…" = "Save…";
+
+/* accessibility name of the Run All console's Save button */
+"Save output" = "Save output";
+
+/* accessibility name of the Run All console's Clear button */
+"Clear output" = "Clear output";
+
+/* accessibility name of the column icon in the autocomplete list */
+"Column" = "Column";
+
+/* Query Console: accessibility name of the options menu button in the toolbar */
+"Console options" = "Console options";
+
+/* Query bar Copy button menu: copy the result rows as tab-separated text */
+"ClaudeCopyMenuPlain" = "Copy";
+
+/* Query bar Copy button menu: copy the result rows with a header row of column names */
+"ClaudeCopyMenuWithColumnNames" = "Copy with column names";
+
+/* Query bar Copy button menu: copy the result rows as SQL INSERT statements */
+"ClaudeCopyMenuSQLInsert" = "Copy as SQL INSERT";
+
+/* Query bar Copy button menu: copy the result rows as SQL INSERT statements without the auto-increment column */
+"ClaudeCopyMenuSQLInsertNoAutoInc" = "Copy as SQL INSERT (no auto_inc)";
+
+/* Query bar Copy button label: copies the result rows */
+"ClaudeCopyLabelPlain" = "Copy";
+
+/* Query bar Copy button label: copies the result rows with column names (keep short) */
+"ClaudeCopyLabelWithColumnNames" = "Copy with names";
+
+/* Query bar Copy button label: copies the result rows as SQL INSERT statements (keep short) */
+"ClaudeCopyLabelSQLInsert" = "Copy as INSERT";
+
+/* Query bar Copy button label: copies the result rows as SQL INSERT without the auto-increment column (keep short) */
+"ClaudeCopyLabelSQLInsertNoAutoInc" = "Copy INSERT (no auto_inc)";
+
+/* Query bar Copy button label shown briefly after copying */
+"ClaudeCopyLabelCopied" = "Copied";
+
+/* Query editor Run button title while it runs all statements as a script (keep short) */
+"ClaudeRunButtonScript" = "Run as script";
+
+/* Query bar Copy button tooltip: one selected result row will be copied */
+"ClaudeCopyScopeOneSelected" = "Copy 1 selected row";
+
+/* Query bar Copy button tooltip: this many selected result rows will be copied */
+"ClaudeCopyScopeSelected" = "Copy %ld selected rows";
+
+/* Query bar Copy button tooltip: the result's only row will be copied */
+"ClaudeCopyScopeOneAll" = "Copy 1 row";
+
+/* Query bar Copy button tooltip: all of this many result rows will be copied */
+"ClaudeCopyScopeAll" = "Copy %ld rows";
+
+/* Query bar Copy button tooltip suffix (leading space): rows are copied with column names */
+"ClaudeCopyScopeSuffixColumnNames" = " with column names";
+
+/* Query bar Copy button tooltip suffix (leading space): rows are copied as SQL INSERT */
+"ClaudeCopyScopeSuffixSQLInsert" = " as SQL INSERT";
+
+/* Query bar Copy button tooltip suffix (leading space): rows are copied as SQL INSERT without the auto-increment column */
+"ClaudeCopyScopeSuffixSQLInsertNoAutoInc" = " as SQL INSERT (no auto_inc)";
+
+/* Query bar Copy button menu footer: one selected row will be copied */
+"ClaudeCopyFooterOneSelected" = "Copies 1 selected row";
+
+/* Query bar Copy button menu footer: this many selected rows will be copied */
+"ClaudeCopyFooterSelected" = "Copies %ld selected rows";
+
+/* Query bar Copy button menu footer: no selection, so the result's only row will be copied */
+"ClaudeCopyFooterOneAll" = "Copies 1 row · nothing selected";
+
+/* Query bar Copy button menu footer: no selection, so all of this many rows will be copied */
+"ClaudeCopyFooterAll" = "Copies %ld rows · nothing selected";
+
+/* Query bar Copy button tooltip when the result has no rows */
+"ClaudeCopyUnavailableNoRows" = "No rows to copy";
+
+/* Query bar Copy button tooltip when the result has no column definitions to build SQL INSERT statements from */
+"ClaudeCopyUnavailableNoColumns" = "SQL INSERT needs a result with column details";
+
+/* Accessibility help of the query bar Copy button: its chevron lists the copy actions */
+"ClaudeCopyOptions" = "Copy options";
+
+/* Editor options popover: button that inserts the previous query from history */
+"ClaudeEditorOptionsPrevious" = "Previous";
+
+/* Editor options popover: button that inserts the next query from history */
+"ClaudeEditorOptionsNext" = "Next";
+
+/* Editor options popover switch: choosing a history item replaces the editor text */
+"ClaudeEditorOptionsHistoryReplaces" = "History replaces editor content";
+
+/* Editor options popover switch: choosing a favorite replaces the editor text */
+"ClaudeEditorOptionsFavoriteReplaces" = "Favorite replaces editor content";
+
+/* Editor options popover: indent the selection */
+"ClaudeEditorOptionsShiftRight" = "Shift right";
+
+/* Editor options popover: un-indent the selection */
+"ClaudeEditorOptionsShiftLeft" = "Shift left";
+
+/* Editor options popover: comment out the line or selection */
+"ClaudeEditorOptionsCommentLine" = "Comment line";
+
+/* Editor options popover: comment out the current query (shown while Option is held) */
+"ClaudeEditorOptionsCommentQuery" = "Comment query";
+
+/* Editor options popover: open the completion list */
+"ClaudeEditorOptionsShowList" = "Show list";
+
+/* Editor options popover chip: complete from all database names */
+"ClaudeEditorOptionsDatabases" = "Databases";
+
+/* Editor options popover chip: complete from all table and view names */
+"ClaudeEditorOptionsTables" = "Tables";
+
+/* Editor options popover chip: complete from the current table's field names */
+"ClaudeEditorOptionsFields" = "Fields";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsIndent" = "Indent new lines";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsAutoPair" = "Auto-pair characters";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsUppercase" = "Auto-uppercase keywords";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsAutoComplete" = "Auto-completion";
+
+/* Editor options popover switch */
+"ClaudeEditorOptionsAutoHelp" = "Update help while typing";
+
+/* Editor options popover row that opens the font panel */
+"ClaudeEditorOptionsEditorFont" = "Editor font";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionHistory" = "History";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionEditing" = "Editing";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionCompletion" = "Completion";
+
+/* Editor options popover section header */
+"ClaudeEditorOptionsSectionTyping" = "Typing";
+
+/* Editor options popover: a switch's accessibility value when on */
+"ClaudeEditorOptionsOn" = "On";
+
+/* Editor options popover: a switch's accessibility value when off */
+"ClaudeEditorOptionsOff" = "Off";
+
+/* accessibility name of the table structure toolbar icon */
+"ClaudeToolbarGlyphStructure" = "Structure";
+
+/* accessibility name of the table relations toolbar icon */
+"ClaudeToolbarGlyphRelations" = "Relations";
+
+/* accessibility name of the table triggers toolbar icon */
+"ClaudeToolbarGlyphTriggers" = "Triggers";
+
+/* accessibility name of the table info toolbar icon */
+"ClaudeToolbarGlyphInfo" = "Table info";
+
+/* accessibility name of the query toolbar icon */
+"ClaudeToolbarGlyphQuery" = "Query";
+
+/* accessibility name of the record view toolbar icon */
+"ClaudeToolbarGlyphRecordView" = "Record view";
+
+/* accessibility name of the user accounts toolbar icon */
+"ClaudeToolbarGlyphUsers" = "Users";
+
+/* accessibility name of the console toolbar icon */
+"ClaudeToolbarGlyphConsole" = "Console";
+
+/* accessibility name of the clear console toolbar icon */
+"ClaudeToolbarGlyphClearConsole" = "Clear console";
+
+/* accessibility name of the history back arrow */
+"ClaudeToolbarGlyphBack" = "Back";
+
+/* accessibility name of the history forward arrow */
+"ClaudeToolbarGlyphForward" = "Forward";
+
+/* accessibility name of the remove icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphRemove" = "Remove";
+
+/* accessibility name of the duplicate icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphDuplicate" = "Duplicate";
+
+/* accessibility name of the edit mode icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphEditMode" = "Edit mode";
+
+/* accessibility name of the filter icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphFilter" = "Filter";
+
+/* accessibility name of the filter icon in a table tab's bottom bar when a filter is applied */
+"ClaudeTabBarGlyphFilterActive" = "Filter (active)";
+
+/* accessibility name of the columns icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphColumns" = "Columns";
+
+/* accessibility name of the indexes icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphIndexes" = "Indexes";
+
+/* accessibility name of the page options icon in a table tab's bottom bar */
+"ClaudeTabBarGlyphPageOptions" = "Page options";
+
+/* Structure tab: header above the indexes list */
+"ClaudeTabBarIndexesHeader" = "Indexes";
+
+/* View ▸ Toolbar submenu: show/hide the database picker */
+"ClaudeToolbarMenuDatabase" = "Database";
+
+/* View ▸ Toolbar submenu: show/hide the Structure view button */
+"ClaudeToolbarMenuStructure" = "Structure";
+
+/* View ▸ Toolbar submenu: show/hide the Content view button */
+"ClaudeToolbarMenuContent" = "Content";
+
+/* View ▸ Toolbar submenu: show/hide the Relations view button */
+"ClaudeToolbarMenuRelations" = "Relations";
+
+/* View ▸ Toolbar submenu: show/hide the Triggers view button */
+"ClaudeToolbarMenuTriggers" = "Triggers";
+
+/* View ▸ Toolbar submenu: show/hide the Table Info view button */
+"ClaudeToolbarMenuTableInfo" = "Table info";
+
+/* View ▸ Toolbar submenu: show/hide the Query view button */
+"ClaudeToolbarMenuQuery" = "Query";
+
+/* View ▸ Toolbar submenu: show/hide the back/forward history buttons */
+"ClaudeToolbarMenuHistory" = "History";
+
+/* View ▸ Toolbar submenu: show/hide the Record View button */
+"ClaudeToolbarMenuRecordView" = "Record view";
+
+/* View ▸ Toolbar submenu: show/hide the Users button */
+"ClaudeToolbarMenuUsers" = "Users";
+
+/* View ▸ Toolbar submenu: show/hide the Console button */
+"ClaudeToolbarMenuConsole" = "Console";
+
+/* View ▸ Toolbar submenu: show/hide the Clear Console button */
+"ClaudeToolbarMenuClearConsole" = "Clear console";
+
+/* View menu: submenu for showing or hiding toolbar items */
+"ClaudeToolbarMenuTitle" = "Toolbar";
+
+/* View ▸ Toolbar: show toolbar items with icons and labels */
+"ClaudeToolbarMenuIconAndText" = "Icon and text";
+
+/* View ▸ Toolbar: show toolbar items as icons without labels */
+"ClaudeToolbarMenuIconOnly" = "Icon only";
+
+/* View ▸ Toolbar: restore the default toolbar items and order */
+"ClaudeToolbarMenuReset" = "Reset to default";
+
+/* accessibility name of the connection type tabs in the connection panel */
+"ClaudeConnectionTypeTabs" = "Connection type";
+
+/* connection panel : title of the fold holding the less used connection settings */
+"ClaudeConnectionAdvanced" = "Advanced";
+
+/* connection panel : label of the favourite colour row */
+"ClaudeConnectionColour" = "Colour";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionServer" = "Server";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionSignIn" = "Sign in";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionSSHTunnel" = "SSH tunnel";
+
+/* connection panel : section title */
+"ClaudeConnectionSectionVault" = "Vault";
+
+/* connection panel : button saving the current details as a new favourite */
+"ClaudeConnectionAddToFavourites" = "Add to favourites";
+
+/* connection panel : button testing the connection details */
+"ClaudeConnectionTest" = "Test";
+
+/* connection panel : placeholder of the connection name in the header */
+"ClaudeConnectionNewFavourite" = "New favourite";
+
+/* connection panel : pencil button that starts editing the connection name */
+"ClaudeConnectionEditName" = "Edit name";
+
+/* connection panel : primary button saving the favourite's edits, then connecting */
+"ClaudeConnectionSaveAndConnect" = "Save and connect";
+
+/* connection panel : button connecting with the edited details, leaving the favourite unsaved */
+"ClaudeConnectionConnectWithoutSaving" = "Connect without saving";
+
+/* connection screen : title of the Quick connect card */
+"ClaudeFavoriteCardsQuickConnect" = "Quick connect";
+
+/* connection screen : subtitle of the Quick connect card */
+"ClaudeFavoriteCardsQuickConnectSummary" = "Fill in the panel below";
+
+/* connection screen : shown in the favourite cards when the search matches nothing */
+"ClaudeFavoriteCardsNoMatches" = "No favourites match";
+
+/* connection screen : accessibility name of the favourite cards */
+"ClaudeFavoriteCardsAccessibility" = "Favourites";
+
+/* connection screen : top bar button adding a favourites folder */
+"ClaudeConnectionPageFolder" = "Folder";
+
+/* connection screen : tooltip of the top bar button adding a favourites folder */
+"ClaudeConnectionPageNewFolder" = "New folder";
+
+/* connection screen : top bar button adding a favourite */
+"ClaudeConnectionPageFavourite" = "Favourite";
+
+/* connection screen : tooltip and accessibility name of the top bar ⋯ button (its menu imports, exports and sorts connection favourites) */
+"ClaudeConnectionPageMore" = "Import, export and sort connections";
+
+/* connection screen ⋯ menu and File menu : imports connection favourites from a file (or a copied connection string) */
+"ClaudeConnectionsImport" = "Import Connections…";
+
+/* connection screen ⋯ menu and File menu : exports the selected connection favourites to a file */
+"ClaudeConnectionsExport" = "Export Connections…";
+
+/* connection screen ⋯ menu and File menu : exports every connection favourite (with its folders) to a file; shown when no favourite is selected */
+"ClaudeConnectionsExportAll" = "Export All Connections…";
+
+/* connection screen ⋯ menu and File menu : exports the several selected connection favourites to a file */
+"ClaudeConnectionsExportSelected" = "Export Selected…";
+
+/* connection page : folder rename : cancel button */
+"ClaudeFolderRenameCancel" = "Cancel renaming";
+
+/* connection page : folder rename : save button */
+"ClaudeFolderRenameSave" = "Save folder name";
+
+/* export dialog: table list column header, include structure */
+"ClaudeExportColumnStructure" = "Structure";
+
+/* export dialog: table list column header, include DROP TABLE */
+"ClaudeExportColumnDrop" = "Drop";
+
+/* export dialog: table list column header, include content */
+"ClaudeExportColumnContent" = "Content";
+
+/* export dialog: table list column header, include the table */
+"ClaudeExportColumnInclude" = "Include";
+
+/* export dialog: title in the header */
+"ClaudeExportTitle" = "Export";
+
+/* export dialog: title of the card with the source and the table list */
+"ClaudeExportWhatTitle" = "What to export";
+
+/* export dialog: title of the card with the destination folder and filename */
+"ClaudeExportSaveToTitle" = "Save to";
+
+/* export dialog: label of the output compression pop-up */
+"ClaudeExportCompression" = "Compression";
+
+/* export dialog: button that opens the custom filename editor */
+"ClaudeExportCustomise" = "Customise";
+
+/* export dialog: accessibility name of the format switcher */
+"ClaudeExportFormatSwitcher" = "Export format";
+
+/* export dialog: source switcher segment, export the marked tables */
+"ClaudeExportSourceTables" = "Tables";
+
+/* export dialog: source switcher segment, export the Content tab's filtered rows */
+"ClaudeExportSourceFiltered" = "Filtered results";
+
+/* export dialog: source switcher segment, export the Query tab's result */
+"ClaudeExportSourceQuery" = "Query results";
+
+/* export dialog: accessibility name of the source switcher */
+"ClaudeExportSourceSwitcher" = "Export source";
+
+/* export dialog: title of the saved settings pull-down */
+"ClaudeExportPresets" = "Presets";
+
+/* export dialog: low memory export checkbox (the full explanation is its tooltip) */
+"ClaudeExportLowMemory" = "Low memory";
+
+/* export dialog: title of the options card, e.g. "SQL options" */
+"ClaudeExportOptionsTitle" = "%@ options";
+
+/* export dialog: button that marks every table in the list */
+"ClaudeExportMarkAll" = "All";
+
+/* export dialog: button that unmarks every table in the list */
+"ClaudeExportMarkNone" = "None";
+
+/* export dialog: hint above the custom filename field in the Customise popover */
+"ClaudeExportTokenHint" = "Click a token to add it, or drag it into the field.";
+
+/* export dialog: accessibility name of a filename token chip, e.g. "Add Database token" */
+"ClaudeExportAddToken" = "Add %@ token";
+
+/* export dialog options: group title, what the export includes (SQL, XML) */
+"ClaudeExportOptInclude" = "Include";
+
+/* export dialog options: SQL group title, how the output is written */
+"ClaudeExportOptOutput" = "Output";
+
+/* export dialog options: SQL group title, how INSERT statements are split */
+"ClaudeExportOptInsert" = "INSERT";
+
+/* export dialog options: SQL row label before the number and unit (KiB of data / rows) after which a new INSERT statement starts */
+"ClaudeExportOptInsertEvery" = "New statement every";
+
+/* export dialog options: CSV group title, the field separator, enclosing and escape characters */
+"ClaudeExportOptFields" = "Fields";
+
+/* export dialog options: CSV row label, the character that terminates fields or lines */
+"ClaudeExportOptTerminate" = "Terminate";
+
+/* export dialog options: CSV row label, the character that encloses fields */
+"ClaudeExportOptWrap" = "Wrap";
+
+/* export dialog options: CSV row label, the character that escapes special characters */
+"ClaudeExportOptEscape" = "Escape";
+
+/* export dialog options: CSV group title, the line terminator */
+"ClaudeExportOptLines" = "Lines";
+
+/* export dialog options: group title, the text written for NULL values (CSV, XML) */
+"ClaudeExportOptNullValues" = "NULL values";
+
+/* export dialog options: XML row label before the schema pop-up (MySQL / Plain schema) */
+"ClaudeExportOptFormat" = "Format";
+
+/* import options: accessibility name of the CSV / SQL format switcher */
+"ClaudeImportFormatSwitcher" = "Import format";
+
+/* import options: label of the file encoding pop-up */
+"ClaudeImportEncoding" = "Encoding";
+
+/* import options: label of the CSV field separator field */
+"ClaudeImportFieldsTerminated" = "Fields terminated";
+
+/* import options: label of the CSV field enclosing character field */
+"ClaudeImportFieldsEnclosed" = "Fields enclosed";
+
+/* import options: label of the CSV line terminator field */
+"ClaudeImportLinesTerminated" = "Lines terminated";
+
+/* import options: label of the CSV escape character field */
+"ClaudeImportFieldsEscaped" = "Fields escaped";
+
+/* import options: label of the pop-up choosing what to do when a SQL statement fails */
+"ClaudeImportOnSQLError" = "On SQL error";
+
+/* import field mapping sheet: title in the header */
+"ClaudeImportMapperTitle" = "Import CSV";
+
+/* import field mapping sheet: label before the target table pop-up */
+"ClaudeImportInto" = "Into";
+
+/* import field mapping sheet: button that imports into a new table */
+"ClaudeImportNewTable" = "+ New table";
+
+/* import field mapping sheet: label before the new table's name field */
+"ClaudeImportNewTableName" = "Name";
+
+/* import field mapping sheet: title of the card with the mapping table */
+"ClaudeImportFieldMapping" = "Field mapping";
+
+/* import field mapping sheet: title of the card with the import options */
+"ClaudeImportOptions" = "Options";
+
+/* import field mapping sheet: header of the column choosing the CSV value for each target column */
+"ClaudeImportColumnSource" = "CSV field";
+
+/* import field mapping sheet: header of the target table's column names */
+"ClaudeImportColumnTarget" = "Target column";
+
+/* import field mapping sheet: header of the target columns' types */
+"ClaudeImportColumnType" = "Type";
+
+/* import field mapping sheet: button that goes back to the file chooser */
+"ClaudeImportGoBack" = "‹ Go back";
+
 /* Error shown for a statement refused while the lost-connection question is open */
 "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again." = "The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.";
 
@@ -4442,3 +5174,1420 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+
+/* import field mapping sheet: label before the import method switcher (INSERT · REPLACE · UPDATE) */
+"ClaudeImportMethod" = "Method";
+
+/* import field mapping sheet: label before the pop-up choosing how CSV fields are aligned to the table's columns */
+"ClaudeImportAlignBy" = "Align by";
+
+/* import field mapping sheet: accessibility name of the INSERT / REPLACE / UPDATE switcher */
+"ClaudeImportMethodSwitcher" = "Import method";
+
+/* import field mapping sheet: title of the group with the import method's options, e.g. "INSERT options" */
+"ClaudeImportMethodOptions" = "%@ options";
+
+/* sidebar: placeholder of the field that filters the tables list */
+"ClaudeSidebarFilterPlaceholder" = "Filter tables";
+
+/* window tab bar: context menu item that closes the tab */
+"ClaudeTabBarCloseTab" = "Close tab";
+
+/* window tab bar: accessibility name of a tab's close button, with the tab's title */
+"ClaudeTabBarCloseTabNamed" = "Close %@";
+
+/* window tab bar: tooltip and accessibility name of the button that opens a new tab */
+"ClaudeTabBarNewTab" = "New tab";
+
+/* window tab bar: context menu item that closes every tab of the window except the clicked one */
+"ClaudeTabBarCloseOthers" = "Close other tabs";
+
+/* window tab bar: context menu item that moves the clicked tab out into a window of its own */
+"ClaudeTabBarMoveToNewWindow" = "Move tab to new window";
+
+/* window tab bar: context menu item that merges every window of the app into tabs of this window */
+"ClaudeTabBarMergeAll" = "Merge all windows";
+
+/* Window menu: merges every window of the app into tabs of the front window */
+"ClaudeWindowMenuMergeAll" = "Merge All Windows";
+
+/* Claude sheet title: the Rename Database sheet */
+"ClaudeFormRenameDatabase" = "Rename database";
+
+/* Claude sheet title: the New Database sheet */
+"ClaudeFormNewDatabase" = "New database";
+
+/* Claude sheet title: the Alter Database sheet (encoding and collation) */
+"ClaudeFormAlterDatabase" = "Alter database";
+
+/* Claude sheet title: the Duplicate Database sheet */
+"ClaudeFormDuplicateDatabase" = "Duplicate database";
+
+/* Claude sheet row label: the password field of the encrypted connection file sheet */
+"ClaudeFormLabelPassword" = "Password";
+
+/* Claude sheet row label: the field with the new name of a database or table being renamed or duplicated */
+"ClaudeFormLabelNewName" = "New name";
+
+/* Claude sheet context line under the Rename Database title: the database's current name */
+"ClaudeFormContextCurrently" = "Currently %@";
+
+/* Claude sheet context line under a Duplicate title: the database or table being duplicated */
+"ClaudeFormContextFrom" = "From %@";
+
+/* Claude sheet context line under the New Table title: the database the table is created in */
+"ClaudeFormContextIn" = "In %@";
+
+/* Claude sheet title: the New Table sheet */
+"ClaudeFormNewTable" = "New table";
+
+/* Claude sheet title: the Duplicate Table sheet (also used for views, procedures and functions) */
+"ClaudeFormDuplicateTable" = "Duplicate table";
+
+/* Claude sheet title: asks which index to add so a column can be AUTO_INCREMENT */
+"ClaudeFormAddKey" = "Add a key?";
+
+/* Claude sheet row label: the pop-up choosing PRIMARY KEY, INDEX or UNIQUE */
+"ClaudeFormLabelKeyType" = "Key type";
+
+/* Claude sheet title: the Reset AUTO_INCREMENT sheet */
+"ClaudeFormResetAutoIncrement" = "Reset auto increment";
+
+/* Claude sheet title: the New Index sheet */
+"ClaudeFormNewIndex" = "New index";
+
+/* Claude sheet section title: the columns an index is built on */
+"ClaudeFormSectionFields" = "Fields";
+
+/* Claude sheet title: the New Relation (foreign key) sheet */
+"ClaudeFormNewRelation" = "New relation";
+
+/* Claude sheet title: the trigger sheet when adding a trigger */
+"ClaudeFormNewTrigger" = "New trigger";
+
+/* Claude sheet title: the trigger sheet when editing an existing trigger */
+"ClaudeFormEditTrigger" = "Edit trigger";
+
+/* Claude sheet section title in New Relation: the column of this table the foreign key is on */
+"ClaudeFormSectionColumn" = "Column";
+
+/* Claude sheet section title in New Relation: the constraint name and its ON UPDATE / ON DELETE actions */
+"ClaudeFormSectionNameAndActions" = "Name and actions";
+
+/* Claude sheet section title in New Relation: the referenced database, table and column */
+"ClaudeFormSectionReferences" = "References";
+
+/* Claude window title: the Go to Database dialog */
+"ClaudeFormGoToDatabase" = "Go to database";
+
+/* field editor: tooltip of the toolbar icon that loads the field's value from a file */
+"ClaudeFieldEditorOpenFile" = "Open file…";
+
+/* field editor: tooltip of the toolbar icon that saves the field's value to a file */
+"ClaudeFieldEditorSaveFile" = "Save to file…";
+
+/* field editor: accessibility name of the Text / Image / Hex / JSON switcher */
+"ClaudeFieldEditorDisplayMode" = "Display mode";
+
+/* Claude alert card: label above the MySQL server's error text */
+"ClaudeAlertMySQLSaid" = "MySQL said";
+
+/* Claude menu card: the one line shown when the search matches no row */
+"ClaudeMenuNoMatches" = "No matches";
+
+/* Claude menu card: database card section header above the user's databases */
+"ClaudeMenuYourDatabases" = "Your databases";
+
+/* Claude menu card: database card section header above the system databases (mysql, sys, …) */
+"ClaudeMenuSystemDatabases" = "System";
+
+/* Claude menu card: placeholder of the database card's search field */
+"ClaudeMenuFindDatabase" = "Find a database";
+
+/* Claude menu card: placeholder of the Query History card's search field */
+"ClaudeMenuSearchHistory" = "Search history";
+
+/* Claude menu card: placeholder of the Query Favorites card's search field */
+"ClaudeMenuSearchFavorites" = "Search favorites";
+
+/* Record View: count shown in the search field when exactly one field matches */
+"ClaudeRecordMatchOne" = "1 match";
+
+/* Record View: count shown in the search field; %d is the number of matching fields */
+"ClaudeRecordMatchMany" = "%d matches";
+
+/* Record View: title shown above the fields of a custom query result row */
+"ClaudeRecordQueryResult" = "Query result";
+
+/* Record View: placeholder of the search field above the fields */
+"ClaudeRecordSearchPlaceholder" = "Search fields and values";
+
+/* Record View footer: how to edit a value */
+"ClaudeRecordEditHint" = "Double-click a value to edit";
+
+/* Record View footer: the keys that show the previous / next row */
+"ClaudeRecordRowsHint" = "⌥↑↓ rows";
+
+/* Record View: link under a collapsed long value; %d is the number of lines the value takes */
+"ClaudeRecordShowAllLines" = "Show all %d lines";
+
+/* Record View: link under an expanded long value that collapses it again */
+"ClaudeRecordShowLess" = "Show less";
+
+/* Record View header: the shown row's position in the grid; %1$ld is the row number, %2$ld the number of rows */
+"ClaudeRecordRowPosition" = "Row %1$ld of %2$ld";
+
+/* Record View: tooltip of the header button that shows the previous row */
+"ClaudeRecordPreviousRow" = "Previous row (⌥↑)";
+
+/* Record View: tooltip of the header button that shows the next row */
+"ClaudeRecordNextRow" = "Next row (⌥↓)";
+
+/* ===== Claude Settings window (2026-10-18): pane, section and row copy ===== */
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.appearance" = "Appearance";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.startup" = "Startup and connections";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.tablesData" = "Tables and data";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.queryEditor" = "Query editor";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.safety" = "Safety and alerts";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.queryConsole" = "Query console";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.sshSecurity" = "SSH and security";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.mcp" = "MCP server";
+
+/* Claude Settings: sidebar and title of a settings pane */
+"ClaudeSettings.pane.updatesPrivacy" = "Updates and privacy";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.look" = "Look";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.editorGridColours" = "Editor and grid colours";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.fonts" = "Fonts";
+
+/* Claude Settings: section heading in the Appearance pane */
+"ClaudeSettings.section.grids" = "Grids";
+
+/* Claude Settings: section heading in the Startup and connections pane */
+"ClaudeSettings.section.whenOpens" = "When Sequel Ace opens";
+
+/* Claude Settings: section heading in the Startup and connections pane */
+"ClaudeSettings.section.connecting" = "Connecting";
+
+/* Claude Settings: section heading in the Tables and data pane */
+"ClaudeSettings.section.loading" = "Loading";
+
+/* Claude Settings: section heading in the Tables and data pane */
+"ClaudeSettings.section.showing" = "Showing";
+
+/* Claude Settings: section heading in the Tables and data pane */
+"ClaudeSettings.section.editing" = "Editing";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.typing" = "Typing";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.highlighting" = "Highlighting";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.suggestions" = "Suggestions and help";
+
+/* Claude Settings: section heading in the Query editor pane */
+"ClaudeSettings.section.history" = "History";
+
+/* Claude Settings: section heading in the Safety and alerts pane */
+"ClaudeSettings.section.beforeChanges" = "Before changes";
+
+/* Claude Settings: section heading in the Safety and alerts pane */
+"ClaudeSettings.section.warnings" = "Warnings";
+
+/* Claude Settings: section heading in the Query console pane */
+"ClaudeSettings.section.logging" = "Logging";
+
+/* Claude Settings: section heading in the SSH and security pane */
+"ClaudeSettings.section.sshTunnels" = "SSH tunnels";
+
+/* Claude Settings: section heading in the SSH and security pane */
+"ClaudeSettings.section.encryption" = "Encryption";
+
+/* Claude Settings: section heading in the SSH and security pane */
+"ClaudeSettings.section.fileAccess" = "File access";
+
+/* Claude Settings: section heading in the MCP server pane */
+"ClaudeSettings.section.mcpServer" = "Server";
+
+/* Claude Settings: name of a setting (row appAppearance) */
+"ClaudeSettings.appAppearance.name" = "App appearance";
+
+/* Claude Settings: one-line description under the setting "App appearance" */
+"ClaudeSettings.appAppearance.desc" = "Light, dark, or follow macOS";
+
+/* Claude Settings: the (i) explanation of the setting "App appearance" */
+"ClaudeSettings.appAppearance.info" = "Switches the whole app between light and dark. With Match macOS it changes when your Mac does. The editor and grid colours follow it too, unless you pick Custom colours below.";
+
+/* Claude Settings: last line of the (i) explanation of "App appearance": its old name and old Preferences pane */
+"ClaudeSettings.appAppearance.was" = "Was: Appearance (General)";
+
+/* Claude Settings: an option of the "App appearance" pop-up */
+"ClaudeSettings.appAppearance.option.matchMacOS" = "Match macOS";
+
+/* Claude Settings: an option of the "App appearance" pop-up */
+"ClaudeSettings.appAppearance.option.light" = "Light";
+
+/* Claude Settings: an option of the "App appearance" pop-up */
+"ClaudeSettings.appAppearance.option.dark" = "Dark";
+
+/* Claude Settings: name of a setting (row accentColour) */
+"ClaudeSettings.accentColour.name" = "Accent colour";
+
+/* Claude Settings: one-line description under the setting "Accent colour" */
+"ClaudeSettings.accentColour.desc" = "Buttons, highlights and selection marks";
+
+/* Claude Settings: the (i) explanation of the setting "Accent colour" */
+"ClaudeSettings.accentColour.info" = "The one colour used for buttons, focus outlines, ticks and selected icons everywhere in the app. Reset puts it back to clay.";
+
+/* Claude Settings: last line of the (i) explanation of "Accent colour": its old name and old Preferences pane */
+"ClaudeSettings.accentColour.was" = "Was: Accent colour (Query Editor)";
+
+/* Claude Settings: name of a setting (row connectionColour) */
+"ClaudeSettings.connectionColour.name" = "Show the connection colour as";
+
+/* Claude Settings: one-line description under the setting "Show the connection colour as" */
+"ClaudeSettings.connectionColour.desc" = "How a saved connection's colour marks its window";
+
+/* Claude Settings: the (i) explanation of the setting "Show the connection colour as", one line per choice (keep the line breaks). Underline: the line sits where the window's top bars end. Tab underline with one tab (no tab bar): the window gets the Underline line instead. "Tab underline + Name pill: both." means the name pill and the tab lines together. Last line: the colour dot on each tab shows whatever the choice */
+"ClaudeSettings.connectionColour.info" = "Underline: a coloured line under the window's top bars.\nName pill: the connection's name in a coloured pill in the title.\nTab underline: a coloured line under each tab (one tab gets the underline).\nTab underline + Name pill: both.\nTab dots always show the colour.";
+
+/* Claude Settings: last line of the (i) explanation of "Show the connection colour as": its old name */
+"ClaudeSettings.connectionColour.was" = "Was: Colour the window with the connection colour";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: no colour on the window */
+"ClaudeSettings.connectionColour.option.off" = "Off";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: a line in the connection's colour where the window's top bars end (under the tab bar when it shows, otherwise along the top edge of the content) */
+"ClaudeSettings.connectionColour.option.underline" = "Underline";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: the connection's name in a coloured pill in the window title */
+"ClaudeSettings.connectionColour.option.namePill" = "Name pill";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: each tab gets a line in its connection's colour */
+"ClaudeSettings.connectionColour.option.tabUnderline" = "Tab underline";
+
+/* Claude Settings: an option of the "Show the connection colour as" pop-up: both the name pill in the window title and a line under each tab in its connection's colour (with one tab, the window gets the Underline line instead of the tab lines) */
+"ClaudeSettings.connectionColour.option.tabUnderlineAndNamePill" = "Tab underline + Name pill";
+
+/* Claude Settings: name of a setting (row editorColours) */
+"ClaudeSettings.editorColours.name" = "Colours";
+
+/* Claude Settings: one-line description under the setting "Colours" */
+"ClaudeSettings.editorColours.desc" = "Match the app appearance, or set your own";
+
+/* Claude Settings: the (i) explanation of the setting "Colours" */
+"ClaudeSettings.editorColours.info" = "Match appearance uses Claude Light in light mode and Claude Dark in dark mode for the editor, result grids, console and status bar. Custom keeps your own colours in both modes.";
+
+/* Claude Settings: last line of the (i) explanation of "Colours": its old name and old Preferences pane */
+"ClaudeSettings.editorColours.was" = "Was: Colours: Follow macOS / Customise (Query Editor)";
+
+/* Claude Settings: name of a setting (row startFromTheme) */
+"ClaudeSettings.startFromTheme.name" = "Start from a theme";
+
+/* Claude Settings: one-line description under the setting "Start from a theme" */
+"ClaudeSettings.startFromTheme.desc" = "Load a saved set of colours";
+
+/* Claude Settings: the (i) explanation of the setting "Start from a theme" */
+"ClaudeSettings.startFromTheme.info" = "Replaces the 11 colours below with a saved theme. Save, import, export and manage themes from the ⋯ menu.";
+
+/* Claude Settings: last line of the (i) explanation of "Start from a theme": its old name and old Preferences pane */
+"ClaudeSettings.startFromTheme.was" = "Was: Start from / gear menu (Query Editor)";
+
+/* Claude Settings: name of a setting (row colourList) */
+"ClaudeSettings.colourList.name" = "11 colours";
+
+/* Claude Settings: one-line description under the setting "11 colours" */
+"ClaudeSettings.colourList.desc" = "Text, background, keywords, selection…";
+
+/* Claude Settings: the (i) explanation of the setting "11 colours" */
+"ClaudeSettings.colourList.info" = "Each colour is used in the editor, and text, background, keyword and selection also colour the result grids and console.";
+
+/* Claude Settings: last line of the (i) explanation of "11 colours": its old name and old Preferences pane */
+"ClaudeSettings.colourList.was" = "Was: Colour table (Query Editor)";
+
+/* Claude Settings: name of a setting (row editorFont) */
+"ClaudeSettings.editorFont.name" = "Editor font";
+
+/* Claude Settings: one-line description under the setting "Editor font" */
+"ClaudeSettings.editorFont.desc" = "Query editor, completion list, script console";
+
+/* Claude Settings: the (i) explanation of the setting "Editor font" */
+"ClaudeSettings.editorFont.info" = "The font you write SQL in. Reset returns to SF Mono 13.";
+
+/* Claude Settings: last line of the (i) explanation of "Editor font": its old name and old Preferences pane */
+"ClaudeSettings.editorFont.was" = "Was: Font + Select… / Reset (Query Editor)";
+
+/* Claude Settings: name of a setting (row resultsFont) */
+"ClaudeSettings.resultsFont.name" = "Results font";
+
+/* Claude Settings: one-line description under the setting "Results font" */
+"ClaudeSettings.resultsFont.desc" = "Content, query results, Structure and other grids";
+
+/* Claude Settings: the (i) explanation of the setting "Results font" */
+"ClaudeSettings.resultsFont.info" = "The font of every data grid and the Query Console.";
+
+/* Claude Settings: last line of the (i) explanation of "Results font": its old name and old Preferences pane */
+"ClaudeSettings.resultsFont.was" = "Was: Font + Change… (General)";
+
+/* Claude Settings: name of a setting (row columnTypes) */
+"ClaudeSettings.columnTypes.name" = "Show column types in headers";
+
+/* Claude Settings: one-line description under the setting "Show column types in headers" */
+"ClaudeSettings.columnTypes.desc" = "VARCHAR, INT… under each column name";
+
+/* Claude Settings: the (i) explanation of the setting "Show column types in headers" */
+"ClaudeSettings.columnTypes.info" = "Adds the column type under the name in Content and query result headers.";
+
+/* Claude Settings: last line of the (i) explanation of "Show column types in headers": its old name and old Preferences pane */
+"ClaudeSettings.columnTypes.was" = "Was: Display column types in content and query views (General)";
+
+/* Claude Settings: name of a setting (row printGridLines) */
+"ClaudeSettings.printGridLines.name" = "Grid lines when printing";
+
+/* Claude Settings: one-line description under the setting "Grid lines when printing" */
+"ClaudeSettings.printGridLines.desc" = "Only affects printed and PDF output";
+
+/* Claude Settings: the (i) explanation of the setting "Grid lines when printing" */
+"ClaudeSettings.printGridLines.info" = "On screen the Claude grids always show their lines; this only changes printed tables.";
+
+/* Claude Settings: last line of the (i) explanation of "Grid lines when printing": its old name and old Preferences pane */
+"ClaudeSettings.printGridLines.was" = "Was: Display vertical grid lines (General)";
+
+/* Claude Settings: name of a setting (row defaultFavourite) */
+"ClaudeSettings.defaultFavourite.name" = "Favourite to select";
+
+/* Claude Settings: one-line description under the setting "Favourite to select" */
+"ClaudeSettings.defaultFavourite.desc" = "Picked on the connection screen";
+
+/* Claude Settings: the (i) explanation of the setting "Favourite to select" */
+"ClaudeSettings.defaultFavourite.info" = "Which saved connection is selected when the connection screen opens: the one you used last, or a fixed one.";
+
+/* Claude Settings: last line of the (i) explanation of "Favourite to select": its old name and old Preferences pane */
+"ClaudeSettings.defaultFavourite.was" = "Was: Default Favorite (General)";
+
+/* Claude Settings: name of a setting (row autoConnect) */
+"ClaudeSettings.autoConnect.name" = "Connect to it automatically";
+
+/* Claude Settings: one-line description under the setting "Connect to it automatically" */
+"ClaudeSettings.autoConnect.desc" = "Only on the first window at launch";
+
+/* Claude Settings: the (i) explanation of the setting "Connect to it automatically" */
+"ClaudeSettings.autoConnect.info" = "Connects to that favourite as soon as the app starts.";
+
+/* Claude Settings: last line of the (i) explanation of "Connect to it automatically": its old name and old Preferences pane */
+"ClaudeSettings.autoConnect.was" = "Was: Connect to default on startup (General)";
+
+/* Claude Settings: name of a setting (row tabToOpen) */
+"ClaudeSettings.tabToOpen.name" = "Tab to open first";
+
+/* Claude Settings: one-line description under the setting "Tab to open first" */
+"ClaudeSettings.tabToOpen.desc" = "After connecting";
+
+/* Claude Settings: the (i) explanation of the setting "Tab to open first" */
+"ClaudeSettings.tabToOpen.info" = "Which tab a new connection opens on: Structure, Content, Query… or whichever you used last.";
+
+/* Claude Settings: last line of the (i) explanation of "Tab to open first": its old name and old Preferences pane */
+"ClaudeSettings.tabToOpen.was" = "Was: Default View (General)";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.lastUsed" = "Last used";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.structure" = "Structure";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.content" = "Content";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.relations" = "Relations";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.tableInfo" = "Table Info";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.query" = "Query";
+
+/* Claude Settings: an option of the "Tab to open first" pop-up */
+"ClaudeSettings.tabToOpen.option.triggers" = "Triggers";
+
+/* Claude Settings: name of a setting (row askBeforeQuitting) */
+"ClaudeSettings.askBeforeQuitting.name" = "Ask before quitting";
+
+/* Claude Settings: one-line description under the setting "Ask before quitting" */
+"ClaudeSettings.askBeforeQuitting.desc" = "Confirmation when you press ⌘Q";
+
+/* Claude Settings: the (i) explanation of the setting "Ask before quitting" */
+"ClaudeSettings.askBeforeQuitting.info" = "Shows a \"Close the app?\" check before quitting.";
+
+/* Claude Settings: last line of the (i) explanation of "Ask before quitting": its old name and old Preferences pane */
+"ClaudeSettings.askBeforeQuitting.was" = "Was: Prompt for confirmation before quitting (General)";
+
+/* Claude Settings: name of a setting (row connectTimeout) */
+"ClaudeSettings.connectTimeout.name" = "Give up connecting after";
+
+/* Claude Settings: one-line description under the setting "Give up connecting after" */
+"ClaudeSettings.connectTimeout.desc" = "0 waits forever";
+
+/* Claude Settings: the (i) explanation of the setting "Give up connecting after" */
+"ClaudeSettings.connectTimeout.info" = "How long to wait for the server (and an SSH tunnel) before showing an error.";
+
+/* Claude Settings: last line of the (i) explanation of "Give up connecting after": its old name and old Preferences pane */
+"ClaudeSettings.connectTimeout.was" = "Was: Connection Timeout (Network)";
+
+/* Claude Settings: name of a setting (row keepAlive) */
+"ClaudeSettings.keepAlive.name" = "Keep connections alive";
+
+/* Claude Settings: one-line description under the setting "Keep connections alive" */
+"ClaudeSettings.keepAlive.desc" = "Stops idle connections dropping";
+
+/* Claude Settings: the (i) explanation of the setting "Keep connections alive" */
+"ClaudeSettings.keepAlive.info" = "Pings the server every 60 seconds so idle connections and SSH tunnels stay open.";
+
+/* Claude Settings: last line of the (i) explanation of "Keep connections alive": its old name and old Preferences pane */
+"ClaudeSettings.keepAlive.was" = "Was: Keep connections alive (Network)";
+
+/* Claude Settings: name of a setting (row characterSet) */
+"ClaudeSettings.characterSet.name" = "Character set";
+
+/* Claude Settings: one-line description under the setting "Character set" */
+"ClaudeSettings.characterSet.desc" = "Used after connecting";
+
+/* Claude Settings: the (i) explanation of the setting "Character set" */
+"ClaudeSettings.characterSet.info" = "The text encoding for the connection. Autodetect switches to utf8mb4 when a table loads.";
+
+/* Claude Settings: last line of the (i) explanation of "Character set": its old name and old Preferences pane */
+"ClaudeSettings.characterSet.was" = "Was: Default Encoding (General)";
+
+/* Claude Settings: name of a setting (row readConnectionStrings) */
+"ClaudeSettings.readConnectionStrings.name" = "Read connection strings from the clipboard";
+
+/* Claude Settings: one-line description under the setting "Read connection strings from the clipboard" */
+"ClaudeSettings.readConnectionStrings.desc" = "When you choose Import on the connection screen";
+
+/* Claude Settings: the (i) explanation of the setting "Read connection strings from the clipboard" */
+"ClaudeSettings.readConnectionStrings.info" = "If the clipboard holds a mysql:// address, Import offers to save it as a new favourite instead of asking for a file.";
+
+/* Claude Settings: last line of the (i) explanation of "Read connection strings from the clipboard": its old name and old Preferences pane */
+"ClaudeSettings.readConnectionStrings.was" = "Was: Connection Strings (General)";
+
+/* Claude Settings: name of a setting (row pageSize) */
+"ClaudeSettings.pageSize.name" = "Show rows in pages of";
+
+/* Claude Settings: one-line description under the setting "Show rows in pages of" */
+"ClaudeSettings.pageSize.desc" = "Content tab";
+
+/* Claude Settings: the (i) explanation of the setting "Show rows in pages of" */
+"ClaudeSettings.pageSize.info" = "Content loads this many rows at a time, with page arrows. Off loads every row (slow on big tables).";
+
+/* Claude Settings: last line of the (i) explanation of "Show rows in pages of": its old name and old Preferences pane */
+"ClaudeSettings.pageSize.was" = "Was: Limit result to … rows (Tables)";
+
+/* Claude Settings: name of a setting (row countRows) */
+"ClaudeSettings.countRows.name" = "Count rows exactly";
+
+/* Claude Settings: one-line description under the setting "Count rows exactly" */
+"ClaudeSettings.countRows.desc" = "Exact counts can be slow on big tables";
+
+/* Claude Settings: the (i) explanation of the setting "Count rows exactly" */
+"ClaudeSettings.countRows.info" = "Never shows an estimate; Always runs COUNT on every table; Small tables only counts tables under 5 MB.";
+
+/* Claude Settings: last line of the (i) explanation of "Count rows exactly": its old name and old Preferences pane */
+"ClaudeSettings.countRows.was" = "Was: Table row counts (Tables)";
+
+/* Claude Settings: an option of the "Count rows exactly" pop-up */
+"ClaudeSettings.countRows.option.never" = "Never";
+
+/* Claude Settings: an option of the "Count rows exactly" pop-up */
+"ClaudeSettings.countRows.option.smallTables" = "Small tables only";
+
+/* Claude Settings: an option of the "Count rows exactly" pop-up */
+"ClaudeSettings.countRows.option.always" = "Always";
+
+/* Claude Settings: name of a setting (row lazyLoadBlobs) */
+"ClaudeSettings.lazyLoadBlobs.name" = "Load large text and binary only when opened";
+
+/* Claude Settings: one-line description under the setting "Load large text and binary only when opened" */
+"ClaudeSettings.lazyLoadBlobs.desc" = "Faster browsing of wide tables";
+
+/* Claude Settings: the (i) explanation of the setting "Load large text and binary only when opened" */
+"ClaudeSettings.lazyLoadBlobs.info" = "Leaves TEXT and BLOB columns out of the first load and fetches each value when you open the cell.";
+
+/* Claude Settings: last line of the (i) explanation of "Load large text and binary only when opened": its old name and old Preferences pane */
+"ClaudeSettings.lazyLoadBlobs.was" = "Was: Don't load blob and text fields until needed (Tables)";
+
+/* Claude Settings: name of a setting (row nullText) */
+"ClaudeSettings.nullText.name" = "Text for NULL";
+
+/* Claude Settings: one-line description under the setting "Text for NULL" */
+"ClaudeSettings.nullText.desc" = "Also what you type to store NULL";
+
+/* Claude Settings: the (i) explanation of the setting "Text for NULL" */
+"ClaudeSettings.nullText.info" = "How SQL NULL is drawn in grids, and the text you type in a cell to save NULL. Export and import use it too.";
+
+/* Claude Settings: last line of the (i) explanation of "Text for NULL": its old name and old Preferences pane */
+"ClaudeSettings.nullText.was" = "Was: Show NULL values as (Tables)";
+
+/* Claude Settings: name of a setting (row tableComments) */
+"ClaudeSettings.tableComments.name" = "Show table comments in the sidebar";
+
+/* Claude Settings: one-line description under the setting "Show table comments in the sidebar" */
+"ClaudeSettings.tableComments.desc" = "Under each table name";
+
+/* Claude Settings: the (i) explanation of the setting "Show table comments in the sidebar" */
+"ClaudeSettings.tableComments.info" = "Loads and shows each table's comment in the tables list (a slightly slower list query).";
+
+/* Claude Settings: last line of the (i) explanation of "Show table comments in the sidebar": its old name and old Preferences pane */
+"ClaudeSettings.tableComments.was" = "Was: Display comments in tables list (General)";
+
+/* Claude Settings: name of a setting (row filterDropZone) */
+"ClaudeSettings.filterDropZone.name" = "Show the filter drop zone";
+
+/* Claude Settings: one-line description under the setting "Show the filter drop zone" */
+"ClaudeSettings.filterDropZone.desc" = "\"Drop a value here\" bar on Content";
+
+/* Claude Settings: the (i) explanation of the setting "Show the filter drop zone" */
+"ClaudeSettings.filterDropZone.info" = "Shows the bar you can drop a cell value onto to filter by it.";
+
+/* Claude Settings: last line of the (i) explanation of "Show the filter drop zone": its old name and old Preferences pane */
+"ClaudeSettings.filterDropZone.was" = "Was: Show filter drop zone (Tables)";
+
+/* Claude Settings: name of a setting (row longValueSheet) */
+"ClaudeSettings.longValueSheet.name" = "Edit long values in a sheet";
+
+/* Claude Settings: one-line description under the setting "Edit long values in a sheet" */
+"ClaudeSettings.longValueSheet.desc" = "Values over this many characters";
+
+/* Claude Settings: the (i) explanation of the setting "Edit long values in a sheet" */
+"ClaudeSettings.longValueSheet.info" = "Long values open in the big editor sheet instead of editing in the cell.";
+
+/* Claude Settings: last line of the (i) explanation of "Edit long values in a sheet": its old name and old Preferences pane */
+"ClaudeSettings.longValueSheet.was" = "Was: Edit inline or popup / Intelligently switch at length (Tables)";
+
+/* Claude Settings: name of a setting (row multiLineSheet) */
+"ClaudeSettings.multiLineSheet.name" = "Always use the sheet for multi-line values";
+
+/* Claude Settings: one-line description under the setting "Always use the sheet for multi-line values" */
+"ClaudeSettings.multiLineSheet.desc" = "Values containing line breaks";
+
+/* Claude Settings: the (i) explanation of the setting "Always use the sheet for multi-line values" */
+"ClaudeSettings.multiLineSheet.info" = "Any value with a line break opens in the sheet.";
+
+/* Claude Settings: last line of the (i) explanation of "Always use the sheet for multi-line values": its old name and old Preferences pane */
+"ClaudeSettings.multiLineSheet.was" = "Was: Always use popup for multi-line content (Tables)";
+
+/* Claude Settings: name of a setting (row reloadAfterSaving) */
+"ClaudeSettings.reloadAfterSaving.name" = "Reload after saving";
+
+/* Claude Settings: one-line description under the setting "Reload after saving" */
+"ClaudeSettings.reloadAfterSaving.desc" = "Re-run the query after you add, edit or delete";
+
+/* Claude Settings: the (i) explanation of the setting "Reload after saving" */
+"ClaudeSettings.reloadAfterSaving.info" = "Re-reads rows from the server after a change so the grid shows exactly what was saved (including in editable query results).";
+
+/* Claude Settings: last line of the (i) explanation of "Reload after saving": its old name and old Preferences pane */
+"ClaudeSettings.reloadAfterSaving.was" = "Was: Reload table after: Adding / Editing / Removing a row (Tables)";
+
+/* Claude Settings: name of a setting (row newColumnsAllowNull) */
+"ClaudeSettings.newColumnsAllowNull.name" = "New columns allow NULL";
+
+/* Claude Settings: one-line description under the setting "New columns allow NULL" */
+"ClaudeSettings.newColumnsAllowNull.desc" = "Structure tab";
+
+/* Claude Settings: the (i) explanation of the setting "New columns allow NULL" */
+"ClaudeSettings.newColumnsAllowNull.info" = "Pre-ticks Allow NULL when you add a column.";
+
+/* Claude Settings: last line of the (i) explanation of "New columns allow NULL": its old name and old Preferences pane */
+"ClaudeSettings.newColumnsAllowNull.was" = "Was: New fields should allow NULL values (Tables)";
+
+/* Claude Settings: name of a setting (row keepIndentation) */
+"ClaudeSettings.keepIndentation.name" = "Keep indentation on new lines";
+
+/* Claude Settings: the (i) explanation of the setting "Keep indentation on new lines" */
+"ClaudeSettings.keepIndentation.info" = "A new line starts at the same indent as the previous one.";
+
+/* Claude Settings: last line of the (i) explanation of "Keep indentation on new lines": its old name and old Preferences pane */
+"ClaudeSettings.keepIndentation.was" = "Was: Indent new lines (Query Editor)";
+
+/* Claude Settings: name of a setting (row softIndent) */
+"ClaudeSettings.softIndent.name" = "Indent with spaces";
+
+/* Claude Settings: one-line description under the setting "Indent with spaces" */
+"ClaudeSettings.softIndent.desc" = "Spaces per level";
+
+/* Claude Settings: the (i) explanation of the setting "Indent with spaces" */
+"ClaudeSettings.softIndent.info" = "Tab inserts spaces, and backspace removes a whole level.";
+
+/* Claude Settings: last line of the (i) explanation of "Indent with spaces": its old name and old Preferences pane */
+"ClaudeSettings.softIndent.was" = "Was: Soft indent (Query Editor)";
+
+/* Claude Settings: name of a setting (row tabWidth) */
+"ClaudeSettings.tabWidth.name" = "Tab width";
+
+/* Claude Settings: one-line description under the setting "Tab width" */
+"ClaudeSettings.tabWidth.desc" = "In spaces";
+
+/* Claude Settings: the (i) explanation of the setting "Tab width" */
+"ClaudeSettings.tabWidth.info" = "How wide a tab character looks in the editor and bundle editor.";
+
+/* Claude Settings: last line of the (i) explanation of "Tab width": its old name and old Preferences pane */
+"ClaudeSettings.tabWidth.was" = "Was: Tab stop width (Query Editor)";
+
+/* Claude Settings: name of a setting (row closeBrackets) */
+"ClaudeSettings.closeBrackets.name" = "Close brackets and quotes";
+
+/* Claude Settings: one-line description under the setting "Close brackets and quotes" */
+"ClaudeSettings.closeBrackets.desc" = "Typing ( adds )";
+
+/* Claude Settings: the (i) explanation of the setting "Close brackets and quotes" */
+"ClaudeSettings.closeBrackets.info" = "Inserts the closing (, ', \" or ` for you.";
+
+/* Claude Settings: last line of the (i) explanation of "Close brackets and quotes": its old name and old Preferences pane */
+"ClaudeSettings.closeBrackets.was" = "Was: Auto pair characters (Query Editor)";
+
+/* Claude Settings: name of a setting (row uppercaseKeywords) */
+"ClaudeSettings.uppercaseKeywords.name" = "Uppercase keywords as you type";
+
+/* Claude Settings: one-line description under the setting "Uppercase keywords as you type" */
+"ClaudeSettings.uppercaseKeywords.desc" = "select → SELECT";
+
+/* Claude Settings: the (i) explanation of the setting "Uppercase keywords as you type" */
+"ClaudeSettings.uppercaseKeywords.info" = "Changes SQL keywords to capitals as you type.";
+
+/* Claude Settings: last line of the (i) explanation of "Uppercase keywords as you type": its old name and old Preferences pane */
+"ClaudeSettings.uppercaseKeywords.was" = "Was: Auto uppercase keywords (Query Editor)";
+
+/* Claude Settings: name of a setting (row dashComments) */
+"ClaudeSettings.dashComments.name" = "Comment lines with --";
+
+/* Claude Settings: one-line description under the setting "Comment lines with --" */
+"ClaudeSettings.dashComments.desc" = "Instead of /* … */";
+
+/* Claude Settings: the (i) explanation of the setting "Comment lines with --" */
+"ClaudeSettings.dashComments.info" = "Comment Current Query and comment selection use -- on each line.";
+
+/* Claude Settings: last line of the (i) explanation of "Comment lines with --": its old name and old Preferences pane */
+"ClaudeSettings.dashComments.was" = "Was: Use dash-style for block comment (Query Editor)";
+
+/* Claude Settings: name of a setting (row syntaxColouring) */
+"ClaudeSettings.syntaxColouring.name" = "Colour SQL syntax";
+
+/* Claude Settings: the (i) explanation of the setting "Colour SQL syntax" */
+"ClaudeSettings.syntaxColouring.info" = "Colours keywords, strings, numbers and comments.";
+
+/* Claude Settings: last line of the (i) explanation of "Colour SQL syntax": its old name and old Preferences pane */
+"ClaudeSettings.syntaxColouring.was" = "Was: Syntax highlighting (Query Editor)";
+
+/* Claude Settings: name of a setting (row highlightStatement) */
+"ClaudeSettings.highlightStatement.name" = "Highlight the current statement";
+
+/* Claude Settings: one-line description under the setting "Highlight the current statement" */
+"ClaudeSettings.highlightStatement.desc" = "The query ⌘R would run";
+
+/* Claude Settings: the (i) explanation of the setting "Highlight the current statement" */
+"ClaudeSettings.highlightStatement.info" = "Tints the statement under the cursor.";
+
+/* Claude Settings: last line of the (i) explanation of "Highlight the current statement": its old name and old Preferences pane */
+"ClaudeSettings.highlightStatement.was" = "Was: Highlight current query (Query Editor)";
+
+/* Claude Settings: name of a setting (row matchBrackets) */
+"ClaudeSettings.matchBrackets.name" = "Highlight matching brackets";
+
+/* Claude Settings: the (i) explanation of the setting "Highlight matching brackets" */
+"ClaudeSettings.matchBrackets.info" = "Marks the bracket that pairs with the one at the cursor.";
+
+/* Claude Settings: last line of the (i) explanation of "Highlight matching brackets": its old name and old Preferences pane */
+"ClaudeSettings.matchBrackets.was" = "Was: Bracket highlighting (Query Editor)";
+
+/* Claude Settings: name of a setting (row autoComplete) */
+"ClaudeSettings.autoComplete.name" = "Suggest completions as you type";
+
+/* Claude Settings: one-line description under the setting "Suggest completions as you type" */
+"ClaudeSettings.autoComplete.desc" = "After a pause of";
+
+/* Claude Settings: the (i) explanation of the setting "Suggest completions as you type" */
+"ClaudeSettings.autoComplete.info" = "Opens the completion list automatically. Off: press Esc to open it.";
+
+/* Claude Settings: last line of the (i) explanation of "Suggest completions as you type": its old name and old Preferences pane */
+"ClaudeSettings.autoComplete.was" = "Was: Auto-Completion + Delay by (Query Editor)";
+
+/* Claude Settings: name of a setting (row completeBackticks) */
+"ClaudeSettings.completeBackticks.name" = "Wrap names in backticks";
+
+/* Claude Settings: one-line description under the setting "Wrap names in backticks" */
+"ClaudeSettings.completeBackticks.desc" = "`table`.`column`";
+
+/* Claude Settings: the (i) explanation of the setting "Wrap names in backticks" */
+"ClaudeSettings.completeBackticks.info" = "Completed database, table and column names are inserted in backticks.";
+
+/* Claude Settings: last line of the (i) explanation of "Wrap names in backticks": its old name and old Preferences pane */
+"ClaudeSettings.completeBackticks.was" = "Was: Complete with backticks (Query Editor)";
+
+/* Claude Settings: name of a setting (row insertArguments) */
+"ClaudeSettings.insertArguments.name" = "Insert function arguments";
+
+/* Claude Settings: the (i) explanation of the setting "Insert function arguments" */
+"ClaudeSettings.insertArguments.info" = "Completing a function inserts its argument placeholders.";
+
+/* Claude Settings: last line of the (i) explanation of "Insert function arguments": its old name and old Preferences pane */
+"ClaudeSettings.insertArguments.was" = "Was: Insert function arguments (Query Editor)";
+
+/* Claude Settings: name of a setting (row autoHelp) */
+"ClaudeSettings.autoHelp.name" = "Show MySQL help for the word at the cursor";
+
+/* Claude Settings: one-line description under the setting "Show MySQL help for the word at the cursor" */
+"ClaudeSettings.autoHelp.desc" = "After a pause of";
+
+/* Claude Settings: the (i) explanation of the setting "Show MySQL help for the word at the cursor" */
+"ClaudeSettings.autoHelp.info" = "Opens the MySQL help viewer for the keyword you're typing.";
+
+/* Claude Settings: last line of the (i) explanation of "Show MySQL help for the word at the cursor": its old name and old Preferences pane */
+"ClaudeSettings.autoHelp.was" = "Was: Update help while typing + Delay by (Query Editor)";
+
+/* Claude Settings: name of a setting (row historySize) */
+"ClaudeSettings.historySize.name" = "Keep the last";
+
+/* Claude Settings: one-line description under the setting "Keep the last" */
+"ClaudeSettings.historySize.desc" = "Queries in History (max 100)";
+
+/* Claude Settings: the (i) explanation of the setting "Keep the last" */
+"ClaudeSettings.historySize.info" = "How many queries the History card remembers.";
+
+/* Claude Settings: last line of the (i) explanation of "Keep the last": its old name and old Preferences pane */
+"ClaudeSettings.historySize.was" = "Was: Remember Last … queries (General)";
+
+/* Claude Settings: name of a setting (row historyPerStatement) */
+"ClaudeSettings.historyPerStatement.name" = "Save each statement separately";
+
+/* Claude Settings: one-line description under the setting "Save each statement separately" */
+"ClaudeSettings.historyPerStatement.desc" = "When you run several at once";
+
+/* Claude Settings: the (i) explanation of the setting "Save each statement separately" */
+"ClaudeSettings.historyPerStatement.info" = "A run of three statements adds three history entries instead of one.";
+
+/* Claude Settings: last line of the (i) explanation of "Save each statement separately": its old name and old Preferences pane */
+"ClaudeSettings.historyPerStatement.was" = "Was: Save query history individually (General)";
+
+/* Claude Settings: name of a setting (row confirmChanges) */
+"ClaudeSettings.confirmChanges.name" = "Confirm before running changes";
+
+/* Claude Settings: one-line description under the setting "Confirm before running changes" */
+"ClaudeSettings.confirmChanges.desc" = "Destructive SQL, Run as Script, and row saves in Content";
+
+/* Claude Settings: the (i) explanation of the setting "Confirm before running changes" */
+"ClaudeSettings.confirmChanges.info" = "Asks first before a query that changes data, before Run All as Script, before every row save in Content, and before renaming a table or editing its comment.";
+
+/* Claude Settings: last line of the (i) explanation of "Confirm before running changes": its old name and old Preferences pane */
+"ClaudeSettings.confirmChanges.was" = "Was: Show warning before executing a query (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row askTwiceDelete) */
+"ClaudeSettings.askTwiceDelete.name" = "Ask twice before deleting rows";
+
+/* Claude Settings: one-line description under the setting "Ask twice before deleting rows" */
+"ClaudeSettings.askTwiceDelete.desc" = "A second confirmation after the delete card in Content";
+
+/* Claude Settings: the (i) explanation of the setting "Ask twice before deleting rows" */
+"ClaudeSettings.askTwiceDelete.info" = "Adds a second \"Are you sure?\" (Double Check) when deleting rows in Content, selected rows or all of them, whether or not Confirm before running changes is on.";
+
+/* Claude Settings: last line of the (i) explanation of "Ask twice before deleting rows": its old name and old Preferences pane */
+"ClaudeSettings.askTwiceDelete.was" = "Was: Show double check warning when deleting rows (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row warnNoRowsAffected) */
+"ClaudeSettings.warnNoRowsAffected.name" = "Warn when a save changes nothing";
+
+/* Claude Settings: one-line description under the setting "Warn when a save changes nothing" */
+"ClaudeSettings.warnNoRowsAffected.desc" = "0 rows affected";
+
+/* Claude Settings: the (i) explanation of the setting "Warn when a save changes nothing" */
+"ClaudeSettings.warnNoRowsAffected.info" = "After saving a row that changed no rows on the server, shows an error and reloads.";
+
+/* Claude Settings: last line of the (i) explanation of "Warn when a save changes nothing": its old name and old Preferences pane */
+"ClaudeSettings.warnNoRowsAffected.was" = "Was: Show error when no rows are affected (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row warnHiddenDatabases) */
+"ClaudeSettings.warnHiddenDatabases.name" = "Warn when the server hides databases";
+
+/* Claude Settings: one-line description under the setting "Warn when the server hides databases" */
+"ClaudeSettings.warnHiddenDatabases.desc" = "skip_show_database is ON";
+
+/* Claude Settings: the (i) explanation of the setting "Warn when the server hides databases" */
+"ClaudeSettings.warnHiddenDatabases.info" = "After connecting, warns if the server only lists databases you have rights to.";
+
+/* Claude Settings: last line of the (i) explanation of "Warn when the server hides databases": its old name and old Preferences pane */
+"ClaudeSettings.warnHiddenDatabases.was" = "Was: Show warning when skip-show-database is set to ON (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logQueries) */
+"ClaudeSettings.logQueries.name" = "Log queries to the Query Console";
+
+/* Claude Settings: one-line description under the setting "Log queries to the Query Console" */
+"ClaudeSettings.logQueries.desc" = "Window ▸ Show Console";
+
+/* Claude Settings: the (i) explanation of the setting "Log queries to the Query Console" */
+"ClaudeSettings.logQueries.info" = "Master switch for the console log. The four below only matter while it is on.";
+
+/* Claude Settings: last line of the (i) explanation of "Log queries to the Query Console": its old name and old Preferences pane */
+"ClaudeSettings.logQueries.was" = "Was: Enable logging for queries (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logInterface) */
+"ClaudeSettings.logInterface.name" = "Queries the app runs for you";
+
+/* Claude Settings: one-line description under the setting "Queries the app runs for you" */
+"ClaudeSettings.logInterface.desc" = "Loading tables, structure…";
+
+/* Claude Settings: last line of the (i) explanation of "Queries the app runs for you": its old name and old Preferences pane */
+"ClaudeSettings.logInterface.was" = "Was: Interface (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logCustomQueries) */
+"ClaudeSettings.logCustomQueries.name" = "Queries you run";
+
+/* Claude Settings: one-line description under the setting "Queries you run" */
+"ClaudeSettings.logCustomQueries.desc" = "Query editor";
+
+/* Claude Settings: last line of the (i) explanation of "Queries you run": its old name and old Preferences pane */
+"ClaudeSettings.logCustomQueries.was" = "Was: Custom Query Editor (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logImportExport) */
+"ClaudeSettings.logImportExport.name" = "Import and export";
+
+/* Claude Settings: last line of the (i) explanation of "Import and export": its old name and old Preferences pane */
+"ClaudeSettings.logImportExport.was" = "Was: Import & Export (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row logErrors) */
+"ClaudeSettings.logErrors.name" = "Errors";
+
+/* Claude Settings: last line of the (i) explanation of "Errors": its old name and old Preferences pane */
+"ClaudeSettings.logErrors.was" = "Was: Errors (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row sshProgram) */
+"ClaudeSettings.sshProgram.name" = "SSH program";
+
+/* Claude Settings: the (i) explanation of the setting "SSH program" */
+"ClaudeSettings.sshProgram.info" = "The ssh binary used for tunnels. Change only if you need a specific build.";
+
+/* Claude Settings: last line of the (i) explanation of "SSH program": its old name and old Preferences pane */
+"ClaudeSettings.sshProgram.was" = "Was: SSH Client (Network)";
+
+/* Claude Settings: name of a setting (row sshConfig) */
+"ClaudeSettings.sshConfig.name" = "SSH config file";
+
+/* Claude Settings: the (i) explanation of the setting "SSH config file" */
+"ClaudeSettings.sshConfig.info" = "Host aliases, keys and options passed to ssh with -F.";
+
+/* Claude Settings: last line of the (i) explanation of "SSH config file": its old name and old Preferences pane */
+"ClaudeSettings.sshConfig.was" = "Was: SSH Config (Network)";
+
+/* Claude Settings: name of a setting (row knownHosts) */
+"ClaudeSettings.knownHosts.name" = "Known hosts file";
+
+/* Claude Settings: the (i) explanation of the setting "Known hosts file" */
+"ClaudeSettings.knownHosts.info" = "Where server fingerprints are checked and saved.";
+
+/* Claude Settings: last line of the (i) explanation of "Known hosts file": its old name and old Preferences pane */
+"ClaudeSettings.knownHosts.was" = "Was: Known Hosts (Network)";
+
+/* Claude Settings: name of a setting (row cipherOrder) */
+"ClaudeSettings.cipherOrder.name" = "SSL cipher order";
+
+/* Claude Settings: one-line description under the setting "SSL cipher order" */
+"ClaudeSettings.cipherOrder.desc" = "Drag to reorder or disable";
+
+/* Claude Settings: the (i) explanation of the setting "SSL cipher order" */
+"ClaudeSettings.cipherOrder.info" = "Order of TLS ciphers offered to MySQL. Disabling too many can stop secure connections; Reset restores the default.";
+
+/* Claude Settings: last line of the (i) explanation of "SSL cipher order": its old name and old Preferences pane */
+"ClaudeSettings.cipherOrder.was" = "Was: SSL Cipher Suites (Network)";
+
+/* Claude Settings: name of a setting (row accessibleFiles) */
+"ClaudeSettings.accessibleFiles.name" = "Files Sequel Ace can open";
+
+/* Claude Settings: one-line description under the setting "Files Sequel Ace can open" */
+"ClaudeSettings.accessibleFiles.desc" = "Keys, SSH configs, SQL files";
+
+/* Claude Settings: the (i) explanation of the setting "Files Sequel Ace can open" */
+"ClaudeSettings.accessibleFiles.info" = "macOS only lets the app reopen files you granted. Add or revoke them here; red ones need re-granting.";
+
+/* Claude Settings: last line of the (i) explanation of "Files Sequel Ace can open": its old name and old Preferences pane */
+"ClaudeSettings.accessibleFiles.was" = "Was: Accessible Files (Files)";
+
+/* Claude Settings: name of a setting (row mcpServer) */
+"ClaudeSettings.mcpServer.name" = "Let AI tools connect";
+
+/* Claude Settings: one-line description under the setting "Let AI tools connect" */
+"ClaudeSettings.mcpServer.desc" = "This Mac only (127.0.0.1)";
+
+/* Claude Settings: the (i) explanation of the setting "Let AI tools connect" */
+"ClaudeSettings.mcpServer.info" = "Starts a local MCP server so tools like Claude can query your open connections.";
+
+/* Claude Settings: last line of the (i) explanation of "Let AI tools connect": its old name and old Preferences pane */
+"ClaudeSettings.mcpServer.was" = "Was: Enable MCP Server (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpReadOnly) */
+"ClaudeSettings.mcpReadOnly.name" = "Read only";
+
+/* Claude Settings: one-line description under the setting "Read only" */
+"ClaudeSettings.mcpReadOnly.desc" = "Reject queries that change data";
+
+/* Claude Settings: the (i) explanation of the setting "Read only" */
+"ClaudeSettings.mcpReadOnly.info" = "AI tools may only run SELECT, SHOW, DESCRIBE and EXPLAIN.";
+
+/* Claude Settings: last line of the (i) explanation of "Read only": its old name and old Preferences pane */
+"ClaudeSettings.mcpReadOnly.was" = "Was: Read-only mode (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpPort) */
+"ClaudeSettings.mcpPort.name" = "Port";
+
+/* Claude Settings: one-line description under the setting "Port" */
+"ClaudeSettings.mcpPort.desc" = "1024–65535";
+
+/* Claude Settings: last line of the (i) explanation of "Port": its old name and old Preferences pane */
+"ClaudeSettings.mcpPort.was" = "Was: Port (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpExportFolder) */
+"ClaudeSettings.mcpExportFolder.name" = "Export folder";
+
+/* Claude Settings: one-line description under the setting "Export folder" */
+"ClaudeSettings.mcpExportFolder.desc" = "Where AI tools may save files";
+
+/* Claude Settings: last line of the (i) explanation of "Export folder": its old name and old Preferences pane */
+"ClaudeSettings.mcpExportFolder.was" = "Was: Export folder (MCP Server)";
+
+/* Claude Settings: name of a setting (row mcpAddress) */
+"ClaudeSettings.mcpAddress.name" = "Address";
+
+/* Claude Settings: one-line description under the setting "Address" */
+"ClaudeSettings.mcpAddress.desc" = "Paste into your MCP client";
+
+/* Claude Settings: the (i) explanation of the setting "Address" */
+"ClaudeSettings.mcpAddress.info" = "http://127.0.0.1:<port>/mcp — SSE-only clients use /sse.";
+
+/* Claude Settings: last line of the (i) explanation of "Address": its old name and old Preferences pane */
+"ClaudeSettings.mcpAddress.was" = "Was: Endpoint (MCP Server)";
+
+/* Claude Settings: name of a setting (row checkUpdates) */
+"ClaudeSettings.checkUpdates.name" = "Check for updates at launch";
+
+/* Claude Settings: one-line description under the setting "Check for updates at launch" */
+"ClaudeSettings.checkUpdates.desc" = "GitHub builds only";
+
+/* Claude Settings: the (i) explanation of the setting "Check for updates at launch" */
+"ClaudeSettings.checkUpdates.info" = "Looks for a newer release on GitHub when the app starts.";
+
+/* Claude Settings: last line of the (i) explanation of "Check for updates at launch": its old name and old Preferences pane */
+"ClaudeSettings.checkUpdates.was" = "Was: Automatically check for updates (Alerts & Logs)";
+
+/* Claude Settings: name of a setting (row shareAnalytics) */
+"ClaudeSettings.shareAnalytics.name" = "Share analytics and crash reports";
+
+/* Claude Settings: one-line description under the setting "Share analytics and crash reports" */
+"ClaudeSettings.shareAnalytics.desc" = "Anonymous, helps the developers";
+
+/* Claude Settings: the (i) explanation of the setting "Share analytics and crash reports" */
+"ClaudeSettings.shareAnalytics.info" = "Sends usage analytics and crash reports to the Sequel Ace developers.";
+
+/* Claude Settings: last line of the (i) explanation of "Share analytics and crash reports": its old name and old Preferences pane */
+"ClaudeSettings.shareAnalytics.was" = "Was: Analytics (General)";
+
+/* Claude Settings: accessibility label of a setting's (i) button; %@ is the setting's name */
+"ClaudeSettings.ui.infoButton" = "About %@";
+
+/* Claude Settings: accessibility value of a setting's (i) button while its explanation is shown */
+"ClaudeSettings.ui.infoShown" = "Shown";
+
+/* Claude Settings: accessibility value of a setting's (i) button while its explanation is hidden */
+"ClaudeSettings.ui.infoHidden" = "Hidden";
+
+/* Claude Settings: a choice pill's title when the stored value matches none of its choices; %@ is the stored value */
+"ClaudeSettings.ui.otherValue" = "Other (%@)";
+
+/* Claude Settings: the title of the Settings window (was "Preferences") */
+"ClaudeSettings.ui.windowTitle" = "Settings";
+
+/* Claude Settings: the app menu item that opens the Settings window (was "Preferences...") */
+"ClaudeSettings.ui.menuItem" = "Settings…";
+
+/* Claude Settings: a font row's button that opens the font panel for that font */
+"ClaudeSettings.ui.changeFont" = "Change…";
+
+/* Claude Settings: the editor font's button that puts it back to SF Mono 13 */
+"ClaudeSettings.editorFont.reset" = "Reset";
+
+/* Claude Settings: Colours pill choice — the editor and grid colours follow the app appearance (Claude Light / Claude Dark) */
+"ClaudeSettings.editorColours.option.matchAppearance" = "Match appearance";
+
+/* Claude Settings: Colours pill choice — the user's own editor and grid colours */
+"ClaudeSettings.editorColours.option.custom" = "Custom";
+
+/* Claude Settings: accessibility label of the ⋯ button beside "Start from a theme" (save, import, export, edit the theme list) */
+"ClaudeSettings.startFromTheme.actions" = "Theme actions";
+
+/* Claude Settings: accessibility label of one of the 11 editor colours; %@ is the colour's name (Text, Keyword…) */
+"ClaudeSettings.colourList.editColour" = "Change the %@ colour";
+
+/* Claude Settings: "Favourite to select" pill — select the favourite used last */
+"ClaudeSettings.defaultFavourite.option.lastUsed" = "Last used";
+
+/* Claude Settings: "Favourite to select" pill — shown (disabled) when there are no favourites */
+"ClaudeSettings.defaultFavourite.option.none" = "No favourites";
+
+/* Claude Settings: "Reload after saving" switch — after adding a row */
+"ClaudeSettings.reloadAfterSaving.option.add" = "Add";
+
+/* Claude Settings: "Reload after saving" switch — after editing a row */
+"ClaudeSettings.reloadAfterSaving.option.edit" = "Edit";
+
+/* Claude Settings: "Reload after saving" switch — after deleting rows */
+"ClaudeSettings.reloadAfterSaving.option.delete" = "Delete";
+
+/* Claude Settings: accessibility label of one "Reload after saving" switch; %@ is Add, Edit or Delete */
+"ClaudeSettings.reloadAfterSaving.switchLabel" = "Reload after saving: %@";
+
+/* Claude Settings: SSH program field while no custom ssh binary is set */
+"ClaudeSettings.sshProgram.systemDefault" = "System default";
+
+/* Claude Settings: SSH program button that opens the custom ssh binary chooser */
+"ClaudeSettings.sshProgram.change" = "Change…";
+
+/* Claude Settings: SSL cipher order button that shows or hides the cipher list under the row */
+"ClaudeSettings.cipherOrder.editList" = "Edit list";
+
+/* Claude Settings: button under the SSL cipher list that restores the default order */
+"ClaudeSettings.cipherOrder.reset" = "Reset";
+
+/* Claude Settings: tooltip of the SSL cipher list's Reset button */
+"ClaudeSettings.cipherOrder.resetHelp" = "Reset the cipher list to the default configuration";
+
+/* Claude Settings: accessible files button that shows or hides the list under the row, when one file is listed */
+"ClaudeSettings.accessibleFiles.oneFile" = "1 file";
+
+/* Claude Settings: accessible files button that shows or hides the list under the row; %ld is the number of files */
+"ClaudeSettings.accessibleFiles.files" = "%ld files";
+
+/* Claude Settings: hint under the accessible files list while some files (shown red) need access granted again */
+"ClaudeSettings.accessibleFiles.staleHint" = "Double-click red items to refresh bookmark";
+
+/* Claude Settings: button under the accessible files list that removes access to the selected files */
+"ClaudeSettings.accessibleFiles.revoke" = "Revoke Selected Files";
+
+/* Claude Settings: button under the accessible files list that opens a panel to grant access to files or folders */
+"ClaudeSettings.accessibleFiles.add" = "Add Files…";
+
+/* ===== Claude Settings window (2026-10-18): pointers from elsewhere (SAClaudeSettingsPointer) ===== */
+
+/* Claude Settings pointer: button that opens Settings on the place the message names (was "Open Files Preferences" / "Go to Network Settings") */
+"ClaudeSettings.pointer.openSettings" = "Open Settings";
+
+/* Claude Settings pointer: single stale bookmark alert message */
+"ClaudeSettings.pointer.staleFiles.one" = "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Settings ▸ SSH and security ▸ Files Sequel Ace can open to refresh or revoke it.";
+
+/* Claude Settings pointer: multiple stale bookmarks alert message */
+"ClaudeSettings.pointer.staleFiles.many" = "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Settings ▸ SSH and security ▸ Files Sequel Ace can open to refresh or revoke them.";
+
+/* Claude Settings pointer: single missing bookmark alert message */
+"ClaudeSettings.pointer.missingFiles.one" = "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Settings ▸ SSH and security ▸ Files Sequel Ace can open.";
+
+/* Claude Settings pointer: multiple missing bookmarks alert message */
+"ClaudeSettings.pointer.missingFiles.many" = "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Settings ▸ SSH and security ▸ Files Sequel Ace can open.";
+
+/* Claude Settings pointer: SSH config file error alert message; %@ is the file's path */
+"ClaudeSettings.pointer.sshConfigFile.message" = "Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can choose a different file in Settings ▸ SSH and security ▸ SSH config file, or restore access to this one in Settings ▸ SSH and security ▸ Files Sequel Ace can open, or you can reset the path to the Sequel Ace default.";
+
+/* Claude Settings pointer: MCP start error message; %ld is the port, %@ the error */
+"ClaudeSettings.pointer.mcpPortError.message" = "The MCP server could not start on port %ld: %@\n\nYou can change the port in Settings ▸ MCP server ▸ Port.";
+
+/* Claude Settings pointer: SSH connection debug header with user-defined ssh binary */
+"ClaudeSettings.pointer.customSSHBinary.message" = "Custom SSH binary enabled. Disable in Settings ▸ SSH and security ▸ SSH program to rule out incompatibilities!";
+
+/* Claude Settings pointer: analytics consent dialog message */
+"ClaudeSettings.pointer.analyticsConsent.message" = "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Settings ▸ Updates and privacy ▸ Share analytics and crash reports.";
+
+/* Claude Settings pointer: known hosts not writable message; %@ is the file's path */
+"ClaudeSettings.pointer.knownHosts.notWritable" = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Settings ▸ SSH and security ▸ Known hosts file and try again.";
+
+/* Claude Settings pointer: known hosts is invalid message */
+"ClaudeSettings.pointer.knownHosts.invalid" = "The selected known hosts file is invalid.\n\nPlease re-select the file in Settings ▸ SSH and security ▸ Known hosts file and try again.";
+
+/* Claude Settings pointer: known hosts contains quote message; %@ is the file's path */
+"ClaudeSettings.pointer.knownHosts.quote" = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Settings ▸ SSH and security ▸ Known hosts file or rename the file/path to remove the quote.";
+
+/* Claude Settings pointer: message of panel when no rows have been affected after writing to the db */
+"ClaudeSettings.pointer.noRowsAffected.message" = "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in Settings ▸ Safety and alerts ▸ Warn when a save changes nothing.)";
+
+/* Claude Settings pointer: Double check delete query */
+"ClaudeSettings.pointer.deleteDoubleCheck.message" = "Double checking as you have Settings ▸ Safety and alerts ▸ Ask twice before deleting rows turned on";
+
+/* process list : note shown when its own connection could not be opened */
+"Using this window's connection — the list can't refresh while it's busy." = "Using this window's connection — the list can't refresh while it's busy.";
+
+/* process list : kill attempted after its connection was closed */
+"The process list's connection is closed." = "The process list's connection is closed.";
+
+/* process list : kill query found the connection running another query (id, that query) */
+"Connection #%lld is now running a different query:\n\n%@\n\nKill it anyway?" = "Connection #%1$lld is now running a different query:\n\n%2$@\n\nKill it anyway?";
+
+/* process list : kill query found the connection idle (id) */
+"Connection #%lld has finished that query and is now idle — nothing was killed." = "Connection #%lld has finished that query and is now idle — nothing was killed.";
+
+/* process list : kill found the connection gone (id) */
+"Connection #%lld has ended." = "Connection #%lld has ended.";
+
+/* process list : its connection is not connected */
+"Not connected" = "Not connected";
+
+/* process list : filter chip showing every connection */
+"All" = "All";
+
+/* process list : filter chip and status of lock waits and long-running queries */
+"Needs attention" = "Needs attention";
+
+/* process list : filter chip and status of connections running a command */
+"Running" = "Running";
+
+/* process list : filter chip and status of sleeping connections and background threads */
+"Idle" = "Idle";
+
+/* process list : filter chip showing connections of this window's user */
+"Mine" = "Mine";
+
+/* process list : threshold pill — a query running longer than 10 seconds needs attention */
+"Over 10 s" = "Over 10 s";
+
+/* process list : threshold pill — a query running longer than 1 minute needs attention */
+"Over 1 min" = "Over 1 min";
+
+/* process list : threshold pill — a query running longer than 5 minutes needs attention */
+"Over 5 min" = "Over 5 min";
+
+/* process list : threshold pill — a query running longer than 30 seconds needs attention */
+"Over 30 s" = "Over 30 s";
+
+/* process list : a row or panel of a connection running no query */
+"idle connection" = "idle connection";
+
+/* process list : accessibility label of the threshold pill */
+"Needs attention after" = "Needs attention after";
+
+/* process list : tooltip of the threshold pill */
+"A command running longer than this needs attention" = "A command running longer than this needs attention";
+
+/* process list : auto refresh switch */
+"Auto refresh" = "Auto refresh";
+
+/* process list : tooltip of the auto refresh switch */
+"Auto refresh the list (⇧⌘R)" = "Auto refresh the list (⇧⌘R)";
+
+/* process list : tooltip of the refresh button */
+"Refresh the list (⌘R)" = "Refresh the list (⌘R)";
+
+/* process list : search field placeholder */
+"Search user, host, database, state, query" = "Search user, host, database, state, query";
+
+/* process list : clear the search field */
+"Clear search" = "Clear search";
+
+/* process list : tooltip of the gear menu */
+"More" = "More";
+
+/* process list : detail panel with nothing selected */
+"Select a connection to see its whole query." = "Select a connection to see its whole query.";
+
+/* process list : detail panel title (connection id) */
+"Connection #%lld" = "Connection #%lld";
+
+/* process list : detail panel label of the state and time */
+"State" = "State";
+
+/* process list : detail panel of a connection no longer listed */
+"This connection has ended." = "This connection has ended.";
+
+/* process list : detail panel keeps the query it showed after the connection changed */
+"This connection has moved on — showing the query as it was" = "This connection has moved on — showing the query as it was";
+
+/* process list : show what the connection runs now */
+"Show current" = "Show current";
+
+/* process list : copy the query shown in the detail panel */
+"Copy query" = "Copy query";
+
+/* process list : insert the query into the window's Query editor */
+"Open in editor" = "Open in editor";
+
+/* process list : tooltip of Open in editor */
+"Insert this query into the window's Query editor" = "Insert this query into the window's Query editor";
+
+/* process list : kill the query of the connection shown */
+"Kill query" = "Kill query";
+
+/* process list : kill the connection shown */
+"Kill connection" = "Kill connection";
+
+/* process list : accessibility label of the list */
+"Connections" = "Connections";
+
+/* process list : gear menu item saving the list shown to a file */
+"Save As…" = "Save As…";
+
+/* process list : muted note when a refresh failed (the server's message) */
+"Couldn't refresh: %@ — showing the last list." = "Couldn't refresh: %@ — showing the last list.";
+
+/* process list : before the first refresh */
+"Loading…" = "Loading…";
+
+/* process list : the chip and search show nothing */
+"No connections match." = "No connections match.";
+
+/* process list : a row or panel of a non-idle connection with no query text */
+"no query" = "no query";
+
+/* process list : its own connection was lost (shown in the notes line) */
+"Lost the Process List's connection; it reconnects on the next refresh" = "Lost the Process List's connection; it reconnects on the next refresh";
+
+/* server variables : strip under the list with nothing selected */
+"Select a variable to see its full value." = "Select a variable to see its full value.";
+
+/* server variables : copy the selected variable's full value */
+"Copy value" = "Copy value";
+
+/* server variables : strip title when several variables are selected */
+"%lld variables selected" = "%lld variables selected";
+
+/* server variables : the selected variable's value is the empty string */
+"empty" = "empty";
+
+/* server variables : accessibility name of the full value of the selected variable */
+"Variable value" = "Variable value";
+
+/* user manager : tooltip and accessibility name of the add-user button under the accounts list */
+"ClaudeUserManagerAddUser" = "Add user";
+
+/* user manager : tooltip and accessibility name of the remove-user button under the accounts list */
+"ClaudeUserManagerRemoveUser" = "Remove user";
+
+/* user manager : tooltip and accessibility name of the gear menu under the accounts list (Add Host, Remove Host, Refresh) */
+"ClaudeUserManagerAccountActions" = "Account actions";
+
+/* user manager : accessibility name of the General / Global Privileges / Schema Privileges / Resources tabs */
+"ClaudeUserManagerSections" = "User manager sections";
+
+/* user manager : schema privileges tab, tooltip of the arrow that moves the selected available privileges to the granted list */
+"ClaudeUserManagerGrantSchemaPrivileges" = "Grant the selected privileges";
+
+/* user manager : schema privileges tab, tooltip of the arrow that moves the selected granted privileges back to the available list */
+"ClaudeUserManagerRevokeSchemaPrivileges" = "Revoke the selected privileges";
+
+/* query favorites manager : tooltip and accessibility name of the add button under the favorites list */
+"ClaudeQueryFavoritesAdd" = "Add query favorite";
+
+/* query favorites manager : tooltip and accessibility name of the remove button under the favorites list */
+"ClaudeQueryFavoritesRemove" = "Remove query favorite";
+
+/* query favorites manager : tooltip and accessibility name of the gear menu under the favorites list (Duplicate, Import, Export…) */
+"ClaudeQueryFavoritesActions" = "Favorite actions";
+
+/* content filter manager : tooltip and accessibility name of the add button under the filters list */
+"ClaudeContentFiltersAdd" = "Add content filter";
+
+/* content filter manager : tooltip and accessibility name of the remove button under the filters list */
+"ClaudeContentFiltersRemove" = "Remove content filter";
+
+/* content filter manager : tooltip and accessibility name of the gear menu under the filters list (Duplicate, Import, Export) */
+"ClaudeContentFiltersActions" = "Filter actions";
+
+/* utility windows : tooltip and accessibility name of a help (?) button */
+"ClaudeUtilityHelp" = "Help";
+
+/* navigator : tooltip and accessibility name of the reload button in the top bar */
+"ClaudeNavigatorReload" = "Reload all structures";
+
+/* bundle editor : label of the keyboard shortcut recorder in the bundle form */
+"ClaudeBundleEditorShortcutLabel" = "Shortcut:";
+
+/* bundle editor : tooltip and accessibility name of the add button under the bundles list */
+"ClaudeBundleEditorAdd" = "Add bundle";
+
+/* bundle editor : tooltip and accessibility name of the remove button under the bundles list */
+"ClaudeBundleEditorRemove" = "Remove bundle";
+
+/* bundle editor : tooltip and accessibility name of the gear menu under the bundles list (Duplicate, Export, Reveal…) */
+"ClaudeBundleEditorActions" = "Bundle actions";
+
+/* bundle editor : the section header over the bundles list (the list's root row), in title case like the other utility windows' list headers */
+"ClaudeBundleEditorBundlesHeader" = "Bundles";
+
+/* process list : search field placeholder (short: the field may be 160pt wide; its tooltip names what it searches) */
+"ClaudeProcessListSearchPlaceholder" = "Search";
+
+/* settings : edit theme list sheet : tooltip and accessibility name of the duplicate button under the themes list */
+"ClaudeThemeListDuplicate" = "Duplicate theme";
+
+/* settings : edit theme list sheet : tooltip and accessibility name of the remove button under the themes list */
+"ClaudeThemeListRemove" = "Remove theme";
+
+/* Claude query history: Clear History item in an unsaved window (its history is shared by all unsaved windows) */
+"ClaudeQueryHistory.clearAllWindows.title" = "Clear History (all windows)";
+
+/* Claude query history: tooltip of the Clear History item in an unsaved window */
+"ClaudeQueryHistory.clearAllWindows.tooltip" = "Clear the query history shared by all windows not saved to a file";
+
+/* Claude query history: Clear History? text for an unsaved window (its history is shared by all unsaved windows) */
+"ClaudeQueryHistory.clearAllWindows.message" = "Are you sure you want to clear the query history shared by all unsaved windows (every window not saved to a file)? This action cannot be undone.";
+
+/* Query favorites and content filters: heading of the section saved for the window's connection when its name is unknown */
+"ClaudeQueryFavoritesThisConnection" = "This connection";
+
+/* Query favorites and content filters: note that a favorite or filter is kept only for this saved connection (arg is the connection's name) */
+"ClaudeQueryFavoritesSavedForConnectionOnly" = "Saved for %@ only";
+
+/* Query favorite save sheet: checkbox that saves the favorite globally (was “Save globally”) */
+"ClaudeQueryFavoriteSaveForAllConnections" = "Save for all connections";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.rose" = "Rose";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.orange" = "Orange";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.amber" = "Amber";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.emerald" = "Emerald";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.sky" = "Sky";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.violet" = "Violet";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.slate" = "Slate";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.teal" = "Teal";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.blue" = "Blue";
+
+/* Favourite colour name, shown in the connection colour picker */
+"ClaudeFavouriteColour.pink" = "Pink";

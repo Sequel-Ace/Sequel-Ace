@@ -56,6 +56,58 @@ final class SAGitHubReleaseTests: XCTestCase {
                                                               isAppStoreInstall: true))
     }
 
+    func testPrivateBuildFlagIsReadFromInfoPlistValues() {
+        let key = SAPrivateBuildPolicy.infoPlistKey
+        XCTAssertEqual(key, "SAPrivateBuild")
+
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: true]))
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: NSNumber(value: 1)]))
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "YES"]))
+        XCTAssertTrue(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "true"]))
+
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: nil))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [:]))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: false]))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "NO"]))
+        // An unexpanded or empty build setting must not turn the updater off.
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: ""]))
+        XCTAssertFalse(SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: [key: "$(SA_PRIVATE_BUILD)"]))
+    }
+
+    func testPrivateBuildsAndAppStoreInstallsDoNotOfferGitHubUpdates() {
+        XCTAssertTrue(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: false, isPrivateBuild: false))
+        XCTAssertFalse(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: false, isPrivateBuild: true))
+        XCTAssertFalse(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: true, isPrivateBuild: false))
+        XCTAssertFalse(SAPrivateBuildPolicy.offersGitHubUpdates(isAppStoreInstall: true, isPrivateBuild: true))
+    }
+
+    func testPrivateBuildsSkipTheStaleBookmarkLaunchAlert() {
+        // The normal (sandboxed) build: the "App Sandbox Issue" alert when bookmarks are stale, none otherwise.
+        XCTAssertTrue(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: false, staleBookmarkCount: 1))
+        XCTAssertTrue(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: false, staleBookmarkCount: 7))
+        XCTAssertFalse(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: false, staleBookmarkCount: 0))
+        // A private (unsandboxed) build never shows it.
+        XCTAssertFalse(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: true, staleBookmarkCount: 1))
+        XCTAssertFalse(SAPrivateBuildPolicy.showsStaleBookmarkAlert(isPrivateBuild: true, staleBookmarkCount: 0))
+    }
+
+    func testStaleBookmarksHoldBackAutoConnectOnlyInTheNormalBuild() {
+        XCTAssertTrue(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: false, staleBookmarkCount: 0))
+        XCTAssertFalse(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: false, staleBookmarkCount: 2))
+        XCTAssertTrue(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: true, staleBookmarkCount: 0))
+        XCTAssertTrue(SAPrivateBuildPolicy.staleBookmarksAllowAutoConnect(isPrivateBuild: true, staleBookmarkCount: 2))
+    }
+
+    func testSettingsFilesListMarksStaleBookmarksOnlyInTheNormalBuild() {
+        // The normal (sandboxed) build: stale entries red, the stale hint and the re-select panel while there are any.
+        XCTAssertTrue(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: false, staleBookmarkCount: 1))
+        XCTAssertTrue(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: false, staleBookmarkCount: 3))
+        XCTAssertFalse(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: false, staleBookmarkCount: 0))
+        // A private (unsandboxed) build can't resolve security-scoped bookmarks and doesn't need them: never marked.
+        XCTAssertFalse(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: true, staleBookmarkCount: 3))
+        XCTAssertFalse(SAPrivateBuildPolicy.marksStaleBookmarks(isPrivateBuild: true, staleBookmarkCount: 0))
+    }
+
     func testAutomaticRolloutMatchesAppleSevenDayPercentages() {
         let start = Date(timeIntervalSince1970: 1_000_000)
         let oneDay: TimeInterval = 24 * 60 * 60
@@ -752,5 +804,42 @@ final class SAGitHubReleaseTests: XCTestCase {
         XCTAssertTrue(SAGitHubReleaseErrorPolicy.shouldPresentError(isUserInitiated: true,
                                                                     statusCode: nil,
                                                                     underlyingError: NSError(domain: "Decode", code: 1)))
+    }
+}
+
+/// The AWS directory decision every ~/.aws gate goes through (save, test, connect, the profile list, the panel's
+/// Authorize / profile / note rows, the console sign-in write-access prompt).
+final class SAPrivateBuildAWSDirectoryPolicyTests: XCTestCase {
+
+    func testSandboxedBuildUsesTheBookmarkAndPrivateBuildDoesNot() {
+        XCTAssertTrue(SAPrivateBuildPolicy.usesAWSDirectoryBookmark(isPrivateBuild: false))
+        XCTAssertFalse(SAPrivateBuildPolicy.usesAWSDirectoryBookmark(isPrivateBuild: true))
+    }
+
+    func testSandboxedBuildNeedsAuthorizationUntilItHasAccess() {
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: false, sandboxedAccess: { false }, awsFilesExist: { true }),
+                       .needsAuthorization)
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: false, sandboxedAccess: { true }, awsFilesExist: { false }),
+                       .available)
+    }
+
+    func testPrivateBuildNeverNeedsAuthorization() {
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: true, sandboxedAccess: { false }, awsFilesExist: { true }),
+                       .available)
+        XCTAssertEqual(SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: true, sandboxedAccess: { false }, awsFilesExist: { false }),
+                       .missing)
+    }
+
+    func testPrivateBuildNeverConsultsTheSandboxedCheck() {
+        // The sandboxed check resolves (and may revoke) bookmarks: a private build must not run it.
+        var consulted = false
+        _ = SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: true, sandboxedAccess: { consulted = true; return true }, awsFilesExist: { true })
+        XCTAssertFalse(consulted)
+    }
+
+    func testSandboxedBuildNeverConsultsThePrivateCheck() {
+        var consulted = false
+        _ = SAPrivateBuildPolicy.awsDirectoryAccess(isPrivateBuild: false, sandboxedAccess: { true }, awsFilesExist: { consulted = true; return true })
+        XCTAssertFalse(consulted)
     }
 }

@@ -117,6 +117,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @property (readwrite, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
 @property (assign) BOOL recordViewNeedsSelectionRestoreRefresh;
 @property (assign) BOOL suppressRecordViewTaskRefresh;
+/// Shown in the run menu only while the Run button remembers the script: the Run current / Run all it showed before.
+@property (nonatomic, strong) NSMenuItem *runTertiaryActionMenuItem;
 
 @end
 
@@ -139,6 +141,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @synthesize reloadingExistingResult = reloadingExistingResult;
 @synthesize errorTextTitle = errorTextTitle;
 @synthesize errorText = errorText;
+@synthesize mySQLConnection = mySQLConnection;
+@synthesize customQueryScrollView = customQueryScrollView;
+@synthesize affectedRowsText = affectedRowsText;
 
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes
 {
@@ -152,36 +157,88 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 #pragma mark IBAction methods
 
 /**
- * Run the primary query task, as per the user preference
+ * What a run item runs: what this tab shows on it (its represented object, set by -updateQueryInteractionInterface),
+ * so a label can never differ from what runs; the remembered state before the first relabel.
+ */
+- (SAClaudeQueryRunAction)_runActionOfItem:(NSMenuItem *)item fallback:(SAClaudeQueryRunAction)fallback
+{
+    id runs = [item representedObject];
+    return [runs isKindOfClass:[NSNumber class]] ? (SAClaudeQueryRunAction)[runs integerValue] : fallback;
+}
+
+/**
+ * Run the remembered run action (⌘R and the Run button's main half; see SAClaudeQueryRunDefault)
  */
 - (IBAction)runPrimaryQueryAction:(id)sender
 {
-    if ([prefs boolForKey:SPQueryPrimaryControlRunsAll]) {
-        [self runAllQueries:sender];
-    } else {
-        [self runSelectedQueries:sender];
-    }
+    [self _runQueryAction:[self _runActionOfItem:runPrimaryActionMenuItem fallback:[SAClaudeQueryRunDefault primaryActionIn:prefs]]
+                 sender:sender
+               remember:YES];
 }
 
 /**
- * Run the secondary query task, as per the user preference
+ * Run the other of Run current / Run all. Picked from the Run card or the menu it becomes the button's; its
+ * shortcut (⌥⌘R) runs it once, as it always did, and leaves the button alone.
  */
 - (IBAction)runSecondaryQueryAction:(id)sender
 {
-    if ([prefs boolForKey:SPQueryPrimaryControlRunsAll]) {
-        [self runSelectedQueries:sender];
-    } else {
-        [self runAllQueries:sender];
+    [self _runQueryAction:[self _runActionOfItem:runSecondaryActionMenuItem fallback:[SAClaudeQueryRunDefault secondaryActionIn:prefs]]
+                 sender:sender
+               remember:[SAClaudeQueryRunDefault remembersRunTriggeredByKeyEquivalent:([[NSApp currentEvent] type] == NSEventTypeKeyDown)]];
+}
+
+/**
+ * While the script is remembered: run the Run current / Run all the button showed before it
+ */
+- (IBAction)runTertiaryQueryAction:(id)sender
+{
+    [self _runQueryAction:[self _runActionOfItem:self.runTertiaryActionMenuItem fallback:[SAClaudeQueryRunDefault tertiaryActionIn:prefs]]
+                 sender:sender
+               remember:YES];
+}
+
+/**
+ * Runs a run action and, when `remember`, makes it the Run button's (the script remembers itself in
+ * -runAllAsScriptAction:, unless `remember` is NO).
+ */
+- (void)_runQueryAction:(SAClaudeQueryRunAction)action sender:(id)sender remember:(BOOL)remember
+{
+    // Key equivalents also arrive on key-up (see -runAllQueries:); those run nothing and change nothing.
+    if ([[NSApp currentEvent] type] == NSEventTypeKeyUp) return;
+    switch (action) {
+        case SAClaudeQueryRunActionScript:
+            self.skipsRememberingScriptRun = !remember;
+            [self runAllAsScriptAction:sender];
+            self.skipsRememberingScriptRun = NO;
+            return;
+        case SAClaudeQueryRunActionAll:
+            if (remember) [self rememberQueryRunAction:action];
+            [self runAllQueries:sender];
+            return;
+        case SAClaudeQueryRunActionCurrent:
+            if (remember) [self rememberQueryRunAction:action];
+            [self runSelectedQueries:sender];
+            return;
     }
 }
 
 /**
- * Swap the primary and secondary query run actions
+ * Makes a run action the Run button's and relabels the button and the run menu.
+ */
+- (void)rememberQueryRunAction:(SAClaudeQueryRunAction)action
+{
+    // A run refused while another is working changes nothing.
+    if ([tableDocumentInstance isWorking] || [SAClaudeQueryRunDefault primaryActionIn:prefs] == action) return;
+    [SAClaudeQueryRunDefault rememberAction:action in:prefs];
+    [self updateQueryInteractionInterface];
+}
+
+/**
+ * Swap the Run button between Run current and Run all
  */
 - (IBAction)switchDefaultQueryAction:(id)sender
 {
-    BOOL newValue = ![prefs boolForKey:SPQueryPrimaryControlRunsAll];
-    [prefs setBool:newValue forKey:SPQueryPrimaryControlRunsAll];
+    [SAClaudeQueryRunDefault switchDefaultIn:prefs];
     [self updateQueryInteractionInterface];
 }
 
@@ -292,7 +349,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
     SAQueryFavoriteSaveWindowController *saveController = [[SAQueryFavoriteSaveWindowController alloc]
         initWithQuery:query
-        fileURL:fileURL
+        localScope:[SAQueryFavoriteLocalScope scopeForDocument:tableDocumentInstance]
         defaultSaveGlobally:[tableDocumentInstance isUntitled]];
     [parentWindow beginSheet:[saveController window] completionHandler:^(__unused NSModalResponse returnCode) {
         (void)[saveController window];
@@ -348,17 +405,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            if ([[textView.textStorage string] length] > 0) {
-                [selectedFaveQueryStr insertString:@"\n" atIndex:0];
-            }
-          
-            NSRange selectedRange = [textView selectedRange];
-            // If no selected range, then make a new range then use it for appending query
-            if (!selectedRange.length) {
-              selectedRange = NSMakeRange(textView.textStorage.length, 0);
-            }
-          
-            [textView insertAsSnippet:selectedFaveQueryStr atRange:selectedRange];
+            [self insertPickedQuery:selectedFaveQueryStr];
         }
     }
 }
@@ -387,19 +434,28 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         else{
             SPLog(@"replaceContent == NO");
-            if ([[textView.textStorage string] length] > 0) {
-                [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
-            }
-          
-            NSRange selectedRange = [textView selectedRange];
-            // If no selected range, then make a new range then use it for appending query
-            if (!selectedRange.length) {
-              selectedRange = NSMakeRange(textView.textStorage.length, 0);
-            }
-          
-            [textView insertAsSnippet:selectedHistoryQueryStr atRange:selectedRange];
+            [self insertPickedQuery:selectedHistoryQueryStr];
         }
 
+    }
+}
+
+/**
+ * Inserts a query picked from the History or Favorites menu (insert mode) on its own line: in place of the
+ * selection, or at the end of the text when nothing is selected, with a newline before it unless it starts a line,
+ * and one after it when text follows on the same line. The caret ends after the query, before that newline
+ * (unless a snippet placeholder is selected).
+ */
+- (void)insertPickedQuery:(NSString *)query
+{
+    SAClaudeQueryInsertion *insertion = [SAClaudeQueryInsertion insertionOfQuery:query intoText:[textView string] selectedRange:[textView selectedRange]];
+    [textView insertAsSnippet:insertion.text atRange:insertion.range];
+
+    if (insertion.trailingNewlineLength && ![textView isSnippetMode]) {
+        NSRange caret = [textView selectedRange];
+        if (!caret.length && caret.location >= (NSUInteger)insertion.trailingNewlineLength) {
+            [textView setSelectedRange:NSMakeRange(caret.location - insertion.trailingNewlineLength, 0)];
+        }
     }
 }
 
@@ -579,7 +635,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSString *infoString;
     
     if ([tableDocumentInstance isUntitled]) {
-        infoString = NSLocalizedString(@"Are you sure you want to clear the global history list? This action cannot be undone.", @"clear global history list informative message");
+        infoString = NSLocalizedString(@"ClaudeQueryHistory.clearAllWindows.message", @"Claude query history: Clear History? text for an unsaved window (its history is shared by all unsaved windows)");
     } else {
         infoString = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to clear the history list for “%@”? This action cannot be undone.", @"clear history list for “%@” informative message"), [tableDocumentInstance displayName]];
     }
@@ -605,6 +661,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     NSString *taskString;
     
+    // A normal run shows its result in the grid, replacing any script output.
+    [self hideScriptConsole];
+
     //ensure there is no pending edit, which could be messed up (#2113)
     [[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
     
@@ -616,9 +675,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     }
     
     [tableDocumentInstance startTaskWithDescription:taskString];
-    [errorTextTitle setStringValue:NSLocalizedString(@"Query Status", @"Query Status")];
+    [errorTextTitle setStringValue:NSLocalizedString(@"Query status", @"Query tab status pane title when there is no error")];
     // reset colour
-    [errorText setTextColor:[NSColor controlTextColor]];
+    [SAClaudeQueryInfoStyler setErrorState:NO forTextView:errorText];
     [errorText setString:taskString];
     [affectedRowsText setStringValue:@""];
     
@@ -791,7 +850,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             NSString *taskString = [NSString stringWithFormat:NSLocalizedString(@"Running query %ld of %lu...", @"Running multiple queries string"), (long)(qp->query+1), (unsigned long)(qp->total)];
             [self->tableDocumentInstance setTaskDescription:taskString];
             // reset text colour
-            [self->errorText setTextColor:[NSColor controlTextColor]];
+            [SAClaudeQueryInfoStyler setErrorState:NO forTextView:self->errorText];
+            [self->errorTextTitle setStringValue:NSLocalizedString(@"Query status", @"Query tab status pane title when there is no error")];
             [self->errorText setString:taskString];
         }];
         
@@ -902,13 +962,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                     if(!suppressErrorSheet) {
                         // Update error text for the user
                         [errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(i+1), errorString];
-                        [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+                        [[errorTextTitle onMainThread] setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
 
                         if(errors.length>0){
                             SPMainQSync(^{
                                 [self->errorText setString:errors];
                                 // set text colour to red
-                                [self->errorText setTextColor:[NSColor redColor]];
+                                [SAClaudeQueryInfoStyler setErrorState:YES forTextView:self->errorText];
                             });
                         }
                         SPMainQSync(^{
@@ -1555,8 +1615,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // If errors occur, display them
     if ( [mySQLConnection lastQueryWasCancelled] || ([errorsString length] && !queryIsTableSorter)) {
         // set the error text
-        [errorText setTextColor:[NSColor redColor]];
-        [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        [SAClaudeQueryInfoStyler setErrorState:YES forTextView:errorText];
+        [errorTextTitle setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
         [errorText setString:[errorsString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
         [[errorTextScrollView verticalScroller] setFloatValue:1.0f];
         
@@ -1617,14 +1677,14 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         }
         
     } else if ( [errorsString length] && queryIsTableSorter ) {
-        [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        [errorTextTitle setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
         // set text colour to red
-        [errorText setTextColor:[NSColor redColor]];
+        [SAClaudeQueryInfoStyler setErrorState:YES forTextView:errorText];
         [errorText setString:NSLocalizedString(@"Couldn't sort column.", @"text shown if an error occurred while sorting the result table")];
         NSBeep();
     } else {
         // reset text colour
-        [errorText setTextColor:[NSColor controlTextColor]];
+        [SAClaudeQueryInfoStyler setErrorState:NO forTextView:errorText];
         [errorText setString:NSLocalizedString(@"There were no errors.", @"text shown when query was successfull")];
     }
     
@@ -1645,21 +1705,48 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (void)updateQueryInteractionInterface
 {
-    
-    // By default, the interface uses Run Query/Run Selection as the primary interface,
-    // but the user can switch this.
-    BOOL primaryActionIsRunAll = [prefs boolForKey:SPQueryPrimaryControlRunsAll];
-    
-    // Update the links as appropriate
-    if (primaryActionIsRunAll) {
-        runPrimaryActionButtonAsSelection = nil;
-        [runPrimaryActionButton setTitle:NSLocalizedString(@"Run All", @"run all button")];
-        [runPrimaryActionMenuItem setTitle:NSLocalizedString(@"Run All Queries", @"Run All menu item title")];
-    } else {
-        runPrimaryActionButtonAsSelection = runPrimaryActionButton;
-        [runSecondaryActionMenuItem setTitle:NSLocalizedString(@"Run All Queries", @"Run All menu item title")];
+    // The Run button runs the remembered action (Run current by default); see SAClaudeQueryRunDefault.
+    SAClaudeQueryRunAction primary = [SAClaudeQueryRunDefault primaryActionIn:prefs];
+    SAClaudeQueryRunAction secondary = [SAClaudeQueryRunDefault secondaryActionIn:prefs];
+    SAClaudeQueryRunAction tertiary = [SAClaudeQueryRunDefault tertiaryActionIn:prefs];
+
+    NSMenu *runMenu = [runSecondaryActionMenuItem menu];
+    if (!self.runTertiaryActionMenuItem && runMenu) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"" action:@selector(runTertiaryQueryAction:) keyEquivalent:@""];
+        [item setTarget:self];
+        [runMenu insertItem:item atIndex:[runMenu indexOfItem:runSecondaryActionMenuItem] + 1];
+        self.runTertiaryActionMenuItem = item;
     }
-    
+    [self.runTertiaryActionMenuItem setHidden:![SAClaudeQueryRunDefault showsTertiaryIn:prefs]];
+
+    // Each run item carries what it runs (the Run card's glyphs and order follow it).
+    [runPrimaryActionMenuItem setRepresentedObject:@(primary)];
+    [runSecondaryActionMenuItem setRepresentedObject:@(secondary)];
+    [self.runTertiaryActionMenuItem setRepresentedObject:@(tertiary)];
+    for (NSMenuItem *item in [runMenu itemArray]) {
+        if ([item action] == @selector(runAllAsScriptAction:)) [item setRepresentedObject:@(SAClaudeQueryRunActionScript)];
+    }
+
+    NSString *runAllMenuTitle = NSLocalizedString(@"Run All Queries", @"Run All menu item title");
+    for (NSMenuItem *item in @[runPrimaryActionMenuItem ?: [NSNull null], runSecondaryActionMenuItem ?: [NSNull null], self.runTertiaryActionMenuItem ?: [NSNull null]]) {
+        if ([item isKindOfClass:[NSMenuItem class]] && [[item representedObject] integerValue] == SAClaudeQueryRunActionAll) [item setTitle:runAllMenuTitle];
+    }
+
+    switch (primary) {
+        case SAClaudeQueryRunActionScript:
+            runPrimaryActionButtonAsSelection = nil;
+            [runPrimaryActionButton setTitle:[SAClaudeQueryRunDefault scriptButtonTitle]];
+            [runPrimaryActionMenuItem setTitle:NSLocalizedString(@"Run All as Script", @"Query editor run menu: run all statements and print every result as plain text")];
+            break;
+        case SAClaudeQueryRunActionAll:
+            runPrimaryActionButtonAsSelection = nil;
+            [runPrimaryActionButton setTitle:NSLocalizedString(@"Run all", @"query editor run button title: run all queries")];
+            break;
+        case SAClaudeQueryRunActionCurrent:
+            runPrimaryActionButtonAsSelection = runPrimaryActionButton;
+            break;
+    }
+
     // Update the Run Current/Previous/Selection menu item (and button if appropriate)
     [self updateContextualRunInterface];
 }
@@ -1672,27 +1759,29 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 {
     NSMenuItem *runSelectionMenuItem;
     
-    // Determine the menu item to change
-    if (runPrimaryActionButtonAsSelection) {
+    // Determine the menu item to change: the one that runs the current query
+    if ([SAClaudeQueryRunDefault primaryActionIn:prefs] == SAClaudeQueryRunActionCurrent) {
         runSelectionMenuItem = runPrimaryActionMenuItem;
-    } else {
+    } else if ([SAClaudeQueryRunDefault secondaryActionIn:prefs] == SAClaudeQueryRunActionCurrent) {
         runSelectionMenuItem = runSecondaryActionMenuItem;
+    } else {
+        runSelectionMenuItem = self.runTertiaryActionMenuItem;
     }
     
     // If the current selection is a single caret position, update the button based on
     // whether the caret is inside a valid query.
     if (![textView selectedRange].length) {
         if (currentQueryBeforeCaret) {
-            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run Previous", @"Title of button to run query just before text caret in custom query view")];
+            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run previous", @"query editor run button title: run previous query")];
             [runSelectionMenuItem setTitle:NSLocalizedString(@"Run Previous Query", @"Title of action menu item to run query just before text caret in custom query view")];
         } else {
-            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run Current", @"Title of button to run current query in custom query view")];
+            [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run current", @"query editor run button title: run current query")];
             [runSelectionMenuItem setTitle:NSLocalizedString(@"Run Current Query", @"Title of action menu item to run current query in custom query view")];
         }
         
         // Otherwise, reflect the active selection
     } else {
-        [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run Selection", @"Title of button to run selected text in custom query view")];
+        [runPrimaryActionButtonAsSelection setTitle:NSLocalizedString(@"Run selection", @"query editor run button title: run selection")];
         [runSelectionMenuItem setTitle:NSLocalizedString(@"Run Selected Text", @"Title of action menu item to run selected text in custom query view")];
     }
 }
@@ -2226,9 +2315,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     NSString *tableForColumn = [columnDefinition objectForKey:@"org_table"];
     
     if(!tableForColumn || ![tableForColumn length]) {
-        [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
+        [errorTextTitle setStringValue:NSLocalizedString(@"Last error", @"Query tab status pane title after an error")];
         // set text colour to red
-        [errorText setTextColor:[NSColor redColor]];
+        [SAClaudeQueryInfoStyler setErrorState:YES forTextView:errorText];
         [errorText setString:[NSString stringWithFormat:NSLocalizedString(@"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.", @"Custom Query result editing error - could not identify a corresponding column"), [columnDefinition objectForKey:@"name"]]];
         NSBeep();
         return;
@@ -2289,7 +2378,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             // This shouldn't happen – for safety reasons
             if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
                 if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
                 } else {
                     NSBeep();
                 }
@@ -2348,7 +2437,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                     // This shouldn't happen – for safety reasons
                     if ( ![self->mySQLConnection rowsAffectedByLastQuery] ) {
                         if ( [self->prefs boolForKey:SPShowNoAffectedRowsError] ) {
-                            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
                         } else {
                             NSBeep();
                         }
@@ -2434,7 +2523,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             showCellAsGray = [resultData cellIsNullOrUnloadedAtRow:rowIndex column:columnIndex];
         }
         
-        [cell setTextColor:showCellAsGray ? [NSColor lightGrayColor] : [NSColor controlTextColor]];
+        [SAClaudeGridCellStyler styleCell:cell role:showCellAsGray ? SAClaudeGridCellRoleNull : SAClaudeGridCellRoleText];
     }
 }
 
@@ -3274,16 +3363,18 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     while([queryFavoritesButton numberOfItems] > 7)
         [queryFavoritesButton removeItemAtIndex:[queryFavoritesButton numberOfItems]-1];
     
-    // Build document-based list
-    NSString *tblDocName = [[[fileURL absoluteString] stringByRemovingPercentEncoding] lastPathComponent];
+    // Build document-based list (Claude look: a window on a saved connection lists that connection's favourites,
+    // headed by its name — SAQueryFavoriteLocalScope)
+    SAQueryFavoriteLocalScope *localScope = [SAQueryFavoriteLocalScope scopeForDocument:tableDocumentInstance];
+    NSString *tblDocName = [localScope connectionName] ?: [[[fileURL absoluteString] stringByRemovingPercentEncoding] lastPathComponent];
     {
         NSMenuItem *headerMenuItem = [[NSMenuItem alloc] initWithTitle:tblDocName action:NULL keyEquivalent:@""];
         [headerMenuItem setTag:SP_FAVORITE_HEADER_MENUITEM_TAG];
-        [headerMenuItem setToolTip:[NSString stringWithFormat:NSLocalizedString(@"‘%@’ based favorites",@"Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file)"), tblDocName]];
+        [headerMenuItem setToolTip:[localScope connectionHeaderToolTip] ?: [NSString stringWithFormat:NSLocalizedString(@"‘%@’ based favorites",@"Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file)"), tblDocName]];
         [headerMenuItem setIndentationLevel:0];
         [menu addItem:headerMenuItem];
     }
-    for (NSDictionary *favorite in [[SPQueryController sharedQueryController] favoritesForFileURL:fileURL]) {
+    for (NSDictionary *favorite in [localScope favorites]) {
         if (![favorite isKindOfClass:[NSDictionary class]] || ![favorite objectForKey:@"name"]) continue;
         NSMutableParagraphStyle *paraStyle = [[NSMutableParagraphStyle alloc] init];
         [paraStyle setTabStops:@[]];
@@ -3438,6 +3529,12 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         [self _updateColumnHeadersForCurrentPreference];
 
         [customQueryView reloadData];
+    } else if ([keyPath isEqualToString:[SAClaudeQueryRunDefault runsAllKey]] || [keyPath isEqualToString:[SAClaudeQueryRunDefault runsScriptKey]]) {
+        if ([NSThread isMainThread]) {
+            [self updateQueryInteractionInterface];
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{ [self updateQueryInteractionInterface]; });
+        }
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
         self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
     } else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
@@ -3477,8 +3574,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // Control Clear History menu item title according to isUntitled
     else if ( [menuItem tag] == SP_HISTORY_CLEAR_MENUITEM_TAG ) {
         if ( [tableDocumentInstance isUntitled] ) {
-            [menuItem setTitle:NSLocalizedString(@"Clear Global History", @"clear global history menu item title")];
-            [menuItem setToolTip:NSLocalizedString(@"Clear the global history list", @"clear the global history list tooltip message")];
+            [menuItem setTitle:NSLocalizedString(@"ClaudeQueryHistory.clearAllWindows.title", @"Claude query history: Clear History item in an unsaved window (its history is shared by all unsaved windows)")];
+            [menuItem setToolTip:NSLocalizedString(@"ClaudeQueryHistory.clearAllWindows.tooltip", @"Claude query history: tooltip of the Clear History item in an unsaved window")];
         } else {
             [menuItem setTitle:[NSString stringWithFormat:NSLocalizedString(@"Clear History for “%@”", @"clear history for “%@” menu title"), [tableDocumentInstance displayName]]];
             [menuItem setToolTip:NSLocalizedString(@"Clear the document-based history list", @"clear the document-based history list tooltip message")];
@@ -3489,6 +3586,12 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         return ([queryHistoryButton numberOfItems]-7);
     }
     else if ([menuItem action] == @selector(runExplainQueryAction:)) {
+        if ([tableDocumentInstance isWorking]) return NO;
+        return ([[textView string] length] > 0);
+    }
+    else if ([menuItem action] == @selector(runAllAsScriptAction:)
+             || ([[menuItem representedObject] isKindOfClass:[NSNumber class]] && [[menuItem representedObject] integerValue] == SAClaudeQueryRunActionScript
+                 && ([menuItem action] == @selector(runPrimaryQueryAction:) || [menuItem action] == @selector(runSecondaryQueryAction:)))) {
         if ([tableDocumentInstance isWorking]) return NO;
         return ([[textView string] length] > 0);
     }
@@ -3775,12 +3878,15 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                                         resizingView:customQueryScrollView
                                    shortcutTableView:customQueryView
                                         bottomInset:0
-                                           topInset:23
+                                           topInset:[SAClaudeEditorChrome barHeight]
                                        autosaveName:@"SARecordViewQueryWidth"];
 
     __weak __typeof__(self) weakSelf = self;
     [recordViewController setShowHandler:^{
         [weakSelf _updateRecordView];
+    }];
+    [recordViewController setRowStepHandler:^(NSInteger delta) {
+        [weakSelf _recordViewStepRowBy:delta];
     }];
     [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
         SPCustomQuery *strongSelf = weakSelf;
@@ -3824,7 +3930,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     }];
     
     // Give the editor a small vertical inset so text is not flush against the top and bottom edges (#2236)
-    [textView setTextContainerInset:NSMakeSize(0.0f, 2.0f)];
+    [textView setTextContainerInset:NSMakeSize(0.0f, [SAClaudeEditorChrome editorTopInset])];
 
     // Set the structure and index view's vertical gridlines if required
     [customQueryView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
@@ -3859,8 +3965,24 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
+    // The Run button's remembered action is app-wide: every Query tab relabels its button when another one changes it.
+    [prefs addObserver:self forKeyPath:[SAClaudeQueryRunDefault runsAllKey] options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:[SAClaudeQueryRunDefault runsScriptKey] options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
+
+	// Claude-style bar under the editor.
+	[SAClaudeQueryBarStyler attachToBarWithOptionsButton:editorOptionsButton
+	                                     favoritesButton:queryFavoritesButton
+	                                       historyButton:queryHistoryButton
+	                                           runButton:runPrimaryActionButton
+	                                         resultsView:[customQueryView enclosingScrollView]
+	                                     editorSplitView:queryEditorSplitView
+	                                        resultsTable:customQueryView];
+	[SAClaudeEditorOptionsButton attachToButton:editorOptionsButton textView:textView];
+
+	// Claude look: status pane and bottom strip. The export pull-down has no outlet; the styler finds it.
+	[SAClaudeQueryInfoStyler attachToInfoSplitView:queryInfoPaneSplitView titleField:errorTextTitle messageTextView:errorText statusField:affectedRowsText infoButton:queryInfoButton exportButton:nil];
 }
 
 - (void)toggleRecordView
@@ -3941,6 +4063,23 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:customQueryView];
 }
 
+/**
+ * Selects the previous (-1) or next (+1) row for the record view. Programmatic selection skips the
+ * delegate's shouldSelectRow:, so ask it first; the selection-change notification refreshes the panel.
+ */
+- (void)_recordViewStepRowBy:(NSInteger)delta
+{
+    NSInteger selectedRow = [self _recordViewSelectedRow];
+    if (selectedRow < 0) return;
+
+    NSInteger targetRow = selectedRow + delta;
+    if (targetRow < 0 || (NSUInteger)targetRow >= [resultData count]) return;
+    if (![self tableView:customQueryView shouldSelectRow:targetRow]) return;
+
+    [customQueryView selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)targetRow] byExtendingSelection:NO];
+    [customQueryView scrollRowToVisible:targetRow];
+}
+
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
 {
     if ([value isKindOfClass:[SPMySQLGeometryData class]]) return [value wktString];
@@ -3992,11 +4131,18 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         [fields addObject:@{
             @"id": @(columnIndex),
             @"name": columnDefinition[@"name"] ?: @"",
-            @"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
+            @"value": [self _recordViewStringForValue:value tableColumn:tableColumn],
+            @"type": columnDefinition[@"type"] ?: @"",
+            @"isNull": @([value isNSNull]),
+            @"notLoaded": @([value isSPNotLoaded])
         }];
     }
 
-    [recordViewController updateWithFields:fields selectedRowCount:1];
+    [recordViewController updateWithFields:fields
+                          selectedRowCount:1
+                                  rowIndex:selectedRow
+                                  rowCount:(NSInteger)[resultData count]
+                                     title:NSLocalizedString(@"ClaudeRecordQueryResult", @"record view title for a custom query result")];
 }
 
 //this method is called right before the UI objects are deallocated
@@ -4020,6 +4166,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
+    [prefs removeObserver:self forKeyPath:[SAClaudeQueryRunDefault runsAllKey]];
+    [prefs removeObserver:self forKeyPath:[SAClaudeQueryRunDefault runsScriptKey]];
     [NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
     
     [self clearQueryLoadTimer];

@@ -6,53 +6,68 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 	<style type="text/css" media="all">
+		/* Printed pages are paper: always light, in the system font, with hairline rules. */
 		html {
 			font-size: 12px;
+			color-scheme: light;
 		}
-		
+
+		body {
+			background-color: #FFFFFF;
+			color: #0B0B0B;
+			font-family: -apple-system, system-ui, sans-serif;
+			line-height: 1.4;
+		}
+
 		.nowrap {
 			white-space: nowrap;
 		}
-		
+
 		div.nowrap {
 			margin: 0;
 			padding: 0;
 		}
-		
-		body, table, th, td {
-			background-color: #FFFFFF;
-			color: #000000;
-		}
-		
+
 		h1 {
+			margin: 0 0 6px;
 			font-size: 16px;
-		}
-		
-		h2 {
-			font-size: 14px;
+			font-weight: 600;
 		}
 
-		table, th, td {
-			width: 300px;
+		h2 {
+			margin: 18px 0 6px;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		strong {
+			font-weight: 600;
+		}
+
+		table {
 			border: none;
-			border-style: hidden;
 			border-collapse: collapse;
 			border-spacing: 0;
 		}
 
 		th, td {
-			padding: 0.2em;
+			padding: 3px 6px;
+			text-align: left;
+			border-bottom: 1px solid #E7E6E1;
 		}
 
+		/* Row labels: muted, like the header row of a data print. */
 		th {
-			text-align: left;
-			font-weight: bold;
+			width: 300px;
+			font-weight: 600;
+			color: #7B7974;
 		}
-		
+
 		td {
 			width: 500px;
 		}
-		
+
+		/* The create syntax keeps the user's editor font. */
 		pre {
 			font-family: {{font}};
 		}

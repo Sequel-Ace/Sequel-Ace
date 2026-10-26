@@ -86,7 +86,8 @@
 	if([NSGraphicsContext currentContextDrawingToScreen]) {
 
 		// Draw textview's background since due to the snippet highlighting we're responsible for it.
-		[[NSColor whiteColor] setFill];
+		// Its own background colour (the editor theme's in the Claude look; white from the XIB otherwise).
+		[[self backgroundColor] setFill];
 		NSRectFill(rect);
 
 		if (![self selectedRange].length && [[self string] length]) {
@@ -97,7 +98,8 @@
 														 withinSelectedCharacterRange: r
 																	  inTextContainer: [self textContainer]
 																			rectCount: &rectCount ];
-			[[NSColor colorWithCalibratedRed:0.95f green:0.95f blue:0.95f alpha:1.0f] setFill];
+			// The current line: a faint wash of the text colour (0.95 grey on white with black text, as before).
+			[[([self textColor] ?: [NSColor textColor]) colorWithAlphaComponent:0.05f] setFill];
 			NSRectFillListUsingOperation(queryRects, rectCount, NSCompositingOperationSourceOver);
 		}
 	}
