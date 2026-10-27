@@ -2105,9 +2105,6 @@
 /* SSH tunnel could not be created because no local port could be allocated */
 "No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
 
-/* database picker : shown when the search matches no database */
-"No Matching Databases" = "No Matching Databases";
-
 /* header for no matches in filtered list */
 "NO MATCHES" = "NO MATCHES";
 
@@ -2585,9 +2582,6 @@
 
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
-
-/* database picker : search field placeholder */
-"Search Databases" = "Search Databases";
 
 /* Search in MySQL Documentation */
 "Search in MySQL Documentation" = "Search in MySQL Documentation";
@@ -4442,3 +4436,54 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+
+/* Preferences > Query Editor: section title for choosing editor themes per light/dark appearance */
+"Theme Appearance" = "Theme Appearance";
+
+/* Preferences > Query Editor > Theme Appearance: checkbox making the editor theme follow light/dark mode */
+"Match system appearance" = "Match system appearance";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in light mode */
+"Light theme" = "Light theme";
+
+/* Preferences > Query Editor > Theme Appearance: label for the theme used in dark mode */
+"Dark theme" = "Dark theme";
+
+/* Preferences > Query Editor > Theme Appearance: a chosen theme whose file no longer exists */
+"%@ (missing)" = "%@ (missing)";
+
+/* record view toolbar item label; also the accessibility name of the record view toolbar icon */
+"Record View" = "Record View";
+
+/* accessibility name of the history back arrow in the main window toolbar */
+"Back" = "Back";
+
+/* accessibility name of the history forward arrow in the main window toolbar */
+"Forward" = "Forward";
+
+/* Menu card: placeholder of the database card's search field */
+"Find a database" = "Find a database";
+
+/* Menu card: database card section header above the user's databases */
+"Your databases" = "Your databases";
+
+/* Menu card: database card section header above the system databases (mysql, sys, …) */
+"System" = "System";
+
+/* Menu card: the one line shown when the search matches no row */
+"No matches" = "No matches";
+
+/* View menu: submenu for showing or hiding toolbar items */
+"Toolbar" = "Toolbar";
+
+/* View ▸ Toolbar: show toolbar items with icons and labels */
+"Icon and Text" = "Icon and Text";
+
+/* View ▸ Toolbar: show toolbar items as icons without labels */
+"Icon Only" = "Icon Only";
+
+/* View ▸ Toolbar: show toolbar items as labels without icons */
+"Text Only" = "Text Only";
+
+/* View ▸ Toolbar: restore the default toolbar items and order */
+"Reset to Default" = "Reset to Default";

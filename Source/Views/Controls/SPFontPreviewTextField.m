@@ -29,6 +29,8 @@
 
 #import "SPFontPreviewTextField.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation SPFontPreviewTextField
 
 /**
@@ -56,7 +58,7 @@
 	[paragraphStyle setMaximumLineHeight:NSHeight([self bounds]) + [displayFont descender]];
 
 	// Set up the text to display - the font display name and the point size.
-  NSString *displayName = [NSString stringWithFormat:@"%@, %.1f pt", [theFont displayName], [theFont pointSize]];
+  NSString *displayName = [NSString stringWithFormat:@"%@, %.1f pt", [SAFontDisplayName nameForFont:theFont], [theFont pointSize]];
 	NSMutableAttributedString *displayString = [[NSMutableAttributedString alloc] initWithString:displayName];
 
 	// Apply the paragraph style
