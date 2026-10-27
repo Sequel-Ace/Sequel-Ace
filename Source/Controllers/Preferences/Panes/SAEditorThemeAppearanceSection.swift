@@ -14,14 +14,14 @@ struct SAEditorThemeAppearanceSection: View {
     @ObservedObject var settings: SAEditorThemeAppearanceSettings
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: SASpacing.small) {
             Divider()
             Text(NSLocalizedString("Theme Appearance", comment: "Preferences > Query Editor: section title for choosing editor themes per light/dark appearance"))
                 .bold()
             Toggle(NSLocalizedString("Match system appearance", comment: "Preferences > Query Editor > Theme Appearance: checkbox making the editor theme follow light/dark mode"),
                    isOn: $settings.matchesSetting)
                 .toggleStyle(.checkbox)
-            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 8, verticalSpacing: 8) {
+            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: SASpacing.xSmall, verticalSpacing: SASpacing.xSmall) {
                 GridRow {
                     Text(NSLocalizedString("Light theme", comment: "Preferences > Query Editor > Theme Appearance: label for the theme used in light mode"))
                         .gridColumnAlignment(.trailing)
@@ -42,11 +42,11 @@ struct SAEditorThemeAppearanceSection: View {
                     .frame(maxWidth: 240, alignment: .leading)
                 }
             }
-            .padding(.leading, 20)
+            .padding(.leading, SASpacing.large)
             .disabled(!settings.matches)
         }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 12)
+        .padding(.horizontal, SASpacing.large)
+        .padding(.bottom, SASpacing.small)
         .frame(maxWidth: .infinity, alignment: .leading)
         // Theme files can change while the pane is hidden; the pane's own changes post themeListDidChange.
         .onAppear { settings.reloadThemeNames() }
