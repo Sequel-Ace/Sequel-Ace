@@ -4457,3 +4457,12 @@
 
 /* Preferences > Query Editor > Theme Appearance: a chosen theme whose file no longer exists */
 "%@ (missing)" = "%@ (missing)";
+
+/* record view toolbar item label; also the accessibility name of the record view toolbar icon */
+"Record View" = "Record View";
+
+/* accessibility name of the history back arrow in the main window toolbar */
+"Back" = "Back";
+
+/* accessibility name of the history forward arrow in the main window toolbar */
+"Forward" = "Forward";
