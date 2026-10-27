@@ -28,6 +28,11 @@ enum SADialogAuthPrompt {
     /// The protocol's question types. The plugin passes the server's type byte
     /// straight through: 1 is an ordinary string, 2 is a password, which must
     /// not be echoed.
+    ///
+    /// This decides whether the answer is echoed, and nothing more. The byte
+    /// comes from the peer, so it cannot be what decides whether the user is
+    /// warned: a server is free to label a question asking for a password as
+    /// an ordinary one.
     static func isSecure(type: Int32) -> Bool {
         type == 2
     }
@@ -35,12 +40,15 @@ enum SADialogAuthPrompt {
     /// The text the user is asked to answer.
     ///
     /// The server writes the question and it is shown as-is, so a server that
-    /// sends nothing still gets a sentence the user can act on. A password
-    /// asked over an unencrypted connection carries a warning: the dialog
-    /// protocol sends every answer in clear text, and the client only
-    /// *requires* TLS when SSL or the cleartext plugin was asked for
-    /// (`SACleartextAuthPolicy`), so a server that picks `dialog` can reach
-    /// this prompt on a plaintext connection.
+    /// sends nothing still gets a sentence the user can act on.
+    ///
+    /// Every question asked over an unencrypted connection carries a warning,
+    /// whatever type the server gave it. The dialog protocol sends each answer
+    /// in clear text, and the client only *requires* TLS when SSL or the
+    /// cleartext plugin was asked for (`SACleartextAuthPolicy`), so a server
+    /// that picks `dialog` can reach this prompt on a plaintext connection.
+    /// Keying the warning off the question type instead would let that same
+    /// server turn it off by calling a password question "ordinary".
     static func message(for prompt: String?, secure: Bool, isEncrypted: Bool) -> String {
         let trimmed = prompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let question = trimmed.isEmpty
@@ -50,7 +58,7 @@ enum SADialogAuthPrompt {
             )
             : trimmed
 
-        guard secure, !isEncrypted else {
+        guard !isEncrypted else {
             return question
         }
         return question + "\n\n" + NSLocalizedString(
@@ -72,7 +80,7 @@ enum SADialogAuthPrompt {
     /// authentication.
     static func ask(prompt: String?, secure: Bool, isEncrypted: Bool) -> String? {
         let message = message(for: prompt, secure: secure, isEncrypted: isEncrypted)
-        let warning = secure && !isEncrypted
+        let warning = !isEncrypted
         if Thread.isMainThread {
             return present(message: message, secure: secure, warning: warning)
         }

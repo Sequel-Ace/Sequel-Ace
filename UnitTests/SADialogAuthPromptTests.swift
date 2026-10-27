@@ -62,10 +62,23 @@ final class SADialogAuthPromptTests: XCTestCase {
         XCTAssertEqual(message("Password:", secure: true, isEncrypted: true), "Password:")
     }
 
-    func testOrdinaryQuestionOverPlaintextIsNotWarnedAbout() {
-        // Only a secret is worth interrupting for; the server asks ordinary
-        // questions (a username, a one-time code prompt) over the same channel.
-        XCTAssertEqual(message("Are you sure?", secure: false, isEncrypted: false), "Are you sure?")
+    func testOrdinaryQuestionOverPlaintextIsAlsoWarnedAbout() {
+        let warned = message("Are you sure?", secure: false, isEncrypted: false)
+        XCTAssertTrue(warned.hasPrefix("Are you sure?"))
+        XCTAssertTrue(warned.localizedCaseInsensitiveContains("not encrypted"))
+    }
+
+    /// The question type is the peer's to choose, so it must not be able to
+    /// decide whether the user is warned — a server asking for a password can
+    /// label the question "ordinary" and would otherwise suppress the warning.
+    func testServerSuppliedTypeCannotSuppressTheWarning() {
+        let asPassword = message("Password:", secure: true, isEncrypted: false)
+        let asOrdinary = message("Password:", secure: false, isEncrypted: false)
+        XCTAssertEqual(asPassword, asOrdinary)
+    }
+
+    func testOrdinaryQuestionOverTLSIsNotWarnedAbout() {
+        XCTAssertEqual(message("Are you sure?", secure: false, isEncrypted: true), "Are you sure?")
     }
 
     func testFallbackPromptStillCarriesTheWarning() {

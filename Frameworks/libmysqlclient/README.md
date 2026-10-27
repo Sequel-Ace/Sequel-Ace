@@ -20,6 +20,19 @@ with `dlsym(RTLD_DEFAULT, …)`; `SADialogAuthPrompt.swift` exports that symbol
 from the app, so the questions become an alert instead of the `fgets(stdin)`
 the plugin falls back to.
 
+It is the one source file here that is **not** shipped as Oracle wrote it.
+`dialog-plaintext-consent.patch` gates the plugin's two unasked replies — the
+`mysql_change_user` packet and a password question with an empty prompt, both
+of which answer straight from `mysql->passwd` — on
+`mysql_get_ssl_cipher()`. Without it a server that selects `dialog` on a
+plaintext connection, or anyone able to rewrite the server's plugin
+announcement, collects the stored password with no prompt and no warning,
+because those paths never reach the callback. Patched, an unencrypted
+connection asks the user instead. The build applies it to a copy of the file
+and fails if it does not apply, and verification fails if the built plugin
+does not reference `mysql_get_ssl_cipher`, so a version bump cannot quietly
+ship the stock plugin.
+
 Both scripts are self-contained and **use nothing from Homebrew**. Every
 dependency is either bundled in the MySQL tarball (zlib, zstd, lz4, ICU,
 protobuf, libfido2, editline, libevent), part of the macOS SDK (SASL), or

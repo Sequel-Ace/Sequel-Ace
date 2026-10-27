@@ -166,6 +166,25 @@ if [ ! -f "$src/CMakeLists.txt" ]; then
     tar -C "$src" --strip-components=1 -zxf "$work_dir/downloads/$mysql_tarball"
 fi
 
+# --- The dialog plugin's source -------------------------------------------
+# Upstream answers an empty password question straight from mysql->passwd and
+# never calls the client's callback, so on a plaintext connection a server (or
+# anyone who can rewrite the server's plugin announcement) collects the stored
+# password with no interaction at all. The patch gates both of those unasked
+# replies on an encrypted transport and changes nothing else; a question the
+# user actually sees still goes to the callback, which warns.
+# It is applied to a copy, so the extracted tree stays pristine and a re-run
+# never double-applies. A version bump that moves these lines fails here
+# rather than silently shipping an unpatched plugin.
+dialog_src="$work_dir/dialog-src"
+rm -rf "$dialog_src"
+mkdir -p "$dialog_src"
+cp "$src/plugin/auth/dialog.cc" "$dialog_src/dialog.cc"
+if ! patch -s -p0 -d "$dialog_src" -i "$script_dir/dialog-plaintext-consent.patch"; then
+    echo "❌ dialog-plaintext-consent.patch does not apply to MySQL $MYSQL_VERSION's plugin/auth/dialog.cc"
+    exit 1
+fi
+
 # --- Per-architecture configure, build, install ---------------------------
 for arch in "${ARCHS[@]}"; do
     build="$work_dir/build-$arch"
@@ -251,16 +270,24 @@ for arch in "${ARCHS[@]}"; do
     # a MODULE is an MH_BUNDLE with no install name (like every other plugin
     # here), MYSQL_DYNAMIC_PLUGIN keeps plugin.h from pulling in the server's
     # sql_plugin.h, and plugin.h reaches OpenSSL headers through my_sys.h.
+    #
+    # dynamic_lookup resolves mysql_get_ssl_cipher, which the patch calls,
+    # against whoever loaded the plugin - libmysqlclient, already in memory,
+    # since it is the one calling dlopen. Recording a dependency on the client
+    # library instead would name a second path to the same file and risk a
+    # second copy of it; MySQL links its own non-client plugins against their
+    # host for exactly this reason.
     echo "***** building the dialog client plugin for $arch *****"
     "$CXX" -std=c++17 -O2 -fPIC -bundle \
         -arch "$arch" -isysroot "$sysroot" \
         -mmacosx-version-min="$DEPLOYMENT_TARGET" \
+        -Wl,-undefined,dynamic_lookup \
         -DMYSQL_DYNAMIC_CLIENT_PLUGIN -DMYSQL_DYNAMIC_PLUGIN \
         $prefix_map \
         -I"$build/include" -I"$src/include" -I"$src" \
         -I"$openssl_dir/sdk-$arch/include" \
         -o "$install/lib/plugin/dialog.so" \
-        "$src/plugin/auth/dialog.cc" > "$work_dir/dialog-$arch.log" 2>&1 || {
+        "$dialog_src/dialog.cc" > "$work_dir/dialog-$arch.log" 2>&1 || {
         echo "❌ $arch dialog plugin did not compile (see $work_dir/dialog-$arch.log)"
         exit 1
     }
@@ -410,6 +437,11 @@ if [ ! -f plugin/dialog.so ]; then
     status=1
 elif ! nm -gU plugin/dialog.so | grep "_mysql_client_plugin_declaration_" > /dev/null; then
     echo "❌ plugin/dialog.so exports no client plugin declaration"
+    status=1
+elif ! nm -u plugin/dialog.so | grep "_mysql_get_ssl_cipher" > /dev/null; then
+    # Only the patched source asks what the transport negotiated, so this is
+    # what separates the shipped plugin from stock upstream.
+    echo "❌ plugin/dialog.so does not check the transport before answering from the stored password"
     status=1
 fi
 if [ "$status" -ne 0 ]; then
