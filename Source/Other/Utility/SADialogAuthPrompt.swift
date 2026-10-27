@@ -49,6 +49,11 @@ enum SADialogAuthPrompt {
     /// that picks `dialog` can reach this prompt on a plaintext connection.
     /// Keying the warning off the question type instead would let that same
     /// server turn it off by calling a password question "ordinary".
+    ///
+    /// The warning comes first for the same reason. AppKit caps an alert's
+    /// height and scrolls the overflow, so a long enough question — which the
+    /// server also writes — would push a trailing warning below the fold and
+    /// out of sight of someone about to answer.
     static func message(for prompt: String?, secure: Bool, isEncrypted: Bool) -> String {
         let trimmed = prompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let question = trimmed.isEmpty
@@ -61,10 +66,11 @@ enum SADialogAuthPrompt {
         guard !isEncrypted else {
             return question
         }
-        return question + "\n\n" + NSLocalizedString(
+        let warning = NSLocalizedString(
             "This connection is not encrypted, so your answer will be sent to the server in clear text.",
             comment: "dialog authentication prompt : warning shown when a password is asked for over a plaintext connection"
         )
+        return warning + "\n\n" + question
     }
 
     /// Copies `answer` onto the heap for the plugin, which sends it and then

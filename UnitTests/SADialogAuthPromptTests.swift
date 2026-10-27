@@ -53,9 +53,20 @@ final class SADialogAuthPromptTests: XCTestCase {
     /// password question can arrive on a plaintext connection.
     func testPasswordOverPlaintextCarriesAWarning() {
         let warned = message("Password:", secure: true, isEncrypted: false)
-        XCTAssertTrue(warned.hasPrefix("Password:"))
+        XCTAssertTrue(warned.hasSuffix("Password:"))
         XCTAssertGreaterThan(warned.count, "Password:".count)
         XCTAssertTrue(warned.localizedCaseInsensitiveContains("not encrypted"))
+    }
+
+    /// An alert's height is capped and the overflow scrolls, so a question
+    /// long enough — and the server writes the question — would push a
+    /// trailing warning out of view of someone about to answer it.
+    func testWarningPrecedesTheServerSuppliedQuestion() {
+        let question = String(repeating: "Please confirm your identity. ", count: 200)
+        let warned = message(question, secure: true, isEncrypted: false)
+        let warningAt = try! XCTUnwrap(warned.range(of: "not encrypted", options: .caseInsensitive))
+        let questionAt = try! XCTUnwrap(warned.range(of: "Please confirm"))
+        XCTAssertLessThan(warningAt.lowerBound, questionAt.lowerBound)
     }
 
     func testPasswordOverTLSIsNotWarnedAbout() {
@@ -64,7 +75,7 @@ final class SADialogAuthPromptTests: XCTestCase {
 
     func testOrdinaryQuestionOverPlaintextIsAlsoWarnedAbout() {
         let warned = message("Are you sure?", secure: false, isEncrypted: false)
-        XCTAssertTrue(warned.hasPrefix("Are you sure?"))
+        XCTAssertTrue(warned.hasSuffix("Are you sure?"))
         XCTAssertTrue(warned.localizedCaseInsensitiveContains("not encrypted"))
     }
 
@@ -83,7 +94,7 @@ final class SADialogAuthPromptTests: XCTestCase {
 
     func testFallbackPromptStillCarriesTheWarning() {
         let warned = message(nil, secure: true, isEncrypted: false)
-        XCTAssertTrue(warned.hasPrefix(message(nil)))
+        XCTAssertTrue(warned.hasSuffix(message(nil)))
         XCTAssertTrue(warned.localizedCaseInsensitiveContains("not encrypted"))
     }
 
