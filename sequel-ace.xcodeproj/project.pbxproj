@@ -703,6 +703,12 @@
 		CF0000332F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */; };
 		D10000002F8C000600C4C14A /* SAAppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000022F8C000600C4C14A /* SAAppearancePreference.swift */; };
 		D10000012F8C000600C4C14A /* SAAppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000022F8C000600C4C14A /* SAAppearancePreference.swift */; };
+		E20000032F8C000600C4C14A /* SAFontDisplayName.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000002F8C000600C4C14A /* SAFontDisplayName.swift */; };
+		E20000022F8C000600C4C14A /* SAFontDisplayName.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000002F8C000600C4C14A /* SAFontDisplayName.swift */; };
+		F30000002F8C000600C4C14A /* SASpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000022F8C000600C4C14A /* SASpacing.swift */; };
+		F30000012F8C000600C4C14A /* SASpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000022F8C000600C4C14A /* SASpacing.swift */; };
+		F30000032F8C000600C4C14A /* SASpacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000042F8C000600C4C14A /* SASpacingTests.swift */; };
+		E20000042F8C000600C4C14A /* SAFontDisplayNameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000012F8C000600C4C14A /* SAFontDisplayNameTests.swift */; };
 		D10000032F8C000600C4C14A /* SATooltipDismissal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000052F8C000600C4C14A /* SATooltipDismissal.swift */; };
 		D10000042F8C000600C4C14A /* SATooltipDismissal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000052F8C000600C4C14A /* SATooltipDismissal.swift */; };
 		D10000062F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */; };
@@ -778,6 +784,20 @@
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 		FE96153A16ECBA48C12BCA09 /* SAFieldEditorCommitPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BCCC96AB0752412886E41B0 /* SAFieldEditorCommitPolicy.swift */; };
 		FEA466FB9F9F757D557F334B /* SATypeAheadSelectionLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */; };
+		0FD1A1CB983B98FD2941210A /* SAEditorThemeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7800E016FD721E4E429F39 /* SAEditorThemeLoader.swift */; };
+		3307B082A7481579BF2CEE4E /* SAEditorThemeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7800E016FD721E4E429F39 /* SAEditorThemeLoader.swift */; };
+		7B526F239AFC2EAC38012B9B /* SAEditorAppearanceThemeSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A7D41785F99757A3F4879E7 /* SAEditorAppearanceThemeSwitcher.swift */; };
+		5A9406708AA0D48CF37A7BD4 /* SAEditorAppearanceThemeSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A7D41785F99757A3F4879E7 /* SAEditorAppearanceThemeSwitcher.swift */; };
+		CCE0FD41A3EF11BA79065CD9 /* SAEditorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D483DAAC523AC3FBE3B85E /* SAEditorDefaults.swift */; };
+		6F9C134C5A52368E3E52468F /* SAEditorDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D483DAAC523AC3FBE3B85E /* SAEditorDefaults.swift */; };
+		0BD10F05866A428C382E34F1 /* SAEditorThemeAppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5537426D814C645C89F9F974 /* SAEditorThemeAppearanceSettings.swift */; };
+		8033567C0A7912508A1CB434 /* SAEditorThemeAppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5537426D814C645C89F9F974 /* SAEditorThemeAppearanceSettings.swift */; };
+		B9E19968EF9A6CF81207CF3D /* SAEditorThemeAppearanceSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1418D6E59DB07C9D6C31808 /* SAEditorThemeAppearanceSection.swift */; };
+		E64050B062D1C55F0A7987D1 /* SAEditorThemeLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D25C3D013682A26875FFA28F /* SAEditorThemeLoaderTests.swift */; };
+		124DCD4CA373197A66E9DD64 /* SAEditorAppearanceThemeSwitcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F3AFB09C9CED6006AE303A /* SAEditorAppearanceThemeSwitcherTests.swift */; };
+		439A1F117CD9DEE9ABEED1D6 /* SAEditorDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF45B8A53E824537C0D6CD3 /* SAEditorDefaultsTests.swift */; };
+		1DD515EBA28B39C014491B8B /* SAEditorThemeAppearanceSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4A756F6E8421C7D9745A7F /* SAEditorThemeAppearanceSettingsTests.swift */; };
+		04C49A0B0A2C4DE5342FEF58 /* SARegistrationDomainSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2207DFAB9379352D0BD46EF3 /* SARegistrationDomainSnapshotTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1664,6 +1684,10 @@
 		CF0000322F8C000600C4C14A /* SARuleFilterRootConjunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARuleFilterRootConjunction.swift; sourceTree = "<group>"; };
 		CF0000342F8C000600C4C14A /* SARuleFilterRootConjunctionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARuleFilterRootConjunctionTests.swift; sourceTree = "<group>"; };
 		D10000022F8C000600C4C14A /* SAAppearancePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAppearancePreference.swift; sourceTree = "<group>"; };
+		E20000002F8C000600C4C14A /* SAFontDisplayName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFontDisplayName.swift; sourceTree = "<group>"; };
+		E20000012F8C000600C4C14A /* SAFontDisplayNameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFontDisplayNameTests.swift; sourceTree = "<group>"; };
+		F30000022F8C000600C4C14A /* SASpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASpacing.swift; sourceTree = "<group>"; };
+		F30000042F8C000600C4C14A /* SASpacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SASpacingTests.swift; sourceTree = "<group>"; };
 		D10000052F8C000600C4C14A /* SATooltipDismissal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATooltipDismissal.swift; sourceTree = "<group>"; };
 		D10000082F8C000600C4C14A /* SAQueryHistoryMerger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAQueryHistoryMerger.swift; sourceTree = "<group>"; };
 		D10000102F8C000600C4C14A /* SAProfilingFollowupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAProfilingFollowupTests.swift; sourceTree = "<group>"; };
@@ -1713,6 +1737,16 @@
 		FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SABaseFormatter.swift; sourceTree = "<group>"; };
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
+		0C7800E016FD721E4E429F39 /* SAEditorThemeLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorThemeLoader.swift; sourceTree = "<group>"; };
+		8A7D41785F99757A3F4879E7 /* SAEditorAppearanceThemeSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorAppearanceThemeSwitcher.swift; sourceTree = "<group>"; };
+		63D483DAAC523AC3FBE3B85E /* SAEditorDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorDefaults.swift; sourceTree = "<group>"; };
+		5537426D814C645C89F9F974 /* SAEditorThemeAppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorThemeAppearanceSettings.swift; sourceTree = "<group>"; };
+		E1418D6E59DB07C9D6C31808 /* SAEditorThemeAppearanceSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorThemeAppearanceSection.swift; sourceTree = "<group>"; };
+		D25C3D013682A26875FFA28F /* SAEditorThemeLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorThemeLoaderTests.swift; sourceTree = "<group>"; };
+		14F3AFB09C9CED6006AE303A /* SAEditorAppearanceThemeSwitcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorAppearanceThemeSwitcherTests.swift; sourceTree = "<group>"; };
+		8EF45B8A53E824537C0D6CD3 /* SAEditorDefaultsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorDefaultsTests.swift; sourceTree = "<group>"; };
+		5F4A756F6E8421C7D9745A7F /* SAEditorThemeAppearanceSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorThemeAppearanceSettingsTests.swift; sourceTree = "<group>"; };
+		2207DFAB9379352D0BD46EF3 /* SARegistrationDomainSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARegistrationDomainSnapshotTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2262,6 +2296,8 @@
 				65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */,
 				65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */,
 				88F0964487758A57DA339AF2 /* SPMCPPreferencePane.swift */,
+				5537426D814C645C89F9F974 /* SAEditorThemeAppearanceSettings.swift */,
+				E1418D6E59DB07C9D6C31808 /* SAEditorThemeAppearanceSection.swift */,
 			);
 			path = Panes;
 			sourceTree = "<group>";
@@ -2896,8 +2932,13 @@
 				2617B1FEDA3776DCA242666C /* SAMarkedTextInputState.swift */,
 				1AA5B97BE9E063395AB12888 /* SAAnalyticsConsentPolicy.swift */,
 				D10000022F8C000600C4C14A /* SAAppearancePreference.swift */,
+				E20000002F8C000600C4C14A /* SAFontDisplayName.swift */,
+				F30000022F8C000600C4C14A /* SASpacing.swift */,
 				F001AB41C248FB0C94ECB906 /* SAAnalyticsConsentPolicy+Firebase.swift */,
 				3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */,
+				0C7800E016FD721E4E429F39 /* SAEditorThemeLoader.swift */,
+				8A7D41785F99757A3F4879E7 /* SAEditorAppearanceThemeSwitcher.swift */,
+				63D483DAAC523AC3FBE3B85E /* SAEditorDefaults.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -2989,6 +3030,13 @@
 				7430E44A2179FB112E3CEB83 /* SACodePointLengthAndMySQLDateTests.swift */,
 				619373C347EA990F09910DB0 /* SASessionTimeZoneReconnectTests.swift */,
 				4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */,
+				D25C3D013682A26875FFA28F /* SAEditorThemeLoaderTests.swift */,
+				14F3AFB09C9CED6006AE303A /* SAEditorAppearanceThemeSwitcherTests.swift */,
+				E20000012F8C000600C4C14A /* SAFontDisplayNameTests.swift */,
+				F30000042F8C000600C4C14A /* SASpacingTests.swift */,
+				8EF45B8A53E824537C0D6CD3 /* SAEditorDefaultsTests.swift */,
+				5F4A756F6E8421C7D9745A7F /* SAEditorThemeAppearanceSettingsTests.swift */,
+				2207DFAB9379352D0BD46EF3 /* SARegistrationDomainSnapshotTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3745,6 +3793,8 @@
 				CF0000052F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
 				CF00000D2F8C000600C4C14A /* SACellFilterMerge.swift in Sources */,
 				D10000012F8C000600C4C14A /* SAAppearancePreference.swift in Sources */,
+				E20000032F8C000600C4C14A /* SAFontDisplayName.swift in Sources */,
+				F30000012F8C000600C4C14A /* SASpacing.swift in Sources */,
 				D10000042F8C000600C4C14A /* SATooltipDismissal.swift in Sources */,
 				D10000072F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */,
 				D10000092F8C000600C4C14A /* SAProfilingFollowupTests.swift in Sources */,
@@ -3852,6 +3902,17 @@
 				60366FD008586E2EC4AC275A /* SASessionTimeZoneReconnectTests.swift in Sources */,
 				7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */,
 				55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */,
+				3307B082A7481579BF2CEE4E /* SAEditorThemeLoader.swift in Sources */,
+				5A9406708AA0D48CF37A7BD4 /* SAEditorAppearanceThemeSwitcher.swift in Sources */,
+				6F9C134C5A52368E3E52468F /* SAEditorDefaults.swift in Sources */,
+				8033567C0A7912508A1CB434 /* SAEditorThemeAppearanceSettings.swift in Sources */,
+				E64050B062D1C55F0A7987D1 /* SAEditorThemeLoaderTests.swift in Sources */,
+				124DCD4CA373197A66E9DD64 /* SAEditorAppearanceThemeSwitcherTests.swift in Sources */,
+				E20000042F8C000600C4C14A /* SAFontDisplayNameTests.swift in Sources */,
+				F30000032F8C000600C4C14A /* SASpacingTests.swift in Sources */,
+				439A1F117CD9DEE9ABEED1D6 /* SAEditorDefaultsTests.swift in Sources */,
+				1DD515EBA28B39C014491B8B /* SAEditorThemeAppearanceSettingsTests.swift in Sources */,
+				04C49A0B0A2C4DE5342FEF58 /* SARegistrationDomainSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3894,6 +3955,8 @@
 				51BE68DC3017550E00AF389C /* SAImageRenderer.swift in Sources */,
 				CF00000B2F8C000600C4C14A /* SACellFilterMerge.swift in Sources */,
 				D10000002F8C000600C4C14A /* SAAppearancePreference.swift in Sources */,
+				E20000022F8C000600C4C14A /* SAFontDisplayName.swift in Sources */,
+				F30000002F8C000600C4C14A /* SASpacing.swift in Sources */,
 				D10000032F8C000600C4C14A /* SATooltipDismissal.swift in Sources */,
 				D10000062F8C000600C4C14A /* SAQueryHistoryMerger.swift in Sources */,
 				CF0000302F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
@@ -4216,6 +4279,11 @@
 				D12A7F167B8194DCA3DCAA27 /* SATableReloadRetryPolicy.swift in Sources */,
 				EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */,
 				5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */,
+				0FD1A1CB983B98FD2941210A /* SAEditorThemeLoader.swift in Sources */,
+				7B526F239AFC2EAC38012B9B /* SAEditorAppearanceThemeSwitcher.swift in Sources */,
+				CCE0FD41A3EF11BA79065CD9 /* SAEditorDefaults.swift in Sources */,
+				0BD10F05866A428C382E34F1 /* SAEditorThemeAppearanceSettings.swift in Sources */,
+				B9E19968EF9A6CF81207CF3D /* SAEditorThemeAppearanceSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
