@@ -2105,9 +2105,6 @@
 /* SSH tunnel could not be created because no local port could be allocated */
 "No local port could be allocated for the SSH Tunnel." = "No local port could be allocated for the SSH Tunnel.";
 
-/* database picker : shown when the search matches no database */
-"No Matching Databases" = "No Matching Databases";
-
 /* header for no matches in filtered list */
 "NO MATCHES" = "NO MATCHES";
 
@@ -2585,9 +2582,6 @@
 
 /* schema path header for completion tooltip */
 "Schema path:" = "Schema path:";
-
-/* database picker : search field placeholder */
-"Search Databases" = "Search Databases";
 
 /* Search in MySQL Documentation */
 "Search in MySQL Documentation" = "Search in MySQL Documentation";
@@ -4466,3 +4460,30 @@
 
 /* accessibility name of the history forward arrow in the main window toolbar */
 "Forward" = "Forward";
+
+/* Menu card: placeholder of the database card's search field */
+"Find a database" = "Find a database";
+
+/* Menu card: database card section header above the user's databases */
+"Your databases" = "Your databases";
+
+/* Menu card: database card section header above the system databases (mysql, sys, …) */
+"System" = "System";
+
+/* Menu card: the one line shown when the search matches no row */
+"No matches" = "No matches";
+
+/* View menu: submenu for showing or hiding toolbar items */
+"Toolbar" = "Toolbar";
+
+/* View ▸ Toolbar: show toolbar items with icons and labels */
+"Icon and Text" = "Icon and Text";
+
+/* View ▸ Toolbar: show toolbar items as icons without labels */
+"Icon Only" = "Icon Only";
+
+/* View ▸ Toolbar: show toolbar items as labels without icons */
+"Text Only" = "Text Only";
+
+/* View ▸ Toolbar: restore the default toolbar items and order */
+"Reset to Default" = "Reset to Default";
