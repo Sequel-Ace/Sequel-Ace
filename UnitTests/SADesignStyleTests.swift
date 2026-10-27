@@ -27,7 +27,7 @@ final class SADesignStyleTests: XCTestCase {
             (SADesignStyle.hoverFill, 0x1E1E1D, 0xEAE9E4, "hoverFill"),
             (SADesignStyle.divider, 0x202020, 0xE7E6E1, "divider"),
             (SADesignStyle.textPrimary, 0xF0EFEC, 0x0B0B0B, "textPrimary"),
-            (SADesignStyle.textMuted, 0x898781, 0x7B7974, "textMuted"),
+            (SADesignStyle.textMuted, 0x9F9E99, 0x65635F, "textMuted"),
             (SADesignStyle.toolbarBackground, 0x1A1A19, 0xF4F3EF, "toolbarBackground"),
             (SADesignStyle.cardSurface, 0x2F2E2B, 0xFFFFFF, "cardSurface"),
             (SADesignStyle.cardHairline, 0x34332F, 0xD9D8D2, "cardHairline"),
@@ -46,5 +46,18 @@ final class SADesignStyleTests: XCTestCase {
         XCTAssertEqual(color.greenComponent, 0x66 / 255, accuracy: 0.0001)
         XCTAssertEqual(color.blueComponent, 0xCC / 255, accuracy: 0.0001)
         XCTAssertEqual(color.alphaComponent, 1)
+    }
+
+    /// Verifies muted text reaches the 4.5:1 body-text contrast on every surface the menu cards and toolbar put it on.
+    func testMutedTextIsReadableOnCardSurfaces() {
+        let surfaces: [(NSColor, String)] = [(SADesignStyle.cardSurface, "cardSurface"), (SADesignStyle.hoverFill, "hoverFill"),
+                                             (SADesignStyle.selection, "selection"), (SADesignStyle.toolbarBackground, "toolbarBackground")]
+        for dark in [false, true] {
+            let muted = SADesignAccent.resolved(SADesignStyle.textMuted, dark: dark)
+            for (surface, name) in surfaces {
+                let ratio = SADesignAccent.contrast(muted, SADesignAccent.resolved(surface, dark: dark))
+                XCTAssertGreaterThanOrEqual(ratio, 4.5, "textMuted on \(name) (dark: \(dark)) is \(ratio):1")
+            }
+        }
     }
 }

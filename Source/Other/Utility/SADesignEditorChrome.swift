@@ -18,7 +18,10 @@ import AppKit
         var s = ""
         if modifiers.contains(.control) { s += "⌃" }
         if modifiers.contains(.option) { s += "⌥" }
-        if modifiers.contains(.shift) { s += "⇧" }
+        // AppKit treats an uppercase letter key equivalent as including Shift; show it once.
+        let impliesShift = keyEquivalent.count == 1 && keyEquivalent.uppercased() == keyEquivalent
+            && keyEquivalent.lowercased() != keyEquivalent
+        if modifiers.contains(.shift) || impliesShift { s += "⇧" }
         if modifiers.contains(.command) { s += "⌘" }
         return s + keyEquivalent.uppercased()
     }

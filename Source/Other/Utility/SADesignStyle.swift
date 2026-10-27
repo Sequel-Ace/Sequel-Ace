@@ -34,7 +34,7 @@ import AppKit
     @objc static let hoverFill = dynamic("hoverFill", dark: 0x1E1E1D, light: 0xEAE9E4)
     @objc static let divider = dynamic("divider", dark: 0x202020, light: 0xE7E6E1)
     @objc static let textPrimary = dynamic("textPrimary", dark: 0xF0EFEC, light: 0x0B0B0B)
-    @objc static let textMuted = dynamic("textMuted", dark: 0x898781, light: 0x7B7974)
+    @objc static let textMuted = dynamic("textMuted", dark: 0x9F9E99, light: 0x65635F)
     /// The main window's title bar and toolbar.
     @objc static let toolbarBackground = dynamic("toolbarBackground", dark: 0x1A1A19, light: 0xF4F3EF)
     /// The menu cards' raised surface and their hairline (outline and separators).
