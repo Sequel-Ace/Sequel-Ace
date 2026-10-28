@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPTableInfo.h"
-#import "ImageAndTextCell.h"
 #import "SPDatabaseDocument.h"
 #import "SPTablesList.h"
 #import "SPTableData.h"
@@ -78,6 +77,23 @@
 	// Add activities header
 	[activities addObject:@{@"name" : NSLocalizedString(@"ACTIVITIES", @"header for activities pane")}];
 	[activitiesTable reloadData];
+
+	// The table information pane is a view-based source list with a delegate of its
+	// own, so that the activities pane, which this controller is the delegate of,
+	// stays cell-based. This controller remains the data source of both.
+	__weak SPTableInfo *weakSelf = self;
+	infoTableDelegate = [[SATableInfoTableDelegate alloc] initWithText:^NSString *(NSInteger row) {
+		SPTableInfo *strongSelf = weakSelf;
+		return strongSelf ? [strongSelf->info safeObjectAtIndex:row] : nil;
+	} isGroupRow:^BOOL(NSInteger row) {
+		return row == 0;
+	} shouldSelect:^BOOL(NSInteger row) {
+		// Only the header row, since the information rows are read-only.
+		return row == 0;
+	} headerActivated:^{
+		[weakSelf toggleInfoActivitiesPane];
+	}];
+	[infoTableDelegate attachToTableView:infoTable];
 
 	// Add Information header
 	[info addObject:NSLocalizedString(@"TABLE INFORMATION", @"header for table info pane")];
@@ -410,6 +426,12 @@
 	}
 }
 
+#pragma mark -
+#pragma mark Activities pane delegate
+
+// The table information pane has its own delegate, an SATableInfoTableDelegate;
+// the methods below serve the activities pane only.
+
 /**
  * Give the header row more height than the rows beneath it.
  */
@@ -419,31 +441,32 @@
 }
 
 /**
- * Let only the header row be selected in the table information pane, since its rows
- * are read-only; the activities pane allows every row.
+ * Let every row of the activities pane be selected.
  */
 - (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)rowIndex
 {
-	if (rowIndex == 0) return YES;
-	
-	if (tableView == infoTable) {
-		return NO;
-	} 
-	else {
-		return YES;
+	return YES;
+}
+
+/**
+ * Take an edit of the header row, which a double-click on it starts, as the switch to
+ * the table information pane, and never begin one.
+ */
+- (BOOL)tableView:(NSTableView *)tableView shouldEditTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
+{
+	if (rowIndex == 0) {
+		[self toggleInfoActivitiesPane];
 	}
-	
+
 	return NO;
 }
 
 /**
- * Take a click on a header row as the switch between the table information and the
- * activities pane, and never begin an edit.
+ * Switch between the table information and the activities pane, which share the
+ * space below the tables list, and focus the pane that is shown.
  */
-- (BOOL)tableView:(NSTableView *)tableView shouldEditTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
+- (void)toggleInfoActivitiesPane
 {
-	if (rowIndex > 0) return NO;
-
 	if (![tableInfoScrollView isHidden]) {
 		[tableDocumentInstance setActivityPaneHidden:@0];
 		[[activitiesTable window] makeFirstResponder:activitiesTable];
@@ -457,60 +480,33 @@
 	[activitiesTable deselectAll:nil];
 
 	[self updateActivities];
-	
-	return NO;
 }
 
 /**
  * The tooltip for a row of the activities pane: "Cancel" while the pointer is over the
- * cancel button at the row's right-hand edge, otherwise the activity's name. Rows of
- * the table information pane and the header row get none.
+ * cancel button at the row's right-hand edge, otherwise the activity's name. The header
+ * row gets none.
  */
 - (NSString *)tableView:(NSTableView *)tableView toolTipForCell:(NSCell *)cell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex mouseLocation:(NSPoint)mouseLocation
 {
-	if (tableView == activitiesTable) {
-		if (rowIndex == 0) return @"";
-		
-		if (mouseLocation.x > rect->origin.x + rect->size.width - 30) {
-			return NSLocalizedString(@"Cancel", @"cancel");
-		}
+	if (rowIndex == 0) return @"";
 
-        NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
-
-        return (([[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"])) ?: @"";
-
+	if (mouseLocation.x > rect->origin.x + rect->size.width - 30) {
+		return NSLocalizedString(@"Cancel", @"cancel");
 	}
-	
-	return nil;
+
+	NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
+
+	return (([[dict safeObjectForKey:@"contextInfo"] safeObjectForKey:@"name"])) ?: @"";
 }
 
 /**
- * Draw the top row of either pane as a group row.
+ * Draw the top row of the activities pane as a group row.
  */
 - (BOOL)tableView:(NSTableView *)tableView isGroupRow:(NSInteger)row
 {
-	// This makes the top row (TABLE INFORMATION/ACTIVITIES) have the diff styling
+	// This makes the top row (ACTIVITIES) have the diff styling
 	return row == 0;
-}
-
-/**
- * Give the table information rows their property icon before they are drawn.
- *
- * The header row, the other columns and the activities table are left plain.
- */
-- (void)tableView:(NSTableView *)tableView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
-{
-	if (tableView == infoTable) {
-		if (rowIndex > 0 && [[tableColumn identifier] isEqualToString:@"info"]) {
-			[(ImageAndTextCell*)cell setImage:[NSImage imageNamed:@"table-property"]];
-			[(ImageAndTextCell*)cell setIndentationLevel:0];
-			[(ImageAndTextCell*)cell setDrawsBackground:NO];
-		} 
-		else {
-			[(ImageAndTextCell*)cell setImage:nil];
-			[(ImageAndTextCell*)cell setIndentationLevel:0];
-		}
-	}
 }
 
 #pragma mark -
