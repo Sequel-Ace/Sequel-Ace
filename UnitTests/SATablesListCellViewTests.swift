@@ -124,6 +124,55 @@ final class SATablesListCellViewTests: XCTestCase {
         XCTAssertEqual(source.committed.first?.column, tableView.tableColumns.first)
     }
 
+    func testReturnCommitsOnceAndFocusesTheTable() throws {
+        let cell = try beginEditing(row: 1)
+        let nameField = try XCTUnwrap(cell.textField)
+        let editor = try XCTUnwrap(nameField.currentEditor() as? NSTextView)
+        editor.string = "orders2"
+
+        XCTAssertTrue(cell.control(nameField, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:))))
+
+        XCTAssertEqual(source.committed.map(\.value), ["orders2"])
+        XCTAssertEqual(source.committed.first?.row, 1)
+        XCTAssertTrue(window.firstResponder === tableView)
+    }
+
+    func testTabCommitsOnceWithoutEditingAnotherRow() throws {
+        for command in [#selector(NSResponder.insertTab(_:)), #selector(NSResponder.insertBacktab(_:))] {
+            source.committed.removeAll()
+            let cell = try beginEditing(row: 1)
+            let nameField = try XCTUnwrap(cell.textField)
+            let editor = try XCTUnwrap(nameField.currentEditor() as? NSTextView)
+            editor.string = "orders2"
+
+            XCTAssertTrue(cell.control(nameField, textView: editor, doCommandBy: command))
+
+            XCTAssertEqual(source.committed.map(\.value), ["orders2"], NSStringFromSelector(command))
+            XCTAssertTrue(window.firstResponder === tableView, NSStringFromSelector(command))
+            for row in 0..<source.names.count {
+                let rowCell = tableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? SATablesListCellView
+                XCTAssertNil(rowCell?.textField?.currentEditor(), "\(NSStringFromSelector(command)) row \(row)")
+            }
+        }
+    }
+
+    func testRenameOnlyForTheSingleSelectedRowTheDelegateAllows() {
+        XCTAssertFalse(SATablesListCellView.canRename(row: 1, in: tableView), "nothing selected")
+
+        tableView.selectRowIndexes(IndexSet(integer: 1), byExtendingSelection: false)
+        XCTAssertTrue(SATablesListCellView.canRename(row: 1, in: tableView))
+        XCTAssertFalse(SATablesListCellView.canRename(row: 2, in: tableView), "another row")
+        XCTAssertFalse(SATablesListCellView.canRename(row: -1, in: tableView), "no row")
+
+        source.allowsEditing = false
+        XCTAssertFalse(SATablesListCellView.canRename(row: 1, in: tableView), "delegate refuses")
+        source.allowsEditing = true
+
+        tableView.allowsMultipleSelection = true
+        tableView.selectRowIndexes(IndexSet([1, 2]), byExtendingSelection: false)
+        XCTAssertFalse(SATablesListCellView.canRename(row: 1, in: tableView), "several rows selected")
+    }
+
     func testEditColumnStartsRenamingTheRow() throws {
         // Return on a selected row and the Rename menu item both use editColumn.
         tableView.editColumn(0, row: 2, with: nil, select: true)
@@ -162,6 +211,7 @@ private final class StubSource: NSObject, NSTableViewDataSource, NSTableViewDele
     var groupRows: Set<Int> = [0, 3]
     var comments: [Int: String] = [:]
     var committed: [(value: String?, column: NSTableColumn?, row: Int)] = []
+    var allowsEditing = true
 
     func numberOfRows(in tableView: NSTableView) -> Int {
         names.count
@@ -179,6 +229,10 @@ private final class StubSource: NSObject, NSTableViewDataSource, NSTableViewDele
             tableTypeRawValue: groupRows.contains(row) ? -1 : 0,
             comment: comments[row]
         )
+    }
+
+    func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
+        allowsEditing
     }
 
     func tableView(_ tableView: NSTableView, setObjectValue object: Any?, for tableColumn: NSTableColumn?, row: Int) {

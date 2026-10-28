@@ -260,26 +260,26 @@ import AppKit
     }
 
     #if DEBUG
-    override func reloadData() {
-        super.reloadData()
+    override func layout() {
+        super.layout()
         // Rows are SATablesListCellViews built in code; a cell-based table
-        // would never ask for them and draw its nib data cell instead.
-        if !hasCheckedViewBasedRows, numberOfRows > 0 {
+        // would never show them and draw its nib data cell instead. Checked
+        // once, after the first layout that shows rows, without creating views.
+        let visibleRows = rows(in: visibleRect)
+        if !hasCheckedViewBasedRows, visibleRows.length > 0 {
             hasCheckedViewBasedRows = true
-            assert(view(atColumn: 0, row: 0, makeIfNecessary: true) != nil, "The tables list must be view-based")
+            assert(view(atColumn: 0, row: visibleRows.location, makeIfNecessary: false) != nil, "The tables list must be view-based")
         }
     }
     #endif
 
     /// A click into a row's name starts renaming it without going through the
-    /// delegate's edit check that Return and the Rename menu item use, so ask
-    /// it here too: renaming is blocked while the document is working.
+    /// checks that Return and the Rename menu item use, so apply them here
+    /// too: only the single selected row, and never while the document works.
     override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
-        if let textField = responder as? NSTextField, textField.isEditable {
-            let row = self.row(for: textField)
-            if row >= 0, delegate?.tableView?(self, shouldEdit: tableColumns.first, row: row) == false {
-                return false
-            }
+        if let textField = responder as? NSTextField, textField.isEditable,
+           !SATablesListCellView.canRename(row: row(for: textField), in: self) {
+            return false
         }
         return super.validateProposedFirstResponder(responder, for: event)
     }

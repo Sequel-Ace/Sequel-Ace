@@ -145,6 +145,16 @@ import AppKit
 
     // MARK: - Renaming
 
+    /// Whether `row`'s name may be edited: only as the single selected row,
+    /// as the Rename command requires, and only when the table's delegate
+    /// allows it (it refuses while the document is working).
+    static func canRename(row: Int, in tableView: NSTableView) -> Bool {
+        guard row >= 0, tableView.numberOfSelectedRows == 1, tableView.isRowSelected(row) else {
+            return false
+        }
+        return tableView.delegate?.tableView?(tableView, shouldEdit: tableView.tableColumns.first, row: row) ?? true
+    }
+
     func controlTextDidEndEditing(_ notification: Notification) {
         guard !isCancellingRename, let nameField = textField, let tableView = enclosingTableView else { return }
 
@@ -163,8 +173,12 @@ import AppKit
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         switch commandSelector {
-        case #selector(NSResponder.insertNewline(_:)):
-            // Moving focus back to the list ends editing, which commits.
+        case #selector(NSResponder.insertNewline(_:)),
+             #selector(NSResponder.insertTab(_:)),
+             #selector(NSResponder.insertBacktab(_:)):
+            // Moving focus back to the list ends editing, which commits. Tab
+            // must not carry on into the next row's name: the data source
+            // renames the selected table, whichever row is being edited.
             focusTableView()
             return true
         case #selector(NSResponder.cancelOperation(_:)), #selector(NSResponder.complete(_:)):
