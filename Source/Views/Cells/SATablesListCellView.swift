@@ -217,7 +217,9 @@ import AppKit
         nameField.stringValue = objectValue as? String ?? ""
         needsLayout = true
 
-        guard row >= 0 else { return }
+        // The document may have become busy since editing began; ask the same
+        // question that allowed it, and leave the name as it was if it now says no.
+        guard row >= 0, tableView.delegate?.tableView?(tableView, shouldEdit: tableView.tableColumns.first, row: row) ?? true else { return }
         tableView.dataSource?.tableView?(tableView, setObjectValue: newName, for: tableView.tableColumns.first, row: row)
     }
 

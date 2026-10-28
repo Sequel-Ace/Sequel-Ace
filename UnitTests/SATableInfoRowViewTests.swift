@@ -152,6 +152,30 @@ final class SATableInfoRowViewTests: XCTestCase {
         }
     }
 
+    func testLongLabelYieldsRoomForTheValue() throws {
+        let label = String(repeating: "Informations sur la table ", count: 4)
+        let width: CGFloat = 160
+        source.rows = ["TABLE INFORMATION", "\(label): 200"]
+        tableView.tableColumns[0].width = width
+        tableView.frame.size.width = width
+        tableView.reloadData()
+        tableView.layoutSubtreeIfNeeded()
+
+        let cell = try XCTUnwrap(tableView.view(atColumn: 0, row: 1, makeIfNecessary: true) as? SATableInfoRowView)
+        cell.layoutSubtreeIfNeeded()
+        let labelField = try XCTUnwrap(cell.textField)
+        let valueField = try XCTUnwrap(cell.valueField)
+
+        let available = cell.bounds.maxX - labelField.frame.minX
+        let natural = ceil(valueField.attributedStringValue.size().width)
+        XCTAssertGreaterThan(ceil(labelField.attributedStringValue.size().width), available, "the label cannot fit")
+        XCTAssertGreaterThan(valueField.frame.width, 0)
+        XCTAssertGreaterThanOrEqual(valueField.frame.width, min(natural, available * SATableInfoRowView.minimumValueShare) - 0.5)
+        XCTAssertFalse(labelField.frame.intersects(valueField.frame))
+        XCTAssertGreaterThanOrEqual(valueField.frame.minX - labelField.frame.maxX, SATableInfoRowView.labelValueSpacing)
+        XCTAssertLessThanOrEqual(valueField.frame.maxX, cell.bounds.maxX)
+    }
+
     func testGroupTitleLinesUpWithTheLabels() throws {
         source.rows = ["TABLE INFORMATION", "rows: 200"]
         for style in [NSTableView.RowSizeStyle.small, .medium, .large] {

@@ -13,7 +13,9 @@ import AppKit
 /// A "Label: value" row shows the label in secondary text at the leading edge
 /// and the value right-aligned at the trailing edge. The label keeps its width
 /// and the value truncates in the space left, never closer than
-/// `labelValueSpacing` to the label; a label wider than the row truncates too.
+/// `labelValueSpacing` to the label; a label so long that the value would be
+/// squeezed out truncates instead, leaving the value `minimumValueShare` of
+/// the row (or the width it needs, if less).
 ///
 /// As in the tables list above, the views are laid out with frames, so that a
 /// source-list table can position the text and set its font for the Sidebar
@@ -34,6 +36,9 @@ import AppKit
 
     /// The least space between a label and its value.
     static let labelValueSpacing: CGFloat = 8
+
+    /// The share of the row a value keeps, at most, when the label is long.
+    static let minimumValueShare: CGFloat = 0.4
 
     /// Lines the text up with the object icons in the tables list.
     private static let leadingInset: CGFloat = 3
@@ -154,11 +159,16 @@ import AppKit
             valueField.font = font
         }
 
-        // The label takes the width it needs, up to the row's width less the
-        // spacing; the value has the rest, right-aligned, and truncates first.
+        // The label takes the width it needs and the value has the rest,
+        // right-aligned, truncating first. The label yields once the value
+        // would be left with less than `minimumValueShare` of the row (or all
+        // it needs, if that is less), so a long translated label truncates
+        // instead of hiding the value.
         var labelFrame = labelField.frame
         let available = max(0, bounds.maxX - labelFrame.minX)
-        labelFrame.size.width = min(ceil(labelCell.cellSize.width), max(0, available - Self.labelValueSpacing))
+        let room = max(0, available - Self.labelValueSpacing)
+        let reservedForValue = min(ceil(valueField.cell?.cellSize.width ?? 0), available * Self.minimumValueShare, room)
+        labelFrame.size.width = min(ceil(labelCell.cellSize.width), room - reservedForValue)
         labelField.frame = labelFrame
 
         let valueX = labelFrame.maxX + Self.labelValueSpacing

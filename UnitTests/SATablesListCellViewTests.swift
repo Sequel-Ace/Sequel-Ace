@@ -160,6 +160,21 @@ final class SATablesListCellViewTests: XCTestCase {
         XCTAssertEqual(source.committed.first?.column, tableView.tableColumns.first)
     }
 
+    func testEndEditingDoesNotCommitOnceTheDelegateRefuses() throws {
+        let cell = try beginEditing(row: 1)
+        let nameField = try XCTUnwrap(cell.textField)
+        let editor = try XCTUnwrap(nameField.currentEditor() as? NSTextView)
+        editor.string = "orders2"
+
+        // The document became busy after editing started.
+        source.allowsEditing = false
+        XCTAssertTrue(window.makeFirstResponder(tableView))
+
+        XCTAssertTrue(source.committed.isEmpty)
+        XCTAssertEqual(nameField.stringValue, source.names[1])
+        XCTAssertNil(nameField.currentEditor())
+    }
+
     func testReturnCommitsOnceAndFocusesTheTable() throws {
         let cell = try beginEditing(row: 1)
         let nameField = try XCTUnwrap(cell.textField)
