@@ -271,6 +271,9 @@
 /* range of float */
 "Accurate to approx. 7 decimal places" = "Accurate to approx. 7 decimal places";
 
+/* main window : sidebar bottom bar : tooltip and accessibility description of the pull-down button that lists actions for the selected tables */
+"Actions" = "Actions";
+
 /* active connection window is busy. please wait and try again. tooltip */
 "Active connection window is busy. Please wait and try again." = "Active connection window is busy. Please wait and try again.";
 

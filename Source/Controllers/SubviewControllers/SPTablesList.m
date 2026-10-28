@@ -121,6 +121,21 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Configure the table information pane
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 
+	// The bottom bar uses borderless symbol buttons. The divider's extra drag area
+	// is the bar's image view, which loses its grip image.
+	NSView *dragHandle = nil;
+	for (NSView *sibling in [[toolbarAddButton superview] subviews]) {
+		if ([sibling isKindOfClass:[NSImageView class]]) {
+			dragHandle = sibling;
+			break;
+		}
+	}
+	[SASidebarBottomBar styleWithAddButton:toolbarAddButton
+	                         actionsButton:toolbarActionsButton
+	                          reloadButton:toolbarReloadButton
+	                            infoToggle:[tableListSplitView collapseToggleButton]
+	                            dragHandle:dragHandle];
+
     // Collapse the pane if the last state was collapsed
     // after a delay - to fix #719
     if(user_defaults_get_bool_ud(SPTableInformationPanelCollapsed, prefs) == YES){

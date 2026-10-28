@@ -69,6 +69,8 @@
 
 @implementation SPSplitView
 
+@synthesize collapseToggleButton = collapseToggleButton;
+
 + (void)initialize {
 }
 

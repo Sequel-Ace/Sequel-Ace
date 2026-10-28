@@ -57,6 +57,12 @@
 // Collapsing/expanding
 - (void)setCollapsibleSubviewIndex:(NSUInteger)subviewIndex;
 - (void)setToggleCollapseButton:(NSButton *)aButton;
+
+/**
+ * The button that collapses and expands the collapsible subview, if any.
+ */
+@property (nonatomic, readonly) NSButton *collapseToggleButton;
+
 - (BOOL)isCollapsibleSubviewCollapsed;
 - (IBAction)toggleCollapse:(id)sender;
 - (void)setCollapsibleSubviewCollapsed:(BOOL)shouldCollapse animate:(BOOL)shouldAnimate;
