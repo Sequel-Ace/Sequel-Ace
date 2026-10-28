@@ -89,6 +89,37 @@ final class SATablesListCellViewTests: XCTestCase {
         XCTAssertLessThan(sizes[0], sizes[1])
     }
 
+    func testGroupTitleLinesUpWithTheRowIcons() throws {
+        for style in [NSTableView.RowSizeStyle.small, .medium, .large] {
+            tableView.rowSizeStyle = style
+            tableView.reloadData()
+            tableView.layoutSubtreeIfNeeded()
+
+            let item = try XCTUnwrap(tableView.view(atColumn: 0, row: 1, makeIfNecessary: true) as? SATablesListCellView)
+            let group = try XCTUnwrap(tableView.view(atColumn: 0, row: 0, makeIfNecessary: true) as? SATablesListCellView)
+            item.layoutSubtreeIfNeeded()
+            group.layoutSubtreeIfNeeded()
+
+            let icon = try XCTUnwrap(item.imageView)
+            let title = try XCTUnwrap(group.textField)
+            let iconX = tableView.convert(icon.bounds, from: icon).minX
+            let titleX = tableView.convert(title.bounds, from: title).minX
+            XCTAssertEqual(titleX, iconX, accuracy: 1, "row size style \(style.rawValue)")
+            XCTAssertGreaterThan(iconX, 4, "row size style \(style.rawValue)")
+        }
+    }
+
+    func testGroupTitleStaysWhereAppKitPutsItWithoutItemRows() throws {
+        source.names = ["TABLES", "PROCS & FUNCS"]
+        source.groupRows = [0, 1]
+        tableView.reloadData()
+        tableView.layoutSubtreeIfNeeded()
+
+        let group = try XCTUnwrap(tableView.view(atColumn: 0, row: 0, makeIfNecessary: true) as? SATablesListCellView)
+        group.layoutSubtreeIfNeeded()
+        XCTAssertEqual(try XCTUnwrap(group.textField).frame.minX, 0, accuracy: 0.5)
+    }
+
     func testCommentHiddenWhenEmpty() throws {
         for (comment, hidden) in [(nil, true), ("", true), ("x", false)] as [(String?, Bool)] {
             let cell = SATablesListCellView.make(in: tableView, isGroupRow: false, name: "orders", tableTypeRawValue: 0, comment: comment)

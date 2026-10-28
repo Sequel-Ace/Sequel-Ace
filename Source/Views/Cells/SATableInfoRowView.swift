@@ -22,7 +22,10 @@ import AppKit
 /// which happens when the cell is laid out or drawn.
 ///
 /// Each kind of row has its own reuse identifier, so a cell styled as a header
-/// by AppKit is never handed back for another row.
+/// by AppKit is never handed back for another row. AppKit lays the header's
+/// title out short of where it puts the labels below it; the title is moved in
+/// to the first label's edge after AppKit has laid it out (see
+/// `SATablesListCellView.alignTitle(of:to:)`).
 @objc(SATableInfoRowView) final class SATableInfoRowView: NSTableCellView {
 
     static let groupIdentifier = NSUserInterfaceItemIdentifier("SATableInfoGroupCell")
@@ -121,15 +124,27 @@ import AppKit
         }
     }
 
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        needsLayout = true
+    }
+
     override func layout() {
         super.layout()
         layoutLabelAndValue()
+        indentGroupTitle()
     }
 
     override func viewWillDraw() {
         // AppKit sets the label's font and frame for the row size style here.
         super.viewWillDraw()
         layoutLabelAndValue()
+        indentGroupTitle()
+    }
+
+    private func indentGroupTitle() {
+        guard identifier == Self.groupIdentifier else { return }
+        SATablesListCellView.alignTitle(of: self) { (row: SATableInfoRowView) in row.textField }
     }
 
     private func layoutLabelAndValue() {

@@ -19,7 +19,11 @@ import AppKit
 /// `viewWillDraw`), so the comment is matched to the name right after that.
 ///
 /// Item and group rows use separate reuse identifiers, so a cell styled as a
-/// header by AppKit is never handed back for an item row.
+/// header by AppKit is never handed back for an item row. AppKit lays a group
+/// row's title out at the cell's leading edge, short of where it puts the
+/// icons of the rows below; the title is moved in to the first item row's icon
+/// after AppKit has laid it out (see `alignTitle(of:to:)`), as
+/// Finder and Mail line their section titles up with their rows.
 ///
 /// Renaming happens in place: the cell is its name field's delegate and hands
 /// the trimmed name to the table's data source through
@@ -34,6 +38,7 @@ import AppKit
     /// The object's comment, after the name. Nil in group rows.
     private(set) var commentField: NSTextField?
 
+    private let isGroupRow: Bool
     private var isCancellingRename = false
 
     /// Returns a cell for a row of `tableView`, reusing one of the right kind
@@ -48,6 +53,7 @@ import AppKit
     }
 
     private init(identifier: NSUserInterfaceItemIdentifier, isGroupRow: Bool) {
+        self.isGroupRow = isGroupRow
         super.init(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
         self.identifier = identifier
 
@@ -112,15 +118,52 @@ import AppKit
         }
     }
 
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        needsLayout = true
+    }
+
     override func layout() {
         super.layout()
         layoutComment()
+        indentGroupTitle()
     }
 
     override func viewWillDraw() {
         // AppKit sets the name's font and frame for the row size style here.
         super.viewWillDraw()
         layoutComment()
+        indentGroupTitle()
+    }
+
+    private func indentGroupTitle() {
+        guard isGroupRow else { return }
+        Self.alignTitle(of: self) { (item: SATablesListCellView) in item.imageView }
+    }
+
+    /// Moves the title of the group cell `groupCell` in to the leading edge of
+    /// `leadingView` of the first visible item row of its table, which AppKit
+    /// has laid out for the table's style and row size style. Leaves the title
+    /// where AppKit put it when the table has no such row.
+    static func alignTitle<Cell: NSTableCellView>(of groupCell: NSTableCellView, to leadingView: (Cell) -> NSView?) {
+        // A group row that floats at the top of the list sits in the scroll view, not the table.
+        var ancestor = groupCell.superview
+        while let view = ancestor, !(view is NSTableView || view is NSScrollView) {
+            ancestor = view.superview
+        }
+        guard let table = ancestor as? NSTableView ?? (ancestor as? NSScrollView)?.documentView as? NSTableView,
+              let title = groupCell.textField, let rows = Range(table.rows(in: table.visibleRect)) else { return }
+
+        for row in rows where !(table.delegate?.tableView?(table, isGroupRow: row) ?? false) {
+            guard let item = table.view(atColumn: 0, row: row, makeIfNecessary: false) as? Cell else { continue }
+            item.layoutSubtreeIfNeeded()
+            guard let leading = leadingView(item) else { return }
+            let edge = groupCell.convert(leading.bounds, from: leading).minX
+            if edge > 0 {
+                title.frame = NSRect(x: edge, y: title.frame.minY, width: max(0, groupCell.bounds.maxX - edge), height: title.frame.height)
+            }
+            return
+        }
     }
 
     private func matchCommentFontToName() {
@@ -249,3 +292,4 @@ private final class SATablesListNameField: NSTextField {
         superview?.needsLayout = true
     }
 }
+

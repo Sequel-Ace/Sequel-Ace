@@ -152,6 +152,37 @@ final class SATableInfoRowViewTests: XCTestCase {
         }
     }
 
+    func testGroupTitleLinesUpWithTheLabels() throws {
+        source.rows = ["TABLE INFORMATION", "rows: 200"]
+        for style in [NSTableView.RowSizeStyle.small, .medium, .large] {
+            tableView.rowSizeStyle = style
+            tableView.reloadData()
+            tableView.layoutSubtreeIfNeeded()
+
+            let group = try XCTUnwrap(tableView.view(atColumn: 0, row: 0, makeIfNecessary: true) as? SATableInfoRowView)
+            let pair = try XCTUnwrap(tableView.view(atColumn: 0, row: 1, makeIfNecessary: true) as? SATableInfoRowView)
+            group.layoutSubtreeIfNeeded()
+            pair.layoutSubtreeIfNeeded()
+
+            let title = try XCTUnwrap(group.textField)
+            let label = try XCTUnwrap(pair.textField)
+            let titleX = tableView.convert(title.bounds, from: title).minX
+            let labelX = tableView.convert(label.bounds, from: label).minX
+            XCTAssertEqual(titleX, labelX, accuracy: 1, "row size style \(style.rawValue)")
+            XCTAssertGreaterThan(labelX, 4, "row size style \(style.rawValue)")
+        }
+    }
+
+    func testGroupTitleStaysWhereAppKitPutsItWithoutItemRows() throws {
+        source.rows = ["TABLE INFORMATION"]
+        tableView.reloadData()
+        tableView.layoutSubtreeIfNeeded()
+
+        let group = try XCTUnwrap(tableView.view(atColumn: 0, row: 0, makeIfNecessary: true) as? SATableInfoRowView)
+        group.layoutSubtreeIfNeeded()
+        XCTAssertEqual(try XCTUnwrap(group.textField).frame.minX, 0, accuracy: 0.5)
+    }
+
     func testValueFollowsTheLabelsRowSizeStyle() throws {
         source.rows = ["TABLE INFORMATION", "rows: 200"]
         tableView.reloadData()
