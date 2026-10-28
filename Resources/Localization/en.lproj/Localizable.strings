@@ -1538,6 +1538,9 @@
 /* Errors title */
 "Errors" = "Errors";
 
+/* Accessibility name of an event's icon in the tables list */
+"Event" = "Event";
+
 /* Mysql Help Viewer : Help Topic: Example section title */
 "Example:" = "Example:";
 
@@ -1691,6 +1694,9 @@
 
 /* function */
 "function" = "function";
+
+/* Accessibility name of a stored function's icon in the tables list */
+"Function" = "Function";
 
 /* header for function info pane */
 "FUNCTION INFORMATION" = "FUNCTION INFORMATION";
@@ -2259,6 +2265,9 @@
 
 /* procedure */
 "procedure" = "procedure";
+
+/* Accessibility name of a stored procedure's icon in the tables list */
+"Procedure" = "Procedure";
 
 /* header for procedure info pane */
 "PROCEDURE INFORMATION" = "PROCEDURE INFORMATION";
@@ -2870,7 +2879,8 @@
 /* csv export table heading
  table
  Table Structure : Collation dropdown : 'item is the same as the collation of table' marker
- Table Structure : Encoding dropdown : 'item is table default' marker */
+ Table Structure : Encoding dropdown : 'item is table default' marker
+ Accessibility name of a table's icon in the tables list */
 "Table" = "Table";
 
 /* export label showing that the app is fetching data for a specific table */
@@ -3404,6 +3414,9 @@
 
 /* view */
 "view" = "view";
+
+/* Accessibility name of a view's icon in the tables list */
+"View" = "View";
 
 /* Release notes button title */
 "View full release notes" = "View full release notes";

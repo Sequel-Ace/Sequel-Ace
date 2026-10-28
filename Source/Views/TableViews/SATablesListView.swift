@@ -76,10 +76,21 @@ import AppKit
     // stale and must not conceal feedback that was re-shown mid-animation.
     private var feedbackVisibilityGeneration = 0
 
+    #if DEBUG
+    private var hasCheckedViewBasedRows = false
+    #endif
+
     override func awakeFromNib() {
         super.awakeFromNib()
         // The type-ahead below replaces the built-in single-letter type select.
         allowsTypeSelect = false
+
+        // A native sidebar: rows, text and icons follow the Sidebar icon size
+        // in System Settings. Rows touch, as in Finder; the nib's 2 pt vertical
+        // spacing would add a gap between them.
+        style = .sourceList
+        rowSizeStyle = .default
+        intercellSpacing = NSSize(width: 3, height: 0)
 
         // A nil queue preserves NotificationCenter's synchronous delivery.
         // The start observer must run inside selectRowIndexes(_:)'s delegate
@@ -246,6 +257,31 @@ import AppKit
         default:
             return false
         }
+    }
+
+    #if DEBUG
+    override func reloadData() {
+        super.reloadData()
+        // Rows are SATablesListCellViews built in code; a cell-based table
+        // would never ask for them and draw its nib data cell instead.
+        if !hasCheckedViewBasedRows, numberOfRows > 0 {
+            hasCheckedViewBasedRows = true
+            assert(view(atColumn: 0, row: 0, makeIfNecessary: true) != nil, "The tables list must be view-based")
+        }
+    }
+    #endif
+
+    /// A click into a row's name starts renaming it without going through the
+    /// delegate's edit check that Return and the Rename menu item use, so ask
+    /// it here too: renaming is blocked while the document is working.
+    override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
+        if let textField = responder as? NSTextField, textField.isEditable {
+            let row = self.row(for: textField)
+            if row >= 0, delegate?.tableView?(self, shouldEdit: tableColumns.first, row: row) == false {
+                return false
+            }
+        }
+        return super.validateProposedFirstResponder(responder, for: event)
     }
 
     override func mouseDown(with event: NSEvent) {
