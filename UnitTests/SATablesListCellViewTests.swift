@@ -96,6 +96,11 @@ final class SATablesListCellViewTests: XCTestCase {
         }
     }
 
+    func testMultiLineCommentShowsOnOneLine() throws {
+        let cell = SATablesListCellView.make(in: tableView, isGroupRow: false, name: "orders", tableTypeRawValue: 0, comment: "customer\nrecords\nby\tregion")
+        XCTAssertEqual(try XCTUnwrap(cell.commentField).stringValue, "customer records by region")
+    }
+
     func testCommentStartsAfterTheName() throws {
         source.comments[1] = "customer records"
         tableView.reloadData()

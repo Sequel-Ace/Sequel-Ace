@@ -121,20 +121,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Configure the table information pane
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 
-	// The bottom bar uses borderless symbol buttons. The divider's extra drag area
-	// is the bar's image view, which loses its grip image.
-	NSView *dragHandle = nil;
-	for (NSView *sibling in [[toolbarAddButton superview] subviews]) {
-		if ([sibling isKindOfClass:[NSImageView class]]) {
-			dragHandle = sibling;
-			break;
-		}
-	}
+	// The bottom bar uses borderless symbol buttons. The window's sidebar divider
+	// extends its drag area over the bar's image view, which loses its grip image.
 	[SASidebarBottomBar styleWithAddButton:toolbarAddButton
 	                         actionsButton:toolbarActionsButton
 	                          reloadButton:toolbarReloadButton
 	                            infoToggle:[tableListSplitView collapseToggleButton]
-	                            dragHandle:dragHandle];
+	                            dragHandle:[[tableDocumentInstance contentViewSplitter] additionalDragHandleView]];
 
     // Collapse the pane if the last state was collapsed
     // after a delay - to fix #719
@@ -1736,7 +1729,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 #pragma mark TableView delegate methods
 
 /**
- * Traps enter and esc and edit/cancel without entering next row
+ * In the filter field, the up and down arrows move the selection in the list.
+ * In the name fields of the add-table and copy-table sheets, Return commits the
+ * typed name and keeps the field focused, and Escape abandons the edit.
  */
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)command
 {
@@ -1759,12 +1754,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 	}
 	else {
-		// When enter/return is used, save the row.
+		// Return commits the typed name and keeps the field focused.
 		if ( [textView methodForSelector:command] == [textView methodForSelector:@selector(insertNewline:)] ) {
 			[[control window] makeFirstResponder:control];
 			return YES;
 		}
-		// When the escape key is used, abort the rename.
+		// Escape abandons the edit.
 		else if ( [[control window] methodForSelector:command] == [[control window] methodForSelector:@selector(cancelOperation:)] ||
 				   [textView methodForSelector:command] == [textView methodForSelector:@selector(complete:)] ) {
 			

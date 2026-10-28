@@ -41,8 +41,9 @@ import AppKit
         }
 
         if let infoToggle {
-            makeBorderless(infoToggle, symbol: "info.circle.fill")
+            // The type comes first; the look and images below build on it.
             infoToggle.setButtonType(.toggle)
+            makeBorderless(infoToggle, symbol: "info.circle.fill")
             infoToggle.alternateImage = symbol("info.circle", description: infoToggle.toolTip)
         }
 
@@ -61,8 +62,10 @@ import AppKit
         button.imagePosition = .imageOnly
         button.toolTip = title
         button.setAccessibilityLabel(title)
-        (button.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
-        (button.cell as? NSPopUpButtonCell)?.alternateImage = nil
+        if let cell = button.cell as? NSPopUpButtonCell {
+            cell.arrowPosition = .noArrow
+            cell.alternateImage = nil
+        }
 
         // A pull-down shows its first, hidden item in the button.
         button.itemArray.first?.image = symbol("ellipsis.circle", description: title)

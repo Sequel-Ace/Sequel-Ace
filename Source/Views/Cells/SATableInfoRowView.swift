@@ -54,7 +54,10 @@ import AppKit
     /// the right kind when the table has one queued.
     @objc(makeInTableView:text:isGroupRow:)
     static func make(in tableView: NSTableView, text: String, isGroupRow: Bool) -> NSTableCellView {
-        let row = isGroupRow ? nil : SATableInfoRow.split(text)
+        // Labels are capitalized for the app's language, not the region's: an
+        // English label stays "Is updatable" in a Turkish region.
+        let language = Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en")
+        let row = isGroupRow ? nil : SATableInfoRow.split(text, locale: language)
         let kind: Kind = isGroupRow ? .group : (row == nil ? .text : .pair)
         let cell = tableView.makeView(withIdentifier: kind.identifier, owner: nil) as? SATableInfoRowView
             ?? SATableInfoRowView(kind: kind)

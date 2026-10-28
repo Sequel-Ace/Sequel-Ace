@@ -90,11 +90,18 @@ import AppKit
         imageView?.image = SASidebarObjectGlyph.image(forTableTypeRawValue: tableTypeRawValue)
 
         if let commentField {
-            commentField.stringValue = comment ?? ""
+            commentField.stringValue = Self.singleLine(comment ?? "")
             commentField.isHidden = (comment ?? "").isEmpty
             matchCommentFontToName()
         }
         needsLayout = true
+    }
+
+    /// A comment on one line, as the tables list has always shown it: line
+    /// breaks and tabs become spaces.
+    static func singleLine(_ comment: String) -> String {
+        comment.components(separatedBy: .newlines).joined(separator: " ")
+            .replacingOccurrences(of: "\t", with: " ")
     }
 
     // MARK: - Layout

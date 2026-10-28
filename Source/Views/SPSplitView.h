@@ -70,6 +70,11 @@
 // Additional drag handle
 - (void)setAdditionalDragHandleView:(NSView *)aView;
 
+/**
+ * The view that extends the divider's drag area, if any.
+ */
+@property (nonatomic, readonly) NSView *additionalDragHandleView;
+
 // Constraints
 - (void)setMinSize:(CGFloat)newMinSize ofSubviewAtIndex:(NSUInteger)subviewIndex;
 - (void)setMaxSize:(CGFloat)newMaxSize ofSubviewAtIndex:(NSUInteger)subviewIndex;

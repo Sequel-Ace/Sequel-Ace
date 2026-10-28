@@ -69,6 +69,23 @@ final class SATableInfoRowViewTests: XCTestCase {
         XCTAssertEqual(headerActivations, 0)
     }
 
+    func testDoubleClickOnTheHeaderActivatesIt() throws {
+        let clickedTable = ClickedRowTableView()
+        delegate.attach(to: clickedTable)
+        let target = try XCTUnwrap(clickedTable.target as? NSObject)
+        let doubleAction = try XCTUnwrap(clickedTable.doubleAction)
+
+        // Row 1 is a "Label: value" row.
+        clickedTable.stubbedClickedRow = 1
+        target.perform(doubleAction, with: clickedTable)
+        XCTAssertEqual(headerActivations, 0)
+
+        // Row 0 is the header.
+        clickedTable.stubbedClickedRow = 0
+        target.perform(doubleAction, with: clickedTable)
+        XCTAssertEqual(headerActivations, 1)
+    }
+
     func testEachKindOfRowHasItsOwnIdentifier() throws {
         let identifiers = [SATableInfoRowView.groupIdentifier, SATableInfoRowView.textIdentifier, SATableInfoRowView.pairIdentifier]
         XCTAssertEqual(Set(identifiers).count, 3)
@@ -151,6 +168,15 @@ final class SATableInfoRowViewTests: XCTestCase {
             sizes.append(labelSize)
         }
         XCTAssertLessThan(sizes[0], sizes[1])
+    }
+}
+
+/// A table that reports a chosen row as clicked, as a double-click would.
+private final class ClickedRowTableView: NSTableView {
+    var stubbedClickedRow = -1
+
+    override var clickedRow: Int {
+        stubbedClickedRow
     }
 }
 
