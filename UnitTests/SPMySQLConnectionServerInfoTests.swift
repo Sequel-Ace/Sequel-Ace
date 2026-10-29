@@ -30,8 +30,25 @@ final class SPMySQLConnectionServerInfoTests: XCTestCase {
         XCTAssertTrue(handshakenConnection(serverVersion: "5.5.5-10.11.8-MariaDB-ubu2204").isMariaDB)
     }
 
-    func testServerVersionQuestionsSurviveADisconnect() {
+    /// The teardown a tab close runs: state is connected, the handle is released.
+    func testServerVersionQuestionsSurviveAnActiveTeardown() {
         let connection = handshakenConnection(serverVersion: "10.5.27-MariaDB")
+        connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+
+        connection.disconnect()
+
+        // The active teardown ran rather than the early return for an inactive connection
+        XCTAssertEqual(connection.value(forKey: "state") as? UInt, UInt(SPMySQLDisconnected.rawValue))
+        XCTAssertEqual(connection.value(forKey: "serverVersionNumber") as? UInt, 0)
+        XCTAssertTrue(connection.isMariaDB)
+        XCTAssertFalse(connection.isNotMariadb103)
+    }
+
+    /// Closing a tab whose connection was already closed still asks the predicates.
+    func testServerVersionQuestionsSurviveDisconnectingAnAlreadyClosedConnection() {
+        let connection = handshakenConnection(serverVersion: "10.5.27-MariaDB")
+        connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+
         connection.disconnect()
 
         XCTAssertTrue(connection.isMariaDB)
