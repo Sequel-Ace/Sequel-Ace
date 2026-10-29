@@ -40,6 +40,14 @@ CMAKE_SHA256="0c5d65251c14cc884bfa16bdbed3c263ce5bffe2e21c0d0d00962cb0610464fa"
 # DEPLOYMENT_TARGET in build-openssl.sh.
 DEPLOYMENT_TARGET="13.5"
 ARCHS=(arm64 x86_64)
+# CMAKE_INSTALL_PREFIX is baked into the client as its compile-time plugin and
+# share directories, so it must not name a directory on the machine that built
+# it: whatever scratch path this script ran under would ship inside the dylib
+# and surface in users' dlopen errors (#2773). The prefix is MySQL's own
+# conventional one and DESTDIR redirects the files to where this script wants
+# them. The app overrides the directory at runtime anyway (MYSQL_PLUGIN_DIR),
+# so this only decides what an unoverridden client would say.
+INSTALL_PREFIX="/usr/local/mysql"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 client_dir="$script_dir/../SPMySQLFramework/MySQL Client Libraries"
@@ -49,6 +57,8 @@ openssl_dir="${OPENSSL_BUILD_DIR:-$script_dir/build/openssl}"
 mkdir -p "$work_dir" "$openssl_dir"
 work_dir="$(cd "$work_dir" && pwd)"
 openssl_dir="$(cd "$openssl_dir" && pwd)"
+# Each slice installs with DESTDIR set, so its tree sits below the prefix.
+install_tree() { printf '%s' "$work_dir/destdir-$1$INSTALL_PREFIX"; }
 mysql_tarball="mysql-$MYSQL_VERSION.tar.gz"
 mysql_url="https://cdn.mysql.com/Downloads/MySQL-${MYSQL_VERSION%.*}/$mysql_tarball"
 cmake_tarball="cmake-$CMAKE_VERSION-macos-universal.tar.gz"
@@ -156,14 +166,34 @@ if [ ! -f "$src/CMakeLists.txt" ]; then
     tar -C "$src" --strip-components=1 -zxf "$work_dir/downloads/$mysql_tarball"
 fi
 
+# --- The dialog plugin's source -------------------------------------------
+# Upstream answers an empty password question straight from mysql->passwd and
+# never calls the client's callback, so on a plaintext connection a server (or
+# anyone who can rewrite the server's plugin announcement) collects the stored
+# password with no interaction at all. The patch gates both of those unasked
+# replies on an encrypted transport and changes nothing else; a question the
+# user actually sees still goes to the callback, which warns.
+# It is applied to a copy, so the extracted tree stays pristine and a re-run
+# never double-applies. A version bump that moves these lines fails here
+# rather than silently shipping an unpatched plugin.
+dialog_src="$work_dir/dialog-src"
+rm -rf "$dialog_src"
+mkdir -p "$dialog_src"
+cp "$src/plugin/auth/dialog.cc" "$dialog_src/dialog.cc"
+if ! patch -s -p0 -d "$dialog_src" -i "$script_dir/dialog-plaintext-consent.patch"; then
+    echo "❌ dialog-plaintext-consent.patch does not apply to MySQL $MYSQL_VERSION's plugin/auth/dialog.cc"
+    exit 1
+fi
+
 # --- Per-architecture configure, build, install ---------------------------
 for arch in "${ARCHS[@]}"; do
     build="$work_dir/build-$arch"
-    install="$work_dir/install-$arch"
+    destdir="$work_dir/destdir-$arch"
+    install="$(install_tree "$arch")"
     if [ "${MYSQL_INCREMENTAL:-0}" != "1" ]; then
         rm -rf "$build"
     fi
-    rm -rf "$install"
+    rm -rf "$destdir"
     mkdir -p "$build"
 
     # CMake derives CMAKE_SYSTEM_PROCESSOR from the host, so MySQL's own
@@ -176,6 +206,14 @@ for arch in "${ARCHS[@]}"; do
         extra_c_flags="-DZSTD_DISABLE_ASM"
     fi
 
+    # assert() and MySQL's own DBUG macros put __FILE__ into the shipped
+    # binaries, so without this the absolute path of whatever directory this
+    # script happened to run in ships inside libmysqlclient — which is how a
+    # build scratch directory ended up quoted in #2773. Mapping both roots
+    # leaves machine-independent names behind and is what lets a rebuild
+    # somewhere else reproduce these bytes.
+    prefix_map="-ffile-prefix-map=$src=mysql-$MYSQL_VERSION -ffile-prefix-map=$build=build"
+
     echo "***** configuring $arch *****"
     # CMAKE_IGNORE_PREFIX_PATH keeps find_* away from Homebrew even though
     # /opt/homebrew/bin is usually on PATH; every WITH_* is bundled or points at
@@ -185,10 +223,10 @@ for arch in "${ARCHS[@]}"; do
     # SDK's libsasl2 without it.
     "$cmake_bin" -S "$src" -B "$build" -G "Unix Makefiles" \
         -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
-        -DCMAKE_C_FLAGS="$extra_c_flags" \
+        -DCMAKE_C_FLAGS="$extra_c_flags $prefix_map" -DCMAKE_CXX_FLAGS="$prefix_map" \
         -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_SYSTEM_PROCESSOR="$arch" \
         -DCMAKE_OSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" -DCMAKE_OSX_SYSROOT="$sysroot" \
-        -DCMAKE_INSTALL_PREFIX="$install" -DINSTALL_LAYOUT=STANDALONE \
+        -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" -DINSTALL_LAYOUT=STANDALONE \
         -DCMAKE_IGNORE_PREFIX_PATH="/opt/homebrew;/usr/local" \
         -DBUILD_CONFIG=mysql_release -DWITHOUT_SERVER=ON -DWITH_UNIT_TESTS=OFF \
         -DWITH_SSL="$openssl_dir/sdk-$arch" \
@@ -200,7 +238,7 @@ for arch in "${ARCHS[@]}"; do
         -DENABLED_LOCAL_INFILE=ON -DWITH_EXTRA_CHARSETS=all \
         > "$work_dir/configure-$arch.log" 2>&1
     echo "***** building $arch (log: $work_dir/build-$arch.log) *****"
-    "$cmake_bin" --build "$build" --target install --parallel "$ncpu" > "$work_dir/build-$arch.log" 2>&1
+    DESTDIR="$destdir" "$cmake_bin" --build "$build" --target install --parallel "$ncpu" > "$work_dir/build-$arch.log" 2>&1
 
     for f in lib/libmysqlclient.24.dylib include/mysql.h include/mysql_version.h; do
         if [ ! -f "$install/$f" ]; then
@@ -216,11 +254,48 @@ for arch in "${ARCHS[@]}"; do
         echo "❌ $arch build did not produce the bundled libfido2.1.dylib"
         exit 1
     fi
+
+    # MySQL compiles plugin/auth/dialog.cc only as a TEST_ONLY module, and
+    # names the module after the plugin directory entry ("auth"), not after
+    # the client plugin it declares. The client loader opens <plugin name>.so,
+    # so a community build ships no loadable `dialog` plugin even though the
+    # source is right here and every server asking for PAM authentication
+    # wants it. The same source, compiled client-only under the name the
+    # loader looks for, is that plugin; the file also carries MySQL's two
+    # demo *server* plugins, exactly as Oracle's own SERVER_AND_CLIENT build
+    # of it does, and they are inert in a client.
+    # ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/2773
+    # -bundle, both plugin defines and the OpenSSL headers are what
+    # MYSQL_ADD_PLUGIN's SERVER_AND_CLIENT path compiles this file with:
+    # a MODULE is an MH_BUNDLE with no install name (like every other plugin
+    # here), MYSQL_DYNAMIC_PLUGIN keeps plugin.h from pulling in the server's
+    # sql_plugin.h, and plugin.h reaches OpenSSL headers through my_sys.h.
+    #
+    # dynamic_lookup resolves mysql_get_ssl_cipher, which the patch calls,
+    # against whoever loaded the plugin - libmysqlclient, already in memory,
+    # since it is the one calling dlopen. Recording a dependency on the client
+    # library instead would name a second path to the same file and risk a
+    # second copy of it; MySQL links its own non-client plugins against their
+    # host for exactly this reason.
+    echo "***** building the dialog client plugin for $arch *****"
+    "$CXX" -std=c++17 -O2 -fPIC -bundle \
+        -arch "$arch" -isysroot "$sysroot" \
+        -mmacosx-version-min="$DEPLOYMENT_TARGET" \
+        -Wl,-undefined,dynamic_lookup \
+        -DMYSQL_DYNAMIC_CLIENT_PLUGIN -DMYSQL_DYNAMIC_PLUGIN \
+        $prefix_map \
+        -I"$build/include" -I"$src/include" -I"$src" \
+        -I"$openssl_dir/sdk-$arch/include" \
+        -o "$install/lib/plugin/dialog.so" \
+        "$dialog_src/dialog.cc" > "$work_dir/dialog-$arch.log" 2>&1 || {
+        echo "❌ $arch dialog plugin did not compile (see $work_dir/dialog-$arch.log)"
+        exit 1
+    }
 done
 
 # The headers are architecture-independent by construction; prove it rather
 # than assume it before shipping one copy.
-if ! diff -r "$work_dir/install-arm64/include" "$work_dir/install-x86_64/include" > "$work_dir/include-diff.log"; then
+if ! diff -r "$(install_tree arm64)/include" "$(install_tree x86_64)/include" > "$work_dir/include-diff.log"; then
     echo "❌ arm64 and x86_64 headers differ (see $work_dir/include-diff.log)"
     exit 1
 fi
@@ -233,24 +308,24 @@ cd "$universal"
 
 echo "***** creating universal libraries *****"
 slices=()
-for arch in "${ARCHS[@]}"; do slices+=("$work_dir/install-$arch/lib/libmysqlclient.24.dylib"); done
+for arch in "${ARCHS[@]}"; do slices+=("$(install_tree "$arch")/lib/libmysqlclient.24.dylib"); done
 lipo -create -output libmysqlclient.24.dylib "${slices[@]}"
-for plugin_path in "$work_dir/install-arm64/lib/plugin/"*.so; do
+for plugin_path in "$(install_tree arm64)/lib/plugin/"*.so; do
     plugin="$(basename "$plugin_path")"
     slices=()
     for arch in "${ARCHS[@]}"; do
-        if [ ! -f "$work_dir/install-$arch/lib/plugin/$plugin" ]; then
+        if [ ! -f "$(install_tree "$arch")/lib/plugin/$plugin" ]; then
             echo "❌ $plugin was built for arm64 but not for $arch"
             exit 1
         fi
-        slices+=("$work_dir/install-$arch/lib/plugin/$plugin")
+        slices+=("$(install_tree "$arch")/lib/plugin/$plugin")
     done
     lipo -create -output "plugin/$plugin" "${slices[@]}"
 done
 # The loop above walks the arm64 set; a plugin that only the other
 # architectures produced would otherwise go missing silently.
 for arch in "${ARCHS[@]}"; do
-    for plugin_path in "$work_dir/install-$arch/lib/plugin/"*.so; do
+    for plugin_path in "$(install_tree "$arch")/lib/plugin/"*.so; do
         plugin="$(basename "$plugin_path")"
         if [ ! -f "plugin/$plugin" ]; then
             echo "❌ $plugin was built for $arch but not for arm64"
@@ -262,7 +337,7 @@ done
 # so the library ships next to the plugins. (lib/libfido2.1.dylib is the real
 # file; the other libfido2 names in lib/ are symlinks to it.)
 slices=()
-for arch in "${ARCHS[@]}"; do slices+=("$work_dir/install-$arch/lib/libfido2.1.dylib"); done
+for arch in "${ARCHS[@]}"; do slices+=("$(install_tree "$arch")/lib/libfido2.1.dylib"); done
 lipo -create -output plugin/libfido2.1.dylib "${slices[@]}"
 
 # Rewrites every reference to the OpenSSL pair in $1 to $2/<lib>, whatever
@@ -311,7 +386,7 @@ check_binary() {
     # break on a machine without this build tree or without Homebrew.
     # Dependency lines are tab-indented; the others are the per-architecture
     # headers otool prints for a fat file.
-    if otool -L "$file" | grep '^	' | awk '{ print $1 }' | grep -vE '^(@loader_path/|/usr/lib/|/System/Library/)' | grep -q .; then
+    if otool -L "$file" | grep '^	' | awk '{ print $1 }' | grep -vE '^(@loader_path/|/usr/lib/|/System/Library/)' | grep . > /dev/null; then
         echo "❌ $file links something outside the bundle and the OS:"
         otool -L "$file" | grep '^	' | awk '{ print "     " $1 }' | grep -vE '^ +(@loader_path/|/usr/lib/|/System/Library/)'
         status=1
@@ -339,8 +414,34 @@ if [ "$version_hits" -eq 0 ]; then
     echo "❌ libmysqlclient.24.dylib does not carry the $MYSQL_VERSION version string"
     status=1
 fi
-if ! grep -q "\"$MYSQL_VERSION\"" "$work_dir/install-arm64/include/mysql_version.h"; then
+if ! grep -q "\"$MYSQL_VERSION\"" "$(install_tree arm64)/include/mysql_version.h"; then
     echo "❌ mysql_version.h does not declare $MYSQL_VERSION"
+    status=1
+fi
+# What the client falls back to when nothing sets MYSQL_PLUGIN_DIR ships
+# inside the dylib, and a user who hits it reads the path out of the error.
+# It must be the fixed prefix, and no binary may name this build's scratch
+# directory; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/2773
+if ! strings -a libmysqlclient.24.dylib | grep -x "$INSTALL_PREFIX/lib/plugin" > /dev/null; then
+    echo "❌ libmysqlclient.24.dylib does not carry $INSTALL_PREFIX/lib/plugin as its compile-time plugin directory"
+    status=1
+fi
+if strings -a libmysqlclient.24.dylib plugin/*.so plugin/libfido2.1.dylib | grep -F "$work_dir" > /dev/null; then
+    echo "❌ a built binary carries this build's scratch directory ($work_dir)"
+    status=1
+fi
+# The dialog plugin is the one the client loader opens by name for PAM and
+# other prompt-driven server plugins, so it has to declare a client plugin.
+if [ ! -f plugin/dialog.so ]; then
+    echo "❌ the dialog client plugin is missing from the universal set"
+    status=1
+elif ! nm -gU plugin/dialog.so | grep "_mysql_client_plugin_declaration_" > /dev/null; then
+    echo "❌ plugin/dialog.so exports no client plugin declaration"
+    status=1
+elif ! nm -u plugin/dialog.so | grep "_mysql_get_ssl_cipher" > /dev/null; then
+    # Only the patched source asks what the transport negotiated, so this is
+    # what separates the shipped plugin from stock upstream.
+    echo "❌ plugin/dialog.so does not check the transport before answering from the stored password"
     status=1
 fi
 if [ "$status" -ne 0 ]; then
@@ -358,7 +459,7 @@ echo "***** copying to $client_dir *****"
 staged="$(mktemp "$client_dir/lib/.libmysqlclient.24.dylib.XXXXXX")"
 cp libmysqlclient.24.dylib "$staged"
 mv -f "$staged" "$client_dir/lib/libmysqlclient.24.dylib"
-rsync -a --delete "$work_dir/install-arm64/include/" "$client_dir/include/"
+rsync -a --delete "$(install_tree arm64)/include/" "$client_dir/include/"
 rm -rf "$client_dir/lib/mysqlplugins"
 mkdir -p "$client_dir/lib/mysqlplugins"
 cp plugin/*.so plugin/libfido2.1.dylib "$client_dir/lib/mysqlplugins/"

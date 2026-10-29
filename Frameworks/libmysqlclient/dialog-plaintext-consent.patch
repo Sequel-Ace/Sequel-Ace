@@ -1,0 +1,30 @@
+--- dialog.cc
++++ dialog.cc
+@@ -298,7 +298,14 @@
+         authentication plugin on the client if the first question
+         asks for a password - which will be sent in clear text, by the way)
+       */
+-      reply = mysql->passwd;
++      /* Sequel Ace: the stored password is only handed over unasked when the
++         transport is encrypted. On a plaintext connection the question goes to
++         the client's callback instead, which warns before anything is sent. */
++      if (mysql_get_ssl_cipher(mysql))
++        reply = mysql->passwd;
++      else
++        reply = ask(mysql, 2, "", reply_buf, sizeof(reply_buf));
++      if (!reply) return CR_ERROR;
+     } else {
+       cmd = *pkt++;
+ 
+@@ -310,7 +317,10 @@
+         asking for a password with an empty prompt means mysql->password
+         otherwise we ask the user and read the reply
+       */
+-      if ((cmd >> 1) == 2 && *pkt == 0)
++      /* Sequel Ace: same rule - an empty password question is answered from
++         mysql->passwd only over an encrypted transport; otherwise the user is
++         asked, and warned, before the password leaves the machine. */
++      if ((cmd >> 1) == 2 && *pkt == 0 && mysql_get_ssl_cipher(mysql))
+         reply = mysql->passwd;
+       else
+         reply = ask(mysql, cmd >> 1, (const char *)pkt, reply_buf,
