@@ -24,6 +24,10 @@ final class SPMySQLConnectionServerInfoTests: XCTestCase {
         XCTAssertTrue(handshakenConnection(serverVersion: "10.11.8-MariaDB").isMariaDB)
         XCTAssertFalse(handshakenConnection(serverVersion: "8.4.0").isMariaDB)
         XCTAssertFalse(handshakenConnection(serverVersion: "5.7.44-ubuntu-log").isMariaDB)
+        // A vendor suffix that only shares a letter with MariaDB is still MySQL
+        XCTAssertFalse(handshakenConnection(serverVersion: "8.0.33-debug").isMariaDB)
+        // The MariaDB suffix can follow a "5.5.5-" compatibility prefix
+        XCTAssertTrue(handshakenConnection(serverVersion: "5.5.5-10.11.8-MariaDB-ubu2204").isMariaDB)
     }
 
     func testServerVersionQuestionsSurviveADisconnect() {
