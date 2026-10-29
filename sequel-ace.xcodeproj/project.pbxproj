@@ -16,6 +16,7 @@
 		0EFB3862D086C3F4C5716B85 /* SAKeychainDisabled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB073761524C5CB0C4EA801 /* SAKeychainDisabled.swift */; };
 		0F2381A80270EFDE50D73890 /* SAParserUtilsTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD5C55FC47FCBFA6D183688 /* SAParserUtilsTestSupport.swift */; };
 		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
+		5A5C011000000000000000A1 /* SAScrollableAlertTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5C011000000000000000A2 /* SAScrollableAlertTextTests.swift */; };
 		10E61D41B1CA258A66686820 /* SAAsyncResultBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1196D9FED5B52DE6CD6B0C76 /* SASSHTunnelAuthSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3B6C30475E9800BCE2B9 /* SASSHTunnelAuthSource.swift */; };
@@ -261,6 +262,8 @@
 		513C8CE12BBC4132001CCE3A /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 513C8CE02BBC4132001CCE3A /* OCMock */; };
 		5146ADF02F79B16900C4C14A /* SAFavoritesListDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */; };
 		5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */; };
+		6F1A0C2E8B3D4A5F90172C02 /* SAFavoritesListKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1A0C2E8B3D4A5F90172C01 /* SAFavoritesListKeys.swift */; };
+		6F1A0C2E8B3D4A5F90172C03 /* SAFavoritesListKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1A0C2E8B3D4A5F90172C01 /* SAFavoritesListKeys.swift */; };
 		5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */; };
 		5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
 		5146ADFD2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
@@ -484,6 +487,7 @@
 		58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF57D0F3B4E9700518E8E /* SPTableData.m */; };
 		5A1E0F1C2F9A000100C4C14A /* SAContentFilterLengthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1E0F1D2F9A000100C4C14A /* SAContentFilterLengthTests.swift */; };
 		5A1EC0A12FF0000100000001 /* SARecordViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1EC0A12FF0000100000002 /* SARecordViewTests.swift */; };
+		6F1A0C2E8B3D4A5F90172C05 /* SAFavoritesListKeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F1A0C2E8B3D4A5F90172C04 /* SAFavoritesListKeysTests.swift */; };
 		5A1EC0A12FF0000100000010 /* SARecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1EC0A12FF0000100000012 /* SARecordView.swift */; };
 		5A1EC0A12FF0000100000011 /* SARecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1EC0A12FF0000100000012 /* SARecordView.swift */; };
 		5AF0C1000000000000000002 /* SAFavoritesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C1000000000000000001 /* SAFavoritesListView.swift */; };
@@ -1219,6 +1223,7 @@
 		51384AC12903461000FEC501 /* NSDictionaryExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSDictionaryExtension.swift; sourceTree = "<group>"; };
 		5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDelegate.swift; sourceTree = "<group>"; };
 		5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDataSource.swift; sourceTree = "<group>"; };
+		6F1A0C2E8B3D4A5F90172C01 /* SAFavoritesListKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListKeys.swift; sourceTree = "<group>"; };
 		5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionService.swift; sourceTree = "<group>"; };
 		5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPDatabaseDocument+ViewMode.swift"; sourceTree = "<group>"; };
 		5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATaskManaging.swift; sourceTree = "<group>"; };
@@ -1350,6 +1355,7 @@
 		52C5955B8DBBB2BDAED5886E /* SAKeychainNaming.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAKeychainNaming.swift; sourceTree = "<group>"; };
 		54146A7693E8D862D06856BF /* SAConnectionInfo+ConnectionString.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SAConnectionInfo+ConnectionString.swift"; sourceTree = "<group>"; };
 		5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAStaleBookmarkAlertContentTests.swift; sourceTree = "<group>"; };
+		5A5C011000000000000000A2 /* SAScrollableAlertTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAScrollableAlertTextTests.swift; sourceTree = "<group>"; };
 		55DC09E6A57ECBC54B00BDDD /* SACompletionWindowLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SACompletionWindowLayoutTests.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
 		5806B76311A991EC00813A88 /* SPDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDocumentController.m; sourceTree = "<group>"; };
@@ -1454,6 +1460,7 @@
 		58FEF57D0F3B4E9700518E8E /* SPTableData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableData.m; sourceTree = "<group>"; };
 		5A1E0F1D2F9A000100C4C14A /* SAContentFilterLengthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAContentFilterLengthTests.swift; sourceTree = "<group>"; };
 		5A1EC0A12FF0000100000002 /* SARecordViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARecordViewTests.swift; sourceTree = "<group>"; };
+		6F1A0C2E8B3D4A5F90172C04 /* SAFavoritesListKeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListKeysTests.swift; sourceTree = "<group>"; };
 		5A1EC0A12FF0000100000012 /* SARecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SARecordView.swift; sourceTree = "<group>"; };
 		5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADragPasteboard.swift; sourceTree = "<group>"; };
 		5AF0C1000000000000000001 /* SAFavoritesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListView.swift; sourceTree = "<group>"; };
@@ -2212,6 +2219,7 @@
 				51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */,
 				5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */,
 				5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */,
+				6F1A0C2E8B3D4A5F90172C01 /* SAFavoritesListKeys.swift */,
 				5AF0C1000000000000000001 /* SAFavoritesListView.swift */,
 				5AF0C2000000000000000001 /* SAFavoriteItem.swift */,
 				5AF0C2000000000000000011 /* SAFavoriteItem+Tree.swift */,
@@ -2928,6 +2936,7 @@
 				51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */,
 				C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 				5A1EC0A12FF0000100000002 /* SARecordViewTests.swift */,
+				6F1A0C2E8B3D4A5F90172C04 /* SAFavoritesListKeysTests.swift */,
 				CF0000392F8C000600C4C14A /* SADatabaseRenamePlanTests.swift */,
 				CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */,
 				CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */,
@@ -2965,6 +2974,7 @@
 				5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */,
 				5147B1042F8C000100C4C14A /* SAWindowTitlebarTintTests.swift */,
 				5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */,
+				5A5C011000000000000000A2 /* SAScrollableAlertTextTests.swift */,
 				5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */,
 				5AF0C2000000000000000031 /* SAFavoriteItemTests.swift */,
 				5147B00E2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift */,
@@ -3725,6 +3735,8 @@
 				A19A2000000000000000E004 /* SQLiteDisplayFormatManager.swift in Sources */,
 				A19A2000000000000000E003 /* SQLitePinnedTableManager.swift in Sources */,
 				5A1EC0A12FF0000100000001 /* SARecordViewTests.swift in Sources */,
+				6F1A0C2E8B3D4A5F90172C05 /* SAFavoritesListKeysTests.swift in Sources */,
+				6F1A0C2E8B3D4A5F90172C03 /* SAFavoritesListKeys.swift in Sources */,
 				5A1EC0A12FF0000100000011 /* SARecordView.swift in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
 				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
@@ -3771,6 +3783,7 @@
 				5147B1032F8C000100C4C14A /* SAWindowTitlebarTint.swift in Sources */,
 				5147B1052F8C000100C4C14A /* SAWindowTitlebarTintTests.swift in Sources */,
 				0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */,
+				5A5C011000000000000000A1 /* SAScrollableAlertTextTests.swift in Sources */,
 				5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
 				5147B00A2F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift in Sources */,
 				510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */,
@@ -4000,6 +4013,7 @@
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
 				51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */,
 				5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */,
+				6F1A0C2E8B3D4A5F90172C02 /* SAFavoritesListKeys.swift in Sources */,
 				5AF0C1000000000000000002 /* SAFavoritesListView.swift in Sources */,
 				5AF0C2000000000000000002 /* SAFavoriteItem.swift in Sources */,
 				5AF0C2000000000000000012 /* SAFavoriteItem+Tree.swift in Sources */,
