@@ -34,6 +34,8 @@ final class SPMySQLConnectionServerInfoTests: XCTestCase {
     func testServerVersionQuestionsSurviveAnActiveTeardown() {
         let connection = handshakenConnection(serverVersion: "10.5.27-MariaDB")
         connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+        // Nonzero, so the reset assertion below can fail if the teardown stops running
+        connection.setValue(NSNumber(value: 100527), forKey: "serverVersionNumber")
 
         connection.disconnect()
 
