@@ -85,16 +85,86 @@ final class SAFieldPickerTests: XCTestCase {
         XCTAssertEqual(try serializedFilter(controller)["column"] as? String, "customer_name")
     }
 
+    func testReloadCriteriaPreservesSelectedLaterField() throws {
+        let (controller, editor) = try makeController()
+        defer { editor.unbind(NSBindingName("rows")) }
+        let originalPicker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
+        let model = originalPicker.makePickerModel()
+        model.query = "billing"
+        model.chooseHighlighted()
+        let before = try serializedFilter(controller) as NSDictionary
+
+        editor.reloadCriteria()
+
+        XCTAssertEqual(try serializedFilter(controller) as NSDictionary, before)
+        let picker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
+        XCTAssertEqual(picker.titleOfSelectedItem, "billing_email")
+        XCTAssertTrue(picker.isDescendant(of: editor))
+    }
+
+    func testReloadCriteriaPreservesDifferentFieldsInNestedAndDisabledRows() throws {
+        let (controller, editor) = try makeController()
+        defer { editor.unbind(NSBindingName("rows")) }
+        editor.nestingMode = .compound
+        var disabledRule = savedRule(selectedName: "customer_email")
+        disabledRule["enabled"] = false
+        let filters: [String: Any] = [
+            "filterClass": "groupNode", "isConjunction": false,
+            "children": [
+                disabledRule,
+                ["filterClass": "groupNode", "isConjunction": true,
+                 "children": [savedRule(selectedName: "billing_email"), savedRule(selectedName: "customer_name")]]
+            ]
+        ]
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: filters)
+        let before = try serializedFilter(controller) as NSDictionary
+
+        controller.perform(NSSelectorFromString("_contentFiltersHaveBeenUpdated:"), with: nil)
+
+        XCTAssertEqual(try serializedFilter(controller) as NSDictionary, before)
+        let pickers = (0..<editor.numberOfRows).compactMap { row -> SAFieldPickerButton? in
+            guard editor.rowType(forRow: row) == .simple else { return nil }
+            return editor.displayValues(forRow: row)[1] as? SAFieldPickerButton
+        }
+        XCTAssertEqual(pickers.map(\.titleOfSelectedItem), ["customer_email", "billing_email", "customer_name"])
+        XCTAssertTrue(pickers.allSatisfy { $0.isDescendant(of: editor) })
+    }
+
+    func testUpdatingContentFiltersPreservesSelectedLaterField() throws {
+        let (controller, editor) = try makeController(selectedName: "billing_email")
+        defer { editor.unbind(NSBindingName("rows")) }
+        let before = try serializedFilter(controller) as NSDictionary
+
+        controller.perform(NSSelectorFromString("_contentFiltersHaveBeenUpdated:"), with: nil)
+
+        XCTAssertEqual(try serializedFilter(controller) as NSDictionary, before)
+        let picker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
+        XCTAssertEqual(picker.titleOfSelectedItem, "billing_email")
+        XCTAssertTrue(picker.isDescendant(of: editor))
+    }
+
     func testEscapeWithSearchDismissesWithoutChangingRule() throws {
         let (controller, editor) = try makeController()
         defer { editor.unbind(NSBindingName("rows")) }
+        let window = NSWindow(contentRect: editor.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = editor
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
         let picker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
-        let model = picker.makePickerModel()
-        var cancelled = false
-        model.onCancel = { cancelled = true }
-        model.query = "EMAIL"
-        model.cancel()
-        XCTAssertTrue(cancelled)
+        picker.performClick(nil)
+        let presented = expectation(description: "Popover has completed presentation")
+        DispatchQueue.main.async { presented.fulfill() }
+        wait(for: [presented], timeout: 2)
+        let popover = try XCTUnwrap(picker.pickerPopover)
+        let popoverWindow = try XCTUnwrap(popover.contentViewController?.view.window)
+        let fieldEditor = try XCTUnwrap(popoverWindow.firstResponder as? NSTextView)
+        let searchField = try XCTUnwrap(fieldEditor.delegate as? NSSearchField)
+        fieldEditor.insertText("EMAIL", replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertEqual(searchField.delegate?.control?(searchField, textView: fieldEditor,
+                                                      doCommandBy: #selector(NSResponder.cancelOperation(_:))), true)
+        XCTAssertFalse(popover.isShown)
+        XCTAssertNil(picker.pickerPopover)
         XCTAssertEqual(try serializedFilter(controller)["column"] as? String, "customer_name")
     }
 

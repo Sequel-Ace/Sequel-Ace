@@ -550,6 +550,15 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		RuleNodeType type = [(RuleNode *) criterion type];
 		// this is the column field
 		if (type == RuleNodeTypeEnable) {
+			// A custom field picker has one advertised child. On reload, that
+			// child must be this row's selected column, not always columns[0].
+			for (NSInteger row = 0; row < [editor numberOfRows]; row++) {
+				NSArray *rowCriteria = [editor criteriaForRow:row];
+				if ([rowCriteria count] > 1 && [rowCriteria firstObject] == criterion) {
+					NSUInteger selectedIndex = [columns indexOfObject:[rowCriteria objectAtIndex:1]];
+					if (selectedIndex != NSNotFound) return [columns objectAtIndex:selectedIndex];
+				}
+			}
 			return [columns objectAtIndex:index];
 		}
 		// the children of the columns are their operators
@@ -2425,12 +2434,15 @@ BOOL SerIsGroup(NSDictionary *dict)
 }
 
 - (NSUInteger)hash {
-	return (([super hash] << 2) | (initialState << 1) | allowsMixedState);
+	return (([super hash] << 1) | allowsMixedState);
 }
 
 - (BOOL)isEqual:(id)other {
+	// Like ArgNode.initialValue, the initial checkbox value is not a
+	// different criterion. Including it discards restored disabled rows
+	// when reloadCriteria compares them with a fresh enabled checkbox.
 	if (other == self) return YES;
-	if (other && [[other class] isEqual:[self class]] && [self initialState] == [(EnableNode *)other initialState] && [self allowsMixedState] == [(EnableNode *)other allowsMixedState]) return YES;
+	if (other && [[other class] isEqual:[self class]] && [self allowsMixedState] == [(EnableNode *)other allowsMixedState]) return YES;
 
 	return NO;
 }
