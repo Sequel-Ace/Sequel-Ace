@@ -1,0 +1,351 @@
+//
+//  SAClaudeGlyphs.swift
+//  Sequel Ace
+//
+//  The Claude-style 16pt outline icons for the left navigation, drawn from
+//  vector paths on a 16x16 grid (y down) so they stay sharp at any scale and
+//  re-tint for light/dark at draw time. Pure AppKit, shared with Unit Tests.
+//
+
+import AppKit
+
+/// The icons the left navigation draws.
+@objc enum SAClaudeGlyph: Int {
+    case database, table, view, procedure, function, add, actions, refresh, infoPanel, more, favorite, history, copy, save, clear, field, keyword
+    case structure, relations, triggers, info, query, recordView, users, console, clearConsole, chevronLeft, chevronRight
+    case remove, duplicate, editMode, filter, filterActive, columns, indexes, pageOptions
+}
+
+@objc final class SAClaudeGlyphs: NSObject {
+
+    /// The tint an icon uses: its object type's colour, or muted for bar buttons.
+    static func tint(for glyph: SAClaudeGlyph) -> NSColor {
+        switch glyph {
+        case .database: return SAClaudeStyle.tintDatabase
+        case .table: return SAClaudeStyle.tintTable
+        case .view: return SAClaudeStyle.tintView
+        case .procedure: return SAClaudeStyle.tintProcedure
+        case .function: return SAClaudeStyle.tintFunction
+        case .add, .actions, .refresh, .infoPanel, .more, .favorite, .history, .copy, .save, .clear, .field, .keyword,
+             .structure, .relations, .triggers, .info, .query, .recordView, .users, .console, .clearConsole, .chevronLeft, .chevronRight,
+             .remove, .duplicate, .editMode, .filter, .filterActive, .columns, .indexes, .pageOptions:
+            return SAClaudeStyle.textMuted
+        }
+    }
+
+    /// What VoiceOver reads for an icon.
+    static func accessibilityName(for glyph: SAClaudeGlyph) -> String {
+        switch glyph {
+        case .database: return NSLocalizedString("Database", comment: "accessibility name of the database icon")
+        case .table: return NSLocalizedString("Table", comment: "accessibility name of the table icon")
+        case .view: return NSLocalizedString("ViewIconAccessibilityName", value: "View", comment: "accessibility name of the view icon in the tables list")
+        case .procedure: return NSLocalizedString("Procedure", comment: "accessibility name of the stored procedure icon in the tables list")
+        case .function: return NSLocalizedString("Function", comment: "accessibility name of the stored function icon in the tables list")
+        case .add: return NSLocalizedString("Add table", comment: "accessibility name of the add table button below the tables list")
+        case .actions: return NSLocalizedString("Table actions", comment: "accessibility name of the table actions menu button below the tables list")
+        case .refresh: return NSLocalizedString("Refresh table list", comment: "accessibility name of the refresh button below the tables list")
+        case .infoPanel: return NSLocalizedString("Toggle information panel", comment: "accessibility name of the button that shows or hides the table information panel")
+        case .more: return NSLocalizedString("Editor options", comment: "accessibility name of the editor options menu button under the query editor")
+        case .favorite: return NSLocalizedString("Query Favorites", comment: "accessibility name of the query favorites menu button under the query editor")
+        case .history: return NSLocalizedString("Query History", comment: "accessibility name of the query history menu button under the query editor")
+        case .copy: return NSLocalizedString("Copy all", comment: "accessibility name of the Run All console's Copy all button")
+        case .save: return NSLocalizedString("Save output", comment: "accessibility name of the Run All console's Save button")
+        case .clear: return NSLocalizedString("Clear output", comment: "accessibility name of the Run All console's Clear button")
+        case .field: return NSLocalizedString("Column", comment: "accessibility name of the column icon in the autocomplete list")
+        case .keyword: return NSLocalizedString("Keyword", comment: "accessibility name of the keyword icon in the autocomplete list")
+        case .structure: return NSLocalizedString("ClaudeToolbarGlyphStructure", value: "Structure", comment: "accessibility name of the table structure toolbar icon")
+        case .relations: return NSLocalizedString("ClaudeToolbarGlyphRelations", value: "Relations", comment: "accessibility name of the table relations toolbar icon")
+        case .triggers: return NSLocalizedString("ClaudeToolbarGlyphTriggers", value: "Triggers", comment: "accessibility name of the table triggers toolbar icon")
+        case .info: return NSLocalizedString("ClaudeToolbarGlyphInfo", value: "Table info", comment: "accessibility name of the table info toolbar icon")
+        case .query: return NSLocalizedString("ClaudeToolbarGlyphQuery", value: "Query", comment: "accessibility name of the query toolbar icon")
+        case .recordView: return NSLocalizedString("ClaudeToolbarGlyphRecordView", value: "Record view", comment: "accessibility name of the record view toolbar icon")
+        case .users: return NSLocalizedString("ClaudeToolbarGlyphUsers", value: "Users", comment: "accessibility name of the user accounts toolbar icon")
+        case .console: return NSLocalizedString("ClaudeToolbarGlyphConsole", value: "Console", comment: "accessibility name of the console toolbar icon")
+        case .clearConsole: return NSLocalizedString("ClaudeToolbarGlyphClearConsole", value: "Clear console", comment: "accessibility name of the clear console toolbar icon")
+        case .chevronLeft: return NSLocalizedString("ClaudeToolbarGlyphBack", value: "Back", comment: "accessibility name of the history back arrow")
+        case .chevronRight: return NSLocalizedString("ClaudeToolbarGlyphForward", value: "Forward", comment: "accessibility name of the history forward arrow")
+        case .remove: return NSLocalizedString("ClaudeTabBarGlyphRemove", value: "Remove", comment: "accessibility name of the remove icon in a table tab's bottom bar")
+        case .duplicate: return NSLocalizedString("ClaudeTabBarGlyphDuplicate", value: "Duplicate", comment: "accessibility name of the duplicate icon in a table tab's bottom bar")
+        case .editMode: return NSLocalizedString("ClaudeTabBarGlyphEditMode", value: "Edit mode", comment: "accessibility name of the edit mode icon in a table tab's bottom bar")
+        case .filter: return NSLocalizedString("ClaudeTabBarGlyphFilter", value: "Filter", comment: "accessibility name of the filter icon in a table tab's bottom bar")
+        case .filterActive: return NSLocalizedString("ClaudeTabBarGlyphFilterActive", value: "Filter (active)", comment: "accessibility name of the filter icon in a table tab's bottom bar when a filter is applied")
+        case .columns: return NSLocalizedString("ClaudeTabBarGlyphColumns", value: "Columns", comment: "accessibility name of the columns icon in a table tab's bottom bar")
+        case .indexes: return NSLocalizedString("ClaudeTabBarGlyphIndexes", value: "Indexes", comment: "accessibility name of the indexes icon in a table tab's bottom bar")
+        case .pageOptions: return NSLocalizedString("ClaudeTabBarGlyphPageOptions", value: "Page options", comment: "accessibility name of the page options icon in a table tab's bottom bar")
+        }
+    }
+
+    /// A 16pt icon in the given tint.
+    @objc(imageForGlyph:tint:)
+    static func image(_ glyph: SAClaudeGlyph, tint: NSColor) -> NSImage {
+        image(glyph, tint: tint, canvas: NSSize(width: 16, height: 16), glyphX: 0)
+    }
+
+    /// The icon for a tables-list row: the glyph on its kind's colour chip, on the padded canvas that positions it and
+    /// the name (see `SAClaudeStyle.sidebarIconLeading`; the chip starts 2pt before it, the name where it always did).
+    ///
+    /// - Parameter type: An `SPTableType` value. Keep in sync with SPTableType in
+    ///   SPConstants.h: -1 none, 0 table, 1 view, 2 procedure, 3 function,
+    ///   4 event, 5 table in a new database.
+    /// - Returns: The image, or `nil` for a header row (-1).
+    @objc(sidebarImageForTableType:)
+    static func sidebarImage(forTableType type: Int) -> NSImage? {
+        let glyph: SAClaudeGlyph
+        switch type {
+        case -1: return nil
+        case 1: glyph = .view
+        case 2: glyph = .procedure
+        case 3: glyph = .function
+        default: glyph = .table
+        }
+        let chip = SAClaudeKindColours.sidebarChipSize
+        return chipImage(glyph, colour: SAClaudeKindColours.colour(forTableType: type) ?? .sky, chipSize: chip,
+                         canvas: NSSize(width: SAClaudeStyle.sidebarIconCanvasWidth, height: chip),
+                         chipX: SAClaudeStyle.sidebarIconLeading - (chip - SAClaudeStyle.iconSize) / 2)
+    }
+
+    /// Size of a glyph on a chip.
+    static let chipGlyphSize: CGFloat = 14
+
+    /// `glyph` at `chipGlyphSize`, centred on a `chipSize` rounded square at `chipX` (centred vertically on the canvas):
+    /// the square in `colour`'s tint, the glyph in its ink, both following the appearance at draw time.
+    static func chipImage(_ glyph: SAClaudeGlyph, colour: SAVividColour, chipSize size: CGFloat, canvas: NSSize, chipX: CGFloat) -> NSImage {
+        let chip = NSRect(x: chipX, y: floor((canvas.height - size) / 2), width: size, height: size)
+        let scale = chipGlyphSize / 16
+        let place = AffineTransform(m11: scale, m12: 0, m21: 0, m22: scale,
+                                    tX: chip.minX + (size - chipGlyphSize) / 2, tY: chip.minY + (size - chipGlyphSize) / 2)
+        let image = NSImage(size: canvas, flipped: true) { _ in
+            let radius = SAClaudeKindColours.chipRadius
+            colour.tintColour.setFill()
+            NSBezierPath(roundedRect: chip, xRadius: radius, yRadius: radius).fill()
+            colour.inkColour.setStroke()
+            for path in paths(for: glyph) {
+                path.transform(using: place)
+                path.lineWidth = SAClaudeStyle.iconStrokeWidth
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                path.stroke()
+            }
+            return true
+        }
+        // Redraw on every use so an appearance change re-tints immediately.
+        image.cacheMode = .never
+        image.accessibilityDescription = accessibilityName(for: glyph)
+        return image
+    }
+
+    /// The icon drawn at `glyphX` on a `canvas` (the gap after it is the canvas's; for an `ImageAndTextCell`, which draws its
+    /// text right after its image).
+    static func image(_ glyph: SAClaudeGlyph, tint: NSColor, canvas: NSSize, glyphX: CGFloat) -> NSImage {
+        let image = NSImage(size: canvas, flipped: true) { _ in
+            // `tint` is dynamic: it resolves against the appearance current at draw time.
+            tint.setStroke()
+            let shift = AffineTransform(translationByX: glyphX, byY: 0)
+            for path in paths(for: glyph) {
+                path.transform(using: shift)
+                path.lineWidth = SAClaudeStyle.iconStrokeWidth
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                path.stroke()
+            }
+            return true
+        }
+        // Redraw on every use so an appearance change re-tints immediately.
+        image.cacheMode = .never
+        image.accessibilityDescription = accessibilityName(for: glyph)
+        return image
+    }
+
+    // MARK: - Paths (16x16 grid, y down; built fresh on every call)
+
+    private static func p(_ x: CGFloat, _ y: CGFloat) -> NSPoint { NSPoint(x: x, y: y) }
+
+    private static func line(_ a: NSPoint, _ b: NSPoint) -> NSBezierPath {
+        let path = NSBezierPath()
+        path.move(to: a)
+        path.line(to: b)
+        return path
+    }
+
+    static func paths(for glyph: SAClaudeGlyph) -> [NSBezierPath] {
+        switch glyph {
+        case .database:
+            let top = NSBezierPath(ovalIn: NSRect(x: 2.5, y: 1.5, width: 11, height: 4))
+            let body = NSBezierPath()
+            body.move(to: p(2.5, 3.5))
+            body.line(to: p(2.5, 12.5))
+            body.curve(to: p(8, 14.5), controlPoint1: p(2.5, 13.6), controlPoint2: p(5, 14.5))
+            body.curve(to: p(13.5, 12.5), controlPoint1: p(11, 14.5), controlPoint2: p(13.5, 13.6))
+            body.line(to: p(13.5, 3.5))
+            let band = NSBezierPath()
+            band.move(to: p(2.5, 8))
+            band.curve(to: p(8, 10), controlPoint1: p(2.5, 9.1), controlPoint2: p(5, 10))
+            band.curve(to: p(13.5, 8), controlPoint1: p(11, 10), controlPoint2: p(13.5, 9.1))
+            return [top, body, band]
+        case .table:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 2.5, width: 12, height: 11), xRadius: 2, yRadius: 2),
+                    line(p(2, 6.5), p(14, 6.5)), line(p(6.5, 6.5), p(6.5, 13.5))]
+        case .view:
+            let frame = NSBezierPath(roundedRect: NSRect(x: 2, y: 2.5, width: 12, height: 11), xRadius: 2, yRadius: 2)
+            frame.setLineDash([2.2, 1.8], count: 2, phase: 0)
+            let eye = NSBezierPath()
+            eye.move(to: p(4.5, 8.5))
+            eye.curve(to: p(8, 6.1), controlPoint1: p(5.5, 6.9), controlPoint2: p(6.7, 6.1))
+            eye.curve(to: p(11.5, 8.5), controlPoint1: p(9.3, 6.1), controlPoint2: p(10.5, 6.9))
+            eye.curve(to: p(8, 10.9), controlPoint1: p(10.5, 10.1), controlPoint2: p(9.3, 10.9))
+            eye.curve(to: p(4.5, 8.5), controlPoint1: p(6.7, 10.9), controlPoint2: p(5.5, 10.1))
+            eye.close()
+            return [frame, eye, NSBezierPath(ovalIn: NSRect(x: 6.4, y: 6.9, width: 3.2, height: 3.2))]
+        case .procedure:
+            let left = NSBezierPath()
+            left.move(to: p(5, 2.5))
+            left.line(to: p(4, 2.5))
+            left.curve(to: p(2.5, 4), controlPoint1: p(3.17, 2.5), controlPoint2: p(2.5, 3.17))
+            left.line(to: p(2.5, 6.5))
+            left.line(to: p(1.5, 8))
+            left.line(to: p(2.5, 9.5))
+            left.line(to: p(2.5, 12))
+            left.curve(to: p(4, 13.5), controlPoint1: p(2.5, 12.83), controlPoint2: p(3.17, 13.5))
+            left.line(to: p(5, 13.5))
+            let right = NSBezierPath()
+            right.move(to: p(11, 2.5))
+            right.line(to: p(12, 2.5))
+            right.curve(to: p(13.5, 4), controlPoint1: p(12.83, 2.5), controlPoint2: p(13.5, 3.17))
+            right.line(to: p(13.5, 6.5))
+            right.line(to: p(14.5, 8))
+            right.line(to: p(13.5, 9.5))
+            right.line(to: p(13.5, 12))
+            right.curve(to: p(12, 13.5), controlPoint1: p(13.5, 12.83), controlPoint2: p(12.83, 13.5))
+            right.line(to: p(11, 13.5))
+            let play = NSBezierPath()
+            play.move(to: p(6.8, 5.8))
+            play.line(to: p(6.8, 10.2))
+            play.line(to: p(10, 8))
+            play.close()
+            return [left, right, play]
+        case .function:
+            let stem = NSBezierPath()
+            stem.move(to: p(10.5, 2.5))
+            stem.curve(to: p(7.9, 4.9), controlPoint1: p(8.9, 2.5), controlPoint2: p(8.2, 3.4))
+            stem.line(to: p(6.4, 11.6))
+            stem.curve(to: p(4, 13.5), controlPoint1: p(6.1, 13), controlPoint2: p(5.4, 13.5))
+            return [stem, line(p(5, 6.5), p(10, 6.5))]
+        case .add:
+            return [line(p(8, 3), p(8, 13)), line(p(3, 8), p(13, 8))]
+        case .actions:
+            // A cog: eight flat-topped teeth around a ring, and a hub.
+            func polar(_ radius: CGFloat, _ degrees: CGFloat) -> NSPoint {
+                let angle = degrees * .pi / 180
+                return p(8 + radius * cos(angle), 8 + radius * sin(angle))
+            }
+            let cog = NSBezierPath()
+            for tooth in 0..<8 {
+                let centre = CGFloat(tooth) * 45
+                let corners = [polar(4.6, centre - 15), polar(6.4, centre - 8), polar(6.4, centre + 8), polar(4.6, centre + 15)]
+                if tooth == 0 { cog.move(to: corners[0]) } else { cog.line(to: corners[0]) }
+                for corner in corners.dropFirst() { cog.line(to: corner) }
+            }
+            cog.close()
+            return [cog, NSBezierPath(ovalIn: NSRect(x: 6, y: 6, width: 4, height: 4))]
+        case .refresh:
+            let arc = NSBezierPath()
+            arc.appendArc(withCenter: p(8, 8), radius: 5, startAngle: 30, endAngle: 330, clockwise: false)
+            return [arc, line(p(12.33, 5.5), p(12.6, 2.4)), line(p(12.33, 5.5), p(9.3, 4.9))]
+        case .infoPanel:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 2.5, width: 12, height: 11), xRadius: 2, yRadius: 2),
+                    line(p(2, 10), p(14, 10))]
+        case .more:
+            return [NSBezierPath(ovalIn: NSRect(x: 2.75, y: 7.25, width: 1.5, height: 1.5)),
+                    NSBezierPath(ovalIn: NSRect(x: 7.25, y: 7.25, width: 1.5, height: 1.5)),
+                    NSBezierPath(ovalIn: NSRect(x: 11.75, y: 7.25, width: 1.5, height: 1.5))]
+        case .favorite:
+            let star = NSBezierPath()
+            let points: [(CGFloat, CGFloat)] = [(8, 2.2), (9.7, 5.8), (13.6, 6.3), (10.7, 9.0), (11.4, 12.9),
+                                                (8, 11), (4.6, 12.9), (5.3, 9.0), (2.4, 6.3), (6.3, 5.8)]
+            star.move(to: p(points[0].0, points[0].1))
+            for point in points.dropFirst() { star.line(to: p(point.0, point.1)) }
+            star.close()
+            return [star]
+        case .history:
+            let ring = NSBezierPath()
+            ring.appendArc(withCenter: p(8, 8), radius: 5.5, startAngle: 180, endAngle: 135, clockwise: false)
+            return [ring, line(p(2.5, 8), p(2.5, 5.3)), line(p(2.5, 8), p(5.1, 8)),
+                    line(p(8, 5), p(8, 8.2)), line(p(8, 8.2), p(10, 9.5))]
+        case .copy:
+            return [NSBezierPath(roundedRect: NSRect(x: 5.5, y: 5.5, width: 8, height: 8), xRadius: 1.5, yRadius: 1.5),
+                    line(p(2.5, 10.5), p(2.5, 3.5)), line(p(2.5, 3.5), p(3.5, 2.5)), line(p(3.5, 2.5), p(10.5, 2.5))]
+        case .save:
+            return [line(p(8, 2.5), p(8, 10)), line(p(8, 10), p(5, 7)), line(p(8, 10), p(11, 7)),
+                    line(p(3, 10.5), p(3, 13.5)), line(p(3, 13.5), p(13, 13.5)), line(p(13, 13.5), p(13, 10.5))]
+        case .clear:
+            return [line(p(3, 4.5), p(13, 4.5)), line(p(6.5, 4.5), p(6.5, 2.5)), line(p(6.5, 2.5), p(9.5, 2.5)), line(p(9.5, 2.5), p(9.5, 4.5)),
+                    NSBezierPath(roundedRect: NSRect(x: 4.5, y: 4.5, width: 7, height: 9), xRadius: 1.5, yRadius: 1.5)]
+        case .field:
+            return [line(p(3, 4.5), p(13, 4.5)), line(p(3, 8), p(13, 8)), line(p(3, 11.5), p(9, 11.5))]
+        case .keyword:
+            return [line(p(4.5, 3.5), p(4.5, 12.5)), line(p(4.5, 8.5), p(10.5, 3.5)), line(p(6.5, 7), p(11, 12.5))]
+        case .structure:
+            return [NSBezierPath(roundedRect: NSRect(x: 2.5, y: 2.5, width: 11, height: 11), xRadius: 2, yRadius: 2),
+                    line(p(2.5, 6), p(13.5, 6)), line(p(6.2, 6), p(6.2, 13.5)), line(p(9.8, 6), p(9.8, 13.5))]
+        case .relations:
+            return [line(p(3, 5.5), p(13, 5.5)), line(p(10.5, 3), p(13, 5.5)), line(p(13, 5.5), p(10.5, 8)),
+                    line(p(13, 10.5), p(3, 10.5)), line(p(5.5, 8), p(3, 10.5)), line(p(3, 10.5), p(5.5, 13))]
+        case .triggers:
+            let bolt = NSBezierPath()
+            bolt.move(to: p(9, 1.8)); bolt.line(to: p(4, 9)); bolt.line(to: p(7.8, 9))
+            bolt.line(to: p(7, 14.2)); bolt.line(to: p(12, 7)); bolt.line(to: p(8.2, 7)); bolt.close()
+            return [bolt]
+        case .info:
+            return [NSBezierPath(ovalIn: NSRect(x: 2.2, y: 2.2, width: 11.6, height: 11.6)),
+                    line(p(8, 7.4), p(8, 11)), NSBezierPath(ovalIn: NSRect(x: 7.6, y: 4.6, width: 0.8, height: 0.8))]
+        case .query:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(5, 6.5), p(7, 8)), line(p(7, 8), p(5, 9.5)), line(p(8.5, 10), p(11, 10))]
+        case .recordView:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(9.5, 3), p(9.5, 13))]
+        case .users:
+            let body = NSBezierPath()
+            body.move(to: p(2.5, 13)); body.curve(to: p(9.5, 13), controlPoint1: p(2.5, 8.6), controlPoint2: p(9.5, 8.6))
+            let second = NSBezierPath()
+            second.move(to: p(10.6, 9.3)); second.curve(to: p(13.5, 12.6), controlPoint1: p(12.8, 9.3), controlPoint2: p(13.5, 10.6))
+            return [NSBezierPath(ovalIn: NSRect(x: 3.8, y: 3.2, width: 4.4, height: 4.4)), body,
+                    NSBezierPath(ovalIn: NSRect(x: 9.2, y: 4.2, width: 3.6, height: 3.6)), second]
+        case .console:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(2, 6), p(14, 6)), line(p(5, 8.2), p(6.6, 9.5)), line(p(6.6, 9.5), p(5, 10.8))]
+        case .clearConsole:
+            return [NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 12, height: 10), xRadius: 2, yRadius: 2),
+                    line(p(2, 6), p(14, 6)), line(p(6.5, 8), p(9.5, 11)), line(p(9.5, 8), p(6.5, 11))]
+        case .chevronLeft:
+            return [line(p(9.5, 4), p(6, 8)), line(p(6, 8), p(9.5, 12))]
+        case .chevronRight:
+            return [line(p(6.5, 4), p(10, 8)), line(p(10, 8), p(6.5, 12))]
+        case .remove:
+            return [line(p(3.5, 8), p(12.5, 8))]
+        case .duplicate:
+            return [NSBezierPath(roundedRect: NSRect(x: 5.5, y: 5.5, width: 8, height: 8), xRadius: 1.5, yRadius: 1.5),
+                    line(p(2.5, 10.5), p(2.5, 3.5)), line(p(2.5, 3.5), p(3.5, 2.5)), line(p(3.5, 2.5), p(10.5, 2.5)),
+                    line(p(9.5, 7.5), p(9.5, 11.5)), line(p(7.5, 9.5), p(11.5, 9.5))]
+        case .editMode:
+            let pencil = NSBezierPath()
+            pencil.move(to: p(3, 13)); pencil.line(to: p(3.5, 10.5)); pencil.line(to: p(10.5, 3.5))
+            pencil.line(to: p(12.5, 5.5)); pencil.line(to: p(5.5, 12.5)); pencil.close()
+            return [pencil, line(p(9, 5), p(11, 7))]
+        case .filter, .filterActive:
+            let funnel = NSBezierPath()
+            funnel.move(to: p(2.5, 3.5)); funnel.line(to: p(13.5, 3.5)); funnel.line(to: p(9.2, 8.5))
+            funnel.line(to: p(9.2, 12.5)); funnel.line(to: p(6.8, 13.5)); funnel.line(to: p(6.8, 8.5)); funnel.close()
+            return glyph == .filterActive ? [funnel, NSBezierPath(ovalIn: NSRect(x: 11.5, y: 10, width: 3, height: 3))] : [funnel]
+        case .columns:
+            return [NSBezierPath(roundedRect: NSRect(x: 2.5, y: 3, width: 11, height: 10), xRadius: 1.5, yRadius: 1.5),
+                    line(p(6.2, 3), p(6.2, 13)), line(p(9.8, 3), p(9.8, 13))]
+        case .indexes:
+            return [line(p(3, 4.5), p(13, 4.5)), line(p(3, 8), p(10, 8)), line(p(3, 11.5), p(7, 11.5)),
+                    line(p(12, 8.5), p(12, 13)), line(p(10.5, 11.5), p(12, 13)), line(p(13.5, 11.5), p(12, 13))]
+        case .pageOptions:
+            return [NSBezierPath(roundedRect: NSRect(x: 3, y: 2.5, width: 10, height: 11), xRadius: 1.5, yRadius: 1.5),
+                    line(p(5.5, 6), p(10.5, 6)), line(p(5.5, 8.5), p(10.5, 8.5)), line(p(5.5, 11), p(8.5, 11))]
+        }
+    }
+}

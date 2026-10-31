@@ -188,35 +188,36 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
  */
 - (void)copy:(id)sender
 {
-	NSString *tmp = nil;
-	
-	if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL || [(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQLNoAutoInc){
+	[self copyRowsForTag:[(NSMenuItem*)sender tag] onlySelectedRows:YES];
+}
 
-		if ([(NSMenuItem*)sender tag] == SPEditMenuCopyAsSQL){
-            tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:NO skipGeneratedColumn:YES];
-		}
-		else{
-			tmp = [self rowsAsSqlInsertsOnlySelectedRows:YES skipAutoIncrementColumn:YES skipGeneratedColumn:YES];
-		}
-		
-		if (tmp != nil){
+- (BOOL)copyRowsForTag:(NSInteger)tag onlySelectedRows:(BOOL)onlySelected
+{
+	NSString *tmp = nil;
+
+	if (tag == SPEditMenuCopyAsSQL || tag == SPEditMenuCopyAsSQLNoAutoInc) {
+		tmp = [self rowsAsSqlInsertsOnlySelectedRows:onlySelected skipAutoIncrementColumn:(tag == SPEditMenuCopyAsSQLNoAutoInc) skipGeneratedColumn:YES];
+		if (tmp != nil) {
 			NSPasteboard *pb = [NSPasteboard generalPasteboard];
 			[pb declareTypes:@[NSPasteboardTypeString] owner:nil];
 			[pb setString:tmp forType:NSPasteboardTypeString];
 		}
 	}
 	else {
-		tmp = [self rowsAsTabStringWithHeaders:([(NSMenuItem*)sender tag] == SPEditMenuCopyWithColumns) onlySelectedRows:YES blobHandling:kBlobInclude];
-		
+		tmp = [self rowsAsTabStringWithHeaders:(tag == SPEditMenuCopyWithColumns) onlySelectedRows:onlySelected blobHandling:kBlobInclude];
 		if (tmp != nil) {
 			NSPasteboard *pb = [NSPasteboard generalPasteboard];
-
 			[pb declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
-
 			[pb setString:tmp forType:NSPasteboardTypeString];
 			[pb setString:tmp forType:NSPasteboardTypeTabularText];
 		}
 	}
+	return tmp != nil;
+}
+
+- (BOOL)hasColumnDefinitions
+{
+	return columnDefinitions != nil;
 }
 
 /**

@@ -54,7 +54,7 @@
 	NSString *observerKeyPath;
 	BOOL observingSelfSelectedTag;  // whether the self-observation from initWithFrame: is registered
 	
-	IBOutlet id delegate;
+	IBOutlet __weak id delegate; // weak: the delegate (the connection controller) owns this view
 	
 	NSArray *colorList;
 }
@@ -62,9 +62,10 @@
 @property (nonatomic,readwrite,assign) NSInteger selectedTag;
 
 /**
- * Provide a list of (NSColor *) objects (at most 7) which will be displayed in the view
+ * Provide the favourite palette: a list of (NSColor *) objects, one per stored colour index, which will be
+ * displayed in the view in rainbow order (see SAFavoriteColourSelectorLayout)
  */
-@property (readwrite,copy) NSArray *colorList;
+@property (nonatomic,readwrite,copy) NSArray *colorList;
 
 @end
 

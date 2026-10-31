@@ -38,7 +38,7 @@
 	IBOutlet __weak SPDatabaseDocument *theDocument;
 	IBOutlet NSSegmentedControl *historyControl;
 
-	SPTableContent *tableContentInstance;
+	__weak SPTableContent *tableContentInstance; // weak: the table content owns this controller
 	SPTablesList *tablesListInstance;
 	NSMutableDictionary *tableContentStates;
 	SPTableHistoryManager *historyManager;

@@ -6,22 +6,26 @@
 //
 
 
+import Combine
 import SwiftUI
 
 @MainActor
 private final class SAQueryFavoriteSaveViewModel: ObservableObject {
-    @Published var name = ""
+    @Published var name = "" {
+        didSet { if name != oldValue { errorMessage = "" } }
+    }
     @Published var saveGlobally: Bool
     @Published var selectedFavoriteID: String? {
         didSet {
             if let selectedFavorite {
                 saveGlobally = selectedFavorite.scope == .global
             }
+            if selectedFavoriteID != oldValue { errorMessage = "" }
         }
     }
     @Published var selections: [SAQueryFavoriteSelection]
+    /// Shown under the form in the alert red until the name or the choice changes.
     @Published var errorMessage = ""
-    @Published var isShowingError = false
 
     init(saveGlobally: Bool, selections: [SAQueryFavoriteSelection]) {
         self.saveGlobally = saveGlobally
@@ -43,96 +47,171 @@ private final class SAQueryFavoriteSaveViewModel: ObservableObject {
 
     func showError(_ message: String) {
         errorMessage = message
-        isShowingError = true
     }
 }
 
+/// The sheet in the Claude form look, at the AppKit form sheets' metrics (`SAClaudeFormLayout`, `.form` controls):
+/// the title, right-aligned labels beside a column of controls, the footer with Cancel and the accent Save at its right.
 private struct SAQueryFavoriteSaveView: View {
     @ObservedObject var model: SAQueryFavoriteSaveViewModel
+    @ObservedObject var palette: SAClaudeSwiftUIPalette
+    let title: String
+    /// The saved connection's name when the window's local favourites are stored for it, else nil.
+    let connectionName: String?
     let onSave: () -> Void
     let onCancel: () -> Void
 
     @FocusState private var isNameFocused: Bool
+
+    private typealias Layout = SAClaudeFormLayout
+
+    static let nameLabel = NSLocalizedString("Query Name:", comment: "Query favorite save sheet name label")
+    static let replaceLabel = NSLocalizedString("Or replace an existing favorite:", comment: "Query favorite replacement picker label")
+
+    /// The label column and sheet width, as the AppKit form engine sizes them: the widest label (on one line) beside
+    /// a control column of at least 200pt, 360–560pt wide.
+    static let frames: SAClaudeFormLayout.Frames = {
+        func labelWidth(_ text: String) -> CGFloat {
+            // A label's one-line width plus the text cell's 2pt insets, as the AppKit form measures its labels.
+            let string = NSAttributedString(string: SAClaudeFormText.rowLabel(text), attributes: [.font: SAClaudeFormSheet.labelFont])
+            return ceil(string.size().width) + 4
+        }
+        let button = SAClaudeFormLayout.FooterItem(width: SAClaudeSwiftUIMetrics.buttonMinWidth,
+                                                   height: SAClaudeControlSize.form.buttonHeight)
+        return SAClaudeFormLayout.frames(SAClaudeFormLayout.Spec(
+            items: [.row(labelWidth: labelWidth(nameLabel), control: .field),
+                    .control(.checkbox),
+                    .row(labelWidth: labelWidth(replaceLabel), control: .popUp)],
+            hasContext: false,
+            footerTrailing: [button, button],
+            currentSize: .zero))
+    }()
+
+    static var width: CGFloat { frames.size.width }
 
     private var isReplacing: Bool {
         model.selectedFavorite != nil
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(NSLocalizedString("Query Name:", comment: "Query favorite save sheet name label"))
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title)
+                .font(Font(SAClaudeFormSheet.titleFont))
+                .foregroundColor(palette.text)
+                .lineLimit(1)
+                .frame(height: Layout.titleHeight)
+                .accessibilityAddTraits(.isHeader)
+                .padding(.bottom, Layout.headerGap)
 
-            TextField("", text: $model.name)
-                .textFieldStyle(.roundedBorder)
-                .disabled(isReplacing)
-                .focused($isNameFocused)
-
-            Toggle(
-                NSLocalizedString("Save globally", comment: "Query favorite save sheet global checkbox"),
-                isOn: $model.saveGlobally
-            )
-            .disabled(isReplacing)
-
-            Divider()
-
-            Text(NSLocalizedString("Or replace an existing favorite:", comment: "Query favorite replacement picker label"))
-                .font(.headline)
-
-            Picker("", selection: $model.selectedFavoriteID) {
-                Text(NSLocalizedString("None", comment: "No query favorite replacement selection"))
-                    .tag(String?.none)
-
-                ForEach(model.selections) { selection in
-                    Text(selectionTitle(selection))
-                        .tag(Optional(selection.id))
-                }
+            row(Self.nameLabel) {
+                TextField("", text: $model.name)
+                    .textFieldStyle(SAClaudeFieldStyle(isFocused: isNameFocused, size: .form))
+                    .focused($isNameFocused)
+                    .disabled(isReplacing)
+                    .accessibilityLabel(Text(SAClaudeFormText.rowLabel(Self.nameLabel)))
             }
-            .labelsHidden()
-            .accessibilityLabel(
-                Text(NSLocalizedString("Favorite to replace", comment: "Query favorite replacement picker accessibility label"))
-            )
+            .padding(.bottom, Layout.rowGap)
+
+            row(nil) {
+                Toggle(
+                    NSLocalizedString("ClaudeQueryFavoriteSaveForAllConnections", value: "Save for all connections",
+                                      comment: "Query favorite save sheet: checkbox that saves the favorite globally (was “Save globally”)"),
+                    isOn: $model.saveGlobally
+                )
+                .toggleStyle(SAClaudeCheckboxToggleStyle(size: .form))
+                .disabled(isReplacing)
+            }
+
+            // Off, for a window on a saved connection: where the favourite goes.
+            if let connectionName, !model.saveGlobally, !isReplacing {
+                note(SAQueryFavoriteLocalScope.savedOnlyText(connectionName), colour: palette.muted)
+                    .padding(.top, -2)
+            }
+
+            Color.clear.frame(height: Layout.rowGap)
+
+            row(Self.replaceLabel) {
+                SAQueryFavoriteReplacePicker(model: model, title: selectionTitle)
+            }
 
             if isReplacing {
-                Text(NSLocalizedString(
+                note(NSLocalizedString(
                     "The selected favorite keeps its name and location.",
                     comment: "Query favorite replacement explanation"
-                ))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                ), colour: palette.muted)
             }
 
-            HStack {
+            if !model.errorMessage.isEmpty {
+                note(model.errorMessage,
+                     colour: Color(nsColor: palette.isDark ? SAClaudeAlertChrome.redGlyphDark : SAClaudeAlertChrome.red))
+            }
+
+            HStack(spacing: Layout.footerItemGap) {
                 Spacer()
 
                 Button(NSLocalizedString("Cancel", comment: "Cancel query favorite save"), action: onCancel)
+                    .buttonStyle(SAClaudeSecondaryButtonStyle(size: .form))
                     .keyboardShortcut(.cancelAction)
 
                 Button(NSLocalizedString("Save", comment: "Save query favorite"), action: onSave)
+                    .buttonStyle(SAClaudePrimaryButtonStyle(size: .form))
                     .keyboardShortcut(.defaultAction)
                     .disabled(!model.canSave)
             }
+            .frame(height: Layout.footerHeight)
+            .padding(.top, Layout.footerGap)
         }
-        .padding(20)
-        .frame(width: 360)
+        .padding(EdgeInsets(top: Layout.topMargin, leading: Layout.sideMargin, bottom: Layout.bottomMargin, trailing: Layout.sideMargin))
+        .frame(width: Self.width)
+        .background(palette.surface)
+        .environmentObject(palette)
         .onAppear {
             isNameFocused = true
         }
-        .alert(
-            NSLocalizedString("Favorite Changed", comment: "Stale query favorite replacement alert title"),
-            isPresented: $model.isShowingError
-        ) {
-            Button(NSLocalizedString("OK", comment: "Dismiss query favorite replacement error"), role: .cancel) {}
-        } message: {
-            Text(model.errorMessage)
+    }
+
+    /// A form row, at least the form's 28pt: the label (its trailing colon dropped, as the AppKit form shows labels)
+    /// right-aligned on one line in the label column, the control centred beside it.
+    private func row<Control: View>(_ label: String?, @ViewBuilder control: () -> Control) -> some View {
+        HStack(alignment: .center, spacing: Layout.labelGap) {
+            Group {
+                if let label {
+                    Text(SAClaudeFormText.rowLabel(label))
+                        .font(Font(SAClaudeFormSheet.labelFont))
+                        .foregroundColor(palette.muted)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .accessibilityHidden(true)
+                } else {
+                    Color.clear.frame(height: 0)
+                }
+            }
+            .frame(width: Self.frames.labelColumnWidth, alignment: .trailing)
+
+            control()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(minHeight: Layout.rowHeight)
+    }
+
+    /// A note under the rows, in the control column (the replacement explanation, the error).
+    private func note(_ text: String, colour: Color) -> some View {
+        HStack(spacing: Layout.labelGap) {
+            Color.clear.frame(width: Self.frames.labelColumnWidth, height: 0)
+            Text(text)
+                .font(Font(SAClaudeFormSheet.contextFont))
+                .foregroundColor(colour)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.top, 6)
     }
 
     private func selectionTitle(_ selection: SAQueryFavoriteSelection) -> String {
         let scope: String
         switch selection.scope {
         case .document:
-            scope = NSLocalizedString("Document", comment: "Document query favorite scope")
+            scope = connectionName ?? NSLocalizedString("Document", comment: "Document query favorite scope")
         case .global:
             scope = NSLocalizedString("Global", comment: "Global query favorite scope")
         }
@@ -140,20 +219,40 @@ private struct SAQueryFavoriteSaveView: View {
     }
 }
 
+/// The replace-existing choice as the kit's Claude pill (`SAClaudePopUpPill`, filling the control column).
+private struct SAQueryFavoriteReplacePicker: View {
+    @ObservedObject var model: SAQueryFavoriteSaveViewModel
+    let title: (SAQueryFavoriteSelection) -> String
+
+    var body: some View {
+        let ids: [String?] = [nil] + model.selections.map { Optional($0.id) }
+        SAClaudePopUpPill(
+            titles: [NSLocalizedString("None", comment: "No query favorite replacement selection")] + model.selections.map(title),
+            selectedIndex: ids.firstIndex(of: model.selectedFavoriteID) ?? 0,
+            accessibilityLabel: NSLocalizedString("Favorite to replace", comment: "Query favorite replacement picker accessibility label"),
+            fillsWidth: true,
+            onSelect: { index in model.selectedFavoriteID = ids.indices.contains(index) ? ids[index] : nil }
+        )
+    }
+}
+
 @MainActor
 @objc final class SAQueryFavoriteSaveWindowController: NSWindowController {
     private let query: String
-    private let fileURL: URL
+    private let localScope: SAQueryFavoriteLocalScope
     private let model: SAQueryFavoriteSaveViewModel
+    private let palette = SAClaudeSwiftUIPalette(source: .app)
+    private var appearanceSubscription: AnyCancellable?
     private let preferences = UserDefaults.standard
 
-    @objc(initWithQuery:fileURL:defaultSaveGlobally:)
-    init(query: String, fileURL: URL, defaultSaveGlobally: Bool) {
+    /// `localScope`: where the window's local favourites live (the saved connection's list or the file's).
+    @objc(initWithQuery:localScope:defaultSaveGlobally:)
+    init(query: String, localScope: SAQueryFavoriteLocalScope, defaultSaveGlobally: Bool) {
         self.query = query
-        self.fileURL = fileURL
+        self.localScope = localScope
 
         let selections = SAQueryFavoriteStore.selections(
-            documentFavorites: Self.documentFavorites(for: fileURL),
+            documentFavorites: localScope.favorites(),
             globalFavorites: Self.globalFavorites()
         )
         model = SAQueryFavoriteSaveViewModel(
@@ -162,7 +261,7 @@ private struct SAQueryFavoriteSaveView: View {
         )
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 280),
+            contentRect: NSRect(x: 0, y: 0, width: SAQueryFavoriteSaveView.width, height: 280),
             styleMask: [.titled],
             backing: .buffered,
             defer: false
@@ -175,10 +274,17 @@ private struct SAQueryFavoriteSaveView: View {
         panel.contentView = NSHostingView(
             rootView: SAQueryFavoriteSaveView(
                 model: model,
+                palette: palette,
+                title: panel.title,
+                connectionName: localScope.connectionName,
                 onSave: { [weak self] in self?.save() },
                 onCancel: { [weak self] in self?.finish(returnCode: .cancel) }
             )
         )
+        // The theme's lightness, as every Claude sheet (the field's caret and the picker's menu follow it).
+        appearanceSubscription = palette.$isDark.sink { [weak panel] isDark in
+            panel?.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+        }
     }
 
     @available(*, unavailable)
@@ -187,7 +293,7 @@ private struct SAQueryFavoriteSaveView: View {
     }
 
     private func save() {
-        let documentFavorites = Self.documentFavorites(for: fileURL)
+        let documentFavorites = localScope.favorites()
         let globalFavorites = Self.globalFavorites()
 
         do {
@@ -202,10 +308,7 @@ private struct SAQueryFavoriteSaveView: View {
 
             switch mutation.scope {
             case .document:
-                SPQueryController.shared().replaceFavorites(
-                    by: mutation.favorites,
-                    forFileURL: fileURL
-                )
+                localScope.replaceFavorites(mutation.favorites)
             case .global:
                 preferences.set(mutation.favorites, forKey: SPQueryFavorites)
             }
@@ -220,16 +323,23 @@ private struct SAQueryFavoriteSaveView: View {
                 documentFavorites: documentFavorites,
                 globalFavorites: globalFavorites
             ))
-            model.showError(NSLocalizedString(
+            showError(NSLocalizedString(
                 "The selected favorite was changed or removed in another window. Choose it again before saving.",
                 comment: "Stale query favorite replacement alert message"
             ))
         } catch {
-            model.showError(NSLocalizedString(
+            showError(NSLocalizedString(
                 "Enter a query name or choose a favorite to replace.",
                 comment: "Missing query favorite name alert message"
             ))
         }
+    }
+
+    /// Shows `message` under the form and has VoiceOver read it (the alert it replaced was read out).
+    private func showError(_ message: String) {
+        model.showError(message)
+        NSAccessibility.post(element: window as Any, notification: .announcementRequested,
+                             userInfo: [.announcement: message, .priority: NSAccessibilityPriorityLevel.high.rawValue])
     }
 
     private func finish(returnCode: NSApplication.ModalResponse) {
@@ -239,13 +349,6 @@ private struct SAQueryFavoriteSaveView: View {
         } else {
             window.close()
         }
-    }
-
-    private static func documentFavorites(for fileURL: URL) -> [Any] {
-        guard let favorites = SPQueryController.shared().favorites(forFileURL: fileURL) else {
-            return []
-        }
-        return favorites.map { $0 }
     }
 
     private static func globalFavorites() -> [Any] {

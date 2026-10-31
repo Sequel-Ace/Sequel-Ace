@@ -111,6 +111,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
+// A connection with no table selected opens on Query; the first table or view picked then
+// switches to this tab (the Default View preference, else the last-used tab). Cleared by any
+// manual tab switch. `applyingInitialViewMode` marks the app's own switches (the opening one and the
+// jump): they do not clear the pending state, and the tab-change delegate starts no load for the jump
+// because _loadTableTask loads the tab it ends up on. `hasScheduledInitialViewJump` is the decision
+// taken in loadTable:ofType: and carried out on the load thread.
+@property (assign) BOOL hasPendingInitialViewMode;
+@property (assign) SAViewMode pendingInitialViewMode;
+@property (assign) BOOL applyingInitialViewMode;
+@property (assign) BOOL hasScheduledInitialViewJump;
+
 - (void)_addDatabase;
 - (void)_alterDatabase;
 - (void)_copyDatabase;
@@ -329,7 +340,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (NSToolbar *)mainToolbar {
     if (!_mainToolbar) {
-        _mainToolbar = [[NSToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
+        _mainToolbar = [[SAClaudeToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
         [_mainToolbar setAllowsUserCustomization:YES];
         [_mainToolbar setAutosavesConfiguration:YES];
         [_mainToolbar setDelegate:self];
@@ -544,26 +555,44 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         else                         [self restoreSession];
     }
     else {
-        switch ([prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode]) {
-            default:
-            case SPStructureViewMode:
-                [self viewStructure];
-                break;
-            case SPContentViewMode:
-                [self viewContent];
-                break;
-            case SPRelationsViewMode:
-                [self viewRelations];
-                break;
-            case SPTableInfoViewMode:
-                [self viewStatus];
-                break;
-            case SPQueryEditorViewMode:
-                [self viewQuery];
-                break;
-            case SPTriggersViewMode:
-                [self viewTriggers];
-                break;
+        NSInteger preferredViewPreference = [prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode];
+        SAViewMode preferredMode = [SAInitialViewPolicy preferredModeForPreferencesValue:preferredViewPreference];
+        SAViewMode initialMode = [SAInitialViewPolicy initialModeWithPreferred:preferredMode hasTable:([self table] != nil)];
+
+        if (initialMode != preferredMode) {
+            // Nothing is selected, so open on Query and remember where the first table or view should go.
+            // The opening switch overwrites SPLastViewMode; put it back so quitting before picking a
+            // table does not lose the user's usual tab.
+            NSInteger lastViewPreference = [prefs integerForKey:SPLastViewMode];
+            self.pendingInitialViewMode = preferredMode;
+            self.hasPendingInitialViewMode = YES;
+            self.applyingInitialViewMode = YES;
+            [self viewQuery];
+            self.applyingInitialViewMode = NO;
+            [prefs setInteger:lastViewPreference forKey:SPLastViewMode];
+        }
+        else {
+            switch (preferredViewPreference) {
+                default:
+                case SPStructureViewMode:
+                    [self viewStructure];
+                    break;
+                case SPContentViewMode:
+                    [self viewContent];
+                    break;
+                case SPRelationsViewMode:
+                    [self viewRelations];
+                    break;
+                case SPTableInfoViewMode:
+                    [self viewStatus];
+                    break;
+                case SPQueryEditorViewMode:
+                    [self viewQuery];
+                    break;
+                case SPTriggersViewMode:
+                    [self viewTriggers];
+                    break;
+            }
         }
     }
 
@@ -1122,6 +1151,39 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if (!isNavigatorVisible) {
         [[SPNavigatorController sharedNavigatorController] updateEntriesForConnection:self];
+    }
+}
+
+#pragma mark -
+#pragma mark Table list methods
+
+/**
+ * Whether the table list sidebar is out of sight: collapsed by the split view,
+ * or dragged shut (a drag to zero width is not recorded as a collapse).
+ */
+- (BOOL)_tableListIsHidden {
+    NSView *sidebar = [[contentViewSplitter subviews] firstObject];
+    CGFloat width = (!sidebar || [sidebar isHidden]) ? 0 : NSWidth([sidebar frame]);
+    return [SAClaudeSidebarChrome tableListIsHiddenWithCollapsedFlag:[contentViewSplitter isCollapsibleSubviewCollapsed] sidebarWidth:width];
+}
+
+/**
+ * Hides or shows the table list sidebar (View > Hide / Show Table List).
+ */
+- (void)toggleTableList {
+    NSView *sidebar = [[contentViewSplitter subviews] firstObject];
+    if (!sidebar) return;
+
+    if (![self _tableListIsHidden]) {
+        [contentViewSplitter setCollapsibleSubviewCollapsed:YES animate:YES];
+    } else if ([contentViewSplitter isCollapsibleSubviewCollapsed]) {
+        // Collapsed by the split view, which reopens it at its pre-collapse width.
+        [contentViewSplitter setCollapsibleSubviewCollapsed:NO animate:YES];
+    } else {
+        // Dragged shut: the split view recorded no collapse, so set the width directly.
+        CGFloat savedWidth = [sidebar isHidden] ? NSWidth([sidebar frame]) : 0;
+        [sidebar setHidden:NO];
+        [contentViewSplitter setPosition:[SAClaudeSidebarChrome tableListRestoreWidthForSavedWidth:savedWidth] ofDividerAtIndex:0];
     }
 }
 
@@ -3116,6 +3178,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return ([[SPQueryController sharedQueryController] consoleMessageCount] > 0);
     }
 
+    // Show/hide table list
+    if (action == @selector(toggleTableList:)) {
+        [menuItem setTitle:[SAClaudeSidebarChrome tableListMenuTitleForHidden:[self _tableListIsHidden]]];
+        return [[contentViewSplitter subviews] count] > 0;
+    }
+
     // Show/hide console
     if (action == @selector(toggleNavigator:)) {
         [menuItem setTitle:([[[SPNavigatorController sharedNavigatorController] window] isVisible]) ? NSLocalizedString(@"Hide Navigator", @"hide navigator") : NSLocalizedString(@"Show Navigator", @"show navigator")];
@@ -3210,9 +3278,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                              database:[self database]
                                 table:[self table]
                          mySQLVersion:mySQLVersion
-             showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
+             showServerVersionInTitle:NO];
 
-    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
+    NSString *subtitle = [SAWindowTitleBuilder subtitleWithConnectionState:state mySQLVersion:mySQLVersion showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
+    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle subtitle:subtitle];
 
     // Always update, so that a window which is no longer connected drops the
     // favourite colour again. A nil colour clears both the tab line and the
@@ -3290,14 +3359,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setAction:@selector(clearConsole:)];
 
     } else if ([itemIdentifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
-        return [SARecordViewToolbarSupport makeToolbarItemWithTarget:self];
+        return [SAClaudeToolbarItems styledItem:[SARecordViewToolbarSupport makeToolbarItemWithTarget:self]];
 
     } else if ([[SAViewModeHelper allToolbarIdentifiers] containsObject:itemIdentifier]) {
         // Use data-driven SAViewMode for view-switching toolbar items
         for (NSInteger i = 0; i <= SAViewModeTriggers; i++) {
             NSToolbarItem *modeItem = [SAViewModeHelper makeToolbarItemFor:(SAViewMode)i target:self];
             if ([modeItem.itemIdentifier isEqualToString:itemIdentifier]) {
-                return modeItem;
+                return [SAClaudeToolbarItems styledItem:modeItem];
             }
         }
 
@@ -3320,7 +3389,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         toolbarItem = nil;
     }
 
-    return toolbarItem;
+    return [SAClaudeToolbarItems styledItem:toolbarItem];
 }
 
 - (void)toolbarWillAddItem:(NSNotification *)notification
@@ -3369,21 +3438,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar*)toolbar
 {
-    return @[
-        SPMainToolbarDatabaseSelection,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarTableStructure,
-        SPMainToolbarTableContent,
-        SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers,
-        SPMainToolbarTableInfo,
-        SPMainToolbarCustomQuery,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarHistoryNavigation,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarUserManager,
-        SPMainToolbarShowConsole
-    ];
+    return [SAClaudeToolbarItems defaultItemIdentifiers];
 }
 
 /**
@@ -3391,16 +3446,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSArray *)toolbarSelectableItemIdentifiers:(NSToolbar *)toolbar
 {
-    return @[
-        SPMainToolbarTableStructure,
-        SPMainToolbarTableContent,
-        SPMainToolbarCustomQuery,
-        SPMainToolbarTableInfo,
-        SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers,
-        [SARecordViewToolbarSupport itemIdentifier]
-    ];
-
+    // SAClaudeToolbar tracks the selected view and draws it itself; nothing is selectable for AppKit,
+    // so it draws no selection bezel or accent label of its own.
+    return @[];
 }
 
 /**
@@ -5469,6 +5517,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [self.mainToolbar setSelectedItemIdentifier:[SAViewModeHelper toolbarIdentifierFor:mode]];
         [self->spHistoryControllerInstance updateHistoryEntries];
         [self->prefs setInteger:[SAViewModeHelper preferencesValueFor:mode] forKey:SPLastViewMode];
+        // Choosing a tab by hand settles where the user wants to be; the opening switch is not a choice.
+        if (!self.applyingInitialViewMode) {
+            self.hasPendingInitialViewMode = NO;
+            self.hasScheduledInitialViewJump = NO;
+        }
         didSwitch = YES;
     });
     return didSwitch;
@@ -5597,6 +5650,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)tabView:(NSTabView *)aTabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem
 {
+    // The opening-tab jump runs inside _loadTableTask, which loads the tab it lands on itself.
+    if (self.applyingInitialViewMode) return;
+
     [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), [self table]]];
 
     // We can't pass aTabView or tabViewItem UI objects to a bg thread, but since the change should already
@@ -5672,6 +5728,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     selectedTableName = [[NSString alloc] initWithString:aTable];
     selectedTableType = aTableType;
+
+    // The first table or view picked after opening on Query moves to the user's usual tab. Decide here;
+    // _loadTableTask performs the switch so it does not race a second load started by the tab delegate.
+    // Test the flag first: -currentlySelectedView can hop to the main thread, which a load with nothing pending skips.
+    if (self.hasPendingInitialViewMode &&
+        [SAInitialViewPolicy shouldJumpWithPending:self.hasPendingInitialViewMode
+                                       selectedType:aTableType
+                                     currentIsQuery:([self currentlySelectedView] == SPTableViewCustomQuery)]) {
+        self.hasPendingInitialViewMode = NO;
+        self.hasScheduledInitialViewJump = YES;
+    }
 
     // Start a task
     if (isReloading) {
@@ -5810,6 +5877,23 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Restore view states as appropriate
         [spHistoryControllerInstance restoreViewStates];
+
+        // Carry out the opening-tab jump decided in loadTable:ofType: before the visible tab is loaded below
+        if (self.hasScheduledInitialViewJump) {
+            self.hasScheduledInitialViewJump = NO;
+            if (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable) {
+                self.applyingInitialViewMode = YES;
+                switch (self.pendingInitialViewMode) {
+                    case SAViewModeStructure: [self viewStructure]; break;
+                    case SAViewModeContent:   [self viewContent];   break;
+                    case SAViewModeQuery:     [self viewQuery];     break;
+                    case SAViewModeStatus:    [self viewStatus];    break;
+                    case SAViewModeRelations: [self viewRelations]; break;
+                    case SAViewModeTriggers:  [self viewTriggers];  break;
+                }
+                self.applyingInitialViewMode = NO;
+            }
+        }
 
         // Load the currently selected view if looking at a table or view
         if (tableEncoding && (selectedTableType == SPTableTypeView || selectedTableType == SPTableTypeTable))
