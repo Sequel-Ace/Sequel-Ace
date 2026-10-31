@@ -732,7 +732,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
   // The vendor suffix follows the version number: "10.11.8-MariaDB", "5.5.5-10.11.8-MariaDB-ubu2204".
   // Match it as a whole name — written as a character class, "-[mariadb]" also matches MySQL
-  // builds such as "8.0.33-debug", which then get MySQL 8.4 restrictions applied to them.
+  // builds such as "8.0.33-debug", which then incorrectly skip MySQL 8.4 restrictions.
   NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-mariadb.*"];
   if ([predicate evaluateWithObject: versionString]){
     return true;
