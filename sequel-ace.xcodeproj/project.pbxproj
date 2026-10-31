@@ -374,6 +374,7 @@
 		51CC84012FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */; };
 		51CC84022FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */; };
 		51CC84042FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */; };
+		5A11BEF02FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A11BEEF2FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift */; };
 		51CD0BDD258D06D8009E2484 /* DataMigrationDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */; };
 		51CD0BDE258D06D8009E2484 /* Preferences.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC0258D06D7009E2484 /* Preferences.xib */; };
 		51CD0BDF258D06D8009E2484 /* FilterTableWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */; };
@@ -1312,6 +1313,7 @@
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAHelpViewerOnlineURLBuilder.swift; sourceTree = "<group>"; };
 		51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAHelpViewerOnlineURLBuilderTests.swift; sourceTree = "<group>"; };
+		5A11BEEF2FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPMySQLConnectionServerInfoTests.swift; sourceTree = "<group>"; };
 		51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DataMigrationDialog.xib; sourceTree = "<group>"; };
 		51CD0BC0258D06D7009E2484 /* Preferences.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Preferences.xib; sourceTree = "<group>"; };
 		51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = FilterTableWindow.xib; sourceTree = "<group>"; };
@@ -2924,6 +2926,7 @@
 				C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */,
 				B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */,
 				51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */,
+				5A11BEEF2FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift */,
 				C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 				5A1EC0A12FF0000100000002 /* SARecordViewTests.swift */,
 				6F1A0C2E8B3D4A5F90172C04 /* SAFavoritesListKeysTests.swift */,
@@ -3721,6 +3724,7 @@
 				961210D6302E7269009A9A2A /* GitHub.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */,
 				51CC84042FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift in Sources */,
+				5A11BEF02FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift in Sources */,
 				C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
 				A19A2000000000000000E004 /* SQLiteDisplayFormatManager.swift in Sources */,
 				A19A2000000000000000E003 /* SQLitePinnedTableManager.swift in Sources */,
