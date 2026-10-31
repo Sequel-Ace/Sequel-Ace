@@ -13,8 +13,8 @@
 import Foundation
 
 /// Result of composing window and tab titles. Two strings because they
-/// can diverge (e.g. the window prepends a path component or MySQL
-/// version, while the tab stays compact).
+/// can diverge (the window prepends the file name, while the tab stays
+/// compact).
 @objc final class SAWindowTitleResult: NSObject {
     @objc let windowTitle: String
     @objc let tabTitle: String
@@ -41,14 +41,13 @@ import Foundation
     /// Branches:
     ///   - `.connecting` — both strings are "Connecting…", no path prefix.
     ///   - `.disconnected` — `<path — >?<bundleName>`, both strings equal.
-    ///   - `.connected` — `<path — >?<(MySQL X) >?<connectionName>[/db[/table]]`
-    ///     for the window; same minus the path-and-version preamble for
-    ///     the tab.
+    ///   - `.connected` — `<path — >?<connectionName>[/db[/table]]`
+    ///     for the window; same minus the path preamble for the tab.
     ///
     /// The path prefix (`"<fileName> — "`) is included only when there's
     /// a file URL and the document has been given a name (i.e. is not
-    /// "Untitled"). The (MySQL X) chunk only appears when the user has
-    /// toggled the corresponding preference.
+    /// "Untitled"). The server version is not part of the title: it is
+    /// the window's subtitle (`subtitle(connectionState:mySQLVersion:showServerVersionInTitle:)`).
     @objc static func buildTitle(
         connectionState: SAWindowConnectionState,
         filePath: String?,
@@ -56,9 +55,7 @@ import Foundation
         bundleName: String,
         connectionName: String,
         database: String?,
-        table: String?,
-        mySQLVersion: String?,
-        showServerVersionInTitle: Bool
+        table: String?
     ) -> SAWindowTitleResult {
         let pathName = pathPrefix(filePath: filePath, isUntitled: isUntitled)
 
@@ -73,11 +70,7 @@ import Foundation
             return SAWindowTitleResult(windowTitle: title, tabTitle: title)
 
         case .connected:
-            var windowTitle = pathName
-            if showServerVersionInTitle, let version = mySQLVersion, !version.isEmpty {
-                windowTitle += "(MySQL \(version)) "
-            }
-            windowTitle += connectionName
+            var windowTitle = pathName + connectionName
             var tabTitle = connectionName
 
             if let database = database, !database.isEmpty {
@@ -108,6 +101,13 @@ import Foundation
         }
         guard let filePath = filePath, !filePath.isEmpty else { return "" }
         return (filePath as NSString).lastPathComponent
+    }
+
+    /// The window's subtitle: `MySQL <version>` while connected, when the user shows the server version
+    /// (`SPDisplayServerVersionInWindowTitle`); otherwise empty.
+    @objc static func subtitle(connectionState: SAWindowConnectionState, mySQLVersion: String?, showServerVersionInTitle: Bool) -> String {
+        guard connectionState == .connected, showServerVersionInTitle, let version = mySQLVersion, !version.isEmpty else { return "" }
+        return "MySQL \(version)"
     }
 
     /// `<fileName> — ` when there is a real file URL and the document has

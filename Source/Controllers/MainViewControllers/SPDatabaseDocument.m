@@ -329,7 +329,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (NSToolbar *)mainToolbar {
     if (!_mainToolbar) {
-        _mainToolbar = [[NSToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
+        _mainToolbar = [[SADesignToolbar alloc] initWithIdentifier:@"TableWindowToolbar"];
         [_mainToolbar setAllowsUserCustomization:YES];
         [_mainToolbar setAutosavesConfiguration:YES];
         [_mainToolbar setDelegate:self];
@@ -3208,11 +3208,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                            bundleName:[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleNameKey]
                        connectionName:[self name]
                              database:[self database]
-                                table:[self table]
-                         mySQLVersion:mySQLVersion
-             showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
+                                table:[self table]];
 
-    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
+    NSString *subtitle = [SAWindowTitleBuilder subtitleWithConnectionState:state mySQLVersion:mySQLVersion showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
+    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle subtitle:subtitle];
 
     // Always update, so that a window which is no longer connected drops the
     // favourite colour again. A nil colour clears both the tab line and the
@@ -3290,14 +3289,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setAction:@selector(clearConsole:)];
 
     } else if ([itemIdentifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
-        return [SARecordViewToolbarSupport makeToolbarItemWithTarget:self];
+        return [SADesignToolbarItems styledItem:[SARecordViewToolbarSupport makeToolbarItemWithTarget:self] willBeInsertedIntoToolbar:willBeInsertedIntoToolbar];
 
     } else if ([[SAViewModeHelper allToolbarIdentifiers] containsObject:itemIdentifier]) {
         // Use data-driven SAViewMode for view-switching toolbar items
         for (NSInteger i = 0; i <= SAViewModeTriggers; i++) {
             NSToolbarItem *modeItem = [SAViewModeHelper makeToolbarItemFor:(SAViewMode)i target:self];
             if ([modeItem.itemIdentifier isEqualToString:itemIdentifier]) {
-                return modeItem;
+                return [SADesignToolbarItems styledItem:modeItem willBeInsertedIntoToolbar:willBeInsertedIntoToolbar];
             }
         }
 
@@ -3320,7 +3319,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         toolbarItem = nil;
     }
 
-    return toolbarItem;
+    return [SADesignToolbarItems styledItem:toolbarItem willBeInsertedIntoToolbar:willBeInsertedIntoToolbar];
 }
 
 - (void)toolbarWillAddItem:(NSNotification *)notification
@@ -3369,21 +3368,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar*)toolbar
 {
-    return @[
-        SPMainToolbarDatabaseSelection,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarTableStructure,
-        SPMainToolbarTableContent,
-        SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers,
-        SPMainToolbarTableInfo,
-        SPMainToolbarCustomQuery,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarHistoryNavigation,
-        NSToolbarSpaceItemIdentifier,
-        SPMainToolbarUserManager,
-        SPMainToolbarShowConsole
-    ];
+    return [SADesignToolbarItems defaultItemIdentifiers];
 }
 
 /**
@@ -3391,16 +3376,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSArray *)toolbarSelectableItemIdentifiers:(NSToolbar *)toolbar
 {
-    return @[
-        SPMainToolbarTableStructure,
-        SPMainToolbarTableContent,
-        SPMainToolbarCustomQuery,
-        SPMainToolbarTableInfo,
-        SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers,
-        [SARecordViewToolbarSupport itemIdentifier]
-    ];
-
+    // SADesignToolbar tracks the selected view and draws it itself; nothing is selectable for AppKit,
+    // so it draws no selection bezel or accent label of its own.
+    return @[];
 }
 
 /**
