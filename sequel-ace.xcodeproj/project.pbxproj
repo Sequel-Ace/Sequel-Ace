@@ -10,6 +10,7 @@
 		EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
 		7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
 		55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */; };
+		E19A5D7C3B2F48A6904D7E85 /* SASidebarBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C3D91E4A5F4D0E8A2B6C31 /* SASidebarBottomBar.swift */; };
 		5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */; };
 		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		063E86F1008F2FB5B4B8C400 /* SASSHTunnelPeerValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC3BA23047656C00BCE2B9 /* SASSHTunnelPeerValidator.swift */; };
@@ -532,6 +533,20 @@
 		77BAF2BFA8B8163A11014DA5 /* SATableListCellRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AA6EC7ADA69D8FCD7F2CAF /* SATableListCellRenderer.swift */; };
 		794358DD6B1C4070943C021B /* SAEditorTokensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */; };
 		7B182E1F0D6218CA522A86D4 /* SATableListCellRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5BD851B6D129D345188D5E5 /* SATableListCellRendererTests.swift */; };
+		917F2F892F11FB0D89EC5905 /* SASidebarObjectGlyph.swift in Sources */ = {isa = PBXBuildFile; fileRef = C26C1940443A3D88355D5F52 /* SASidebarObjectGlyph.swift */; };
+		EC88C51FE0B54DD0C6B896C3 /* SASidebarObjectGlyph.swift in Sources */ = {isa = PBXBuildFile; fileRef = C26C1940443A3D88355D5F52 /* SASidebarObjectGlyph.swift */; };
+		C7A3735ED2227BD5052189E7 /* SATablesListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49E09A1C6AAA32E6B1F773A /* SATablesListCellView.swift */; };
+		368BC9058837D30AB2C8FA07 /* SATablesListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49E09A1C6AAA32E6B1F773A /* SATablesListCellView.swift */; };
+		6737E4579A6ACB89EE332732 /* SASidebarObjectGlyphTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33569A5353D44FB4A09C2839 /* SASidebarObjectGlyphTests.swift */; };
+		24B37411F11A42893519431A /* SATablesListCellViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9692F50369CC5617C9E29DC /* SATablesListCellViewTests.swift */; };
+		C5ADC8492765102A15074EFA /* SATableInfoRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A6E1AA371681F6A3542A69 /* SATableInfoRow.swift */; };
+		66022CB89A1CF8F6530AFB4D /* SATableInfoRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A6E1AA371681F6A3542A69 /* SATableInfoRow.swift */; };
+		DF5CDC0A3504A3B926D11C8C /* SATableInfoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4C71B8F7D3CDDEEC9FFED1 /* SATableInfoRowView.swift */; };
+		32528EFF50A186E7D8005D86 /* SATableInfoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4C71B8F7D3CDDEEC9FFED1 /* SATableInfoRowView.swift */; };
+		A83FF3179D8890D431D1E348 /* SATableInfoTableDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09A9629CB5C7072B6E0FBDE /* SATableInfoTableDelegate.swift */; };
+		1F13514F20E784344E8A9762 /* SATableInfoTableDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09A9629CB5C7072B6E0FBDE /* SATableInfoTableDelegate.swift */; };
+		A94E4901D61EC815BECE17DC /* SATableInfoRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61682B292355F7EE844FCB00 /* SATableInfoRowTests.swift */; };
+		DA461317220BBFCC55CE1E16 /* SATableInfoRowViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A412CF54438B33B68585ACF /* SATableInfoRowViewTests.swift */; };
 		7E75432072457939574AC25A /* SAKeychainDisabledTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0232F338F68F67E4063B3EC /* SAKeychainDisabledTests.swift */; };
 		7EE575894C57515419B0A30A /* SPMCPPreferencePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88F0964487758A57DA339AF2 /* SPMCPPreferencePane.swift */; };
 		806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
@@ -892,6 +907,7 @@
 
 /* Begin PBXFileReference section */
 		D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePopUpButton.swift; sourceTree = "<group>"; };
+		B7C3D91E4A5F4D0E8A2B6C31 /* SASidebarBottomBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASidebarBottomBar.swift; sourceTree = "<group>"; };
 		6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePicker.swift; sourceTree = "<group>"; };
 		4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePickerModelTests.swift; sourceTree = "<group>"; };
 		0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATypeAheadSelectionLoadTests.swift; sourceTree = "<group>"; };
@@ -1528,6 +1544,15 @@
 		91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseScopedValueCache.swift; sourceTree = "<group>"; };
 		93E86B9CAE3B927AC789893E /* SAFieldEditorCommitPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAFieldEditorCommitPolicyTests.swift; sourceTree = "<group>"; };
 		95AA6EC7ADA69D8FCD7F2CAF /* SATableListCellRenderer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableListCellRenderer.swift; sourceTree = "<group>"; };
+		C26C1940443A3D88355D5F52 /* SASidebarObjectGlyph.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASidebarObjectGlyph.swift; sourceTree = "<group>"; };
+		A49E09A1C6AAA32E6B1F773A /* SATablesListCellView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATablesListCellView.swift; sourceTree = "<group>"; };
+		33569A5353D44FB4A09C2839 /* SASidebarObjectGlyphTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASidebarObjectGlyphTests.swift; sourceTree = "<group>"; };
+		D9692F50369CC5617C9E29DC /* SATablesListCellViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATablesListCellViewTests.swift; sourceTree = "<group>"; };
+		15A6E1AA371681F6A3542A69 /* SATableInfoRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableInfoRow.swift; sourceTree = "<group>"; };
+		3C4C71B8F7D3CDDEEC9FFED1 /* SATableInfoRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableInfoRowView.swift; sourceTree = "<group>"; };
+		E09A9629CB5C7072B6E0FBDE /* SATableInfoTableDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableInfoTableDelegate.swift; sourceTree = "<group>"; };
+		61682B292355F7EE844FCB00 /* SATableInfoRowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableInfoRowTests.swift; sourceTree = "<group>"; };
+		0A412CF54438B33B68585ACF /* SATableInfoRowViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SATableInfoRowViewTests.swift; sourceTree = "<group>"; };
 		961210D1302E7233009A9A2A /* SAGitHubReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAGitHubReleaseTests.swift; sourceTree = "<group>"; };
 		963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
 		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
@@ -1874,6 +1899,10 @@
 				500DA4B51BEFF877000773FE /* SPComboBoxCell.h */,
 				500DA4B61BEFF877000773FE /* SPComboBoxCell.m */,
 				95AA6EC7ADA69D8FCD7F2CAF /* SATableListCellRenderer.swift */,
+				C26C1940443A3D88355D5F52 /* SASidebarObjectGlyph.swift */,
+				A49E09A1C6AAA32E6B1F773A /* SATablesListCellView.swift */,
+				15A6E1AA371681F6A3542A69 /* SATableInfoRow.swift */,
+				3C4C71B8F7D3CDDEEC9FFED1 /* SATableInfoRowView.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -2018,6 +2047,7 @@
 				1792C13610AD75C800ABE758 /* SPServerVariablesController.m */,
 				17E6415E0EF01F15001BC333 /* SPTableInfo.h */,
 				17E6415F0EF01F15001BC333 /* SPTableInfo.m */,
+				E09A9629CB5C7072B6E0FBDE /* SATableInfoTableDelegate.swift */,
 				17E641600EF01F15001BC333 /* SPTablesList.h */,
 				17E641610EF01F15001BC333 /* SPTablesList.m */,
 				BC27779E11514B940034DF6A /* SPNavigatorController.h */,
@@ -2487,6 +2517,7 @@
 				5A1EC0A12FF0000100000012 /* SARecordView.swift */,
 				6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */,
 				D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */,
+				B7C3D91E4A5F4D0E8A2B6C31 /* SASidebarBottomBar.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2861,6 +2892,10 @@
 				812D779A61DFF497CD129924 /* SAQueryFavoriteStoreTests.swift */,
 				93E86B9CAE3B927AC789893E /* SAFieldEditorCommitPolicyTests.swift */,
 				D5BD851B6D129D345188D5E5 /* SATableListCellRendererTests.swift */,
+				33569A5353D44FB4A09C2839 /* SASidebarObjectGlyphTests.swift */,
+				D9692F50369CC5617C9E29DC /* SATablesListCellViewTests.swift */,
+				61682B292355F7EE844FCB00 /* SATableInfoRowTests.swift */,
+				0A412CF54438B33B68585ACF /* SATableInfoRowViewTests.swift */,
 				51974D0B304B23DA00C5D23D /* SACSVImportStreamDecoderTests.swift */,
 				7383424B751DCE7B1E781C44 /* SAImportProgressReporterTests.swift */,
 				0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */,
@@ -3848,6 +3883,15 @@
 				6437BC4ED2B743D251F18C2F /* SAFieldEditorCommitPolicyTests.swift in Sources */,
 				77BAF2BFA8B8163A11014DA5 /* SATableListCellRenderer.swift in Sources */,
 				7B182E1F0D6218CA522A86D4 /* SATableListCellRendererTests.swift in Sources */,
+				917F2F892F11FB0D89EC5905 /* SASidebarObjectGlyph.swift in Sources */,
+				C7A3735ED2227BD5052189E7 /* SATablesListCellView.swift in Sources */,
+				6737E4579A6ACB89EE332732 /* SASidebarObjectGlyphTests.swift in Sources */,
+				24B37411F11A42893519431A /* SATablesListCellViewTests.swift in Sources */,
+				C5ADC8492765102A15074EFA /* SATableInfoRow.swift in Sources */,
+				DF5CDC0A3504A3B926D11C8C /* SATableInfoRowView.swift in Sources */,
+				A83FF3179D8890D431D1E348 /* SATableInfoTableDelegate.swift in Sources */,
+				A94E4901D61EC815BECE17DC /* SATableInfoRowTests.swift in Sources */,
+				DA461317220BBFCC55CE1E16 /* SATableInfoRowViewTests.swift in Sources */,
 				AEF6ABA38A7BC5E5C41F1907 /* SATypeAheadSelectionLoad.swift in Sources */,
 				FEA466FB9F9F757D557F334B /* SATypeAheadSelectionLoadTests.swift in Sources */,
 				F2DC12897FE531483FA55474 /* SATableReloadRetryPolicy.swift in Sources */,
@@ -4216,10 +4260,16 @@
 				6C5D707FD9947026F90C868A /* SASSHTunnelFailure.swift in Sources */,
 				FE96153A16ECBA48C12BCA09 /* SAFieldEditorCommitPolicy.swift in Sources */,
 				5DB3C7CF73628DF0DA31F02E /* SATableListCellRenderer.swift in Sources */,
+				EC88C51FE0B54DD0C6B896C3 /* SASidebarObjectGlyph.swift in Sources */,
+				368BC9058837D30AB2C8FA07 /* SATablesListCellView.swift in Sources */,
+				66022CB89A1CF8F6530AFB4D /* SATableInfoRow.swift in Sources */,
+				32528EFF50A186E7D8005D86 /* SATableInfoRowView.swift in Sources */,
+				1F13514F20E784344E8A9762 /* SATableInfoTableDelegate.swift in Sources */,
 				F5CD620522154802D2E1524C /* SATypeAheadSelectionLoad.swift in Sources */,
 				D12A7F167B8194DCA3DCAA27 /* SATableReloadRetryPolicy.swift in Sources */,
 				EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */,
 				5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */,
+				E19A5D7C3B2F48A6904D7E85 /* SASidebarBottomBar.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

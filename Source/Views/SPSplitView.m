@@ -69,6 +69,9 @@
 
 @implementation SPSplitView
 
+@synthesize collapseToggleButton = collapseToggleButton;
+@synthesize additionalDragHandleView = additionalDragHandleView;
+
 + (void)initialize {
 }
 
