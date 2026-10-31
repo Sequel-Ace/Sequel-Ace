@@ -11,6 +11,41 @@
 import XCTest
 import SPMySQL
 
+// MARK: - Server Type Checks After Disconnect
+
+final class SAConnectionServerTypeTests: XCTestCase {
+
+    func testMariaDBCheckBeforeConnecting() {
+        XCTAssertFalse(SPMySQLConnection().isMariaDB())
+    }
+
+    func testMariaDB103CheckBeforeConnecting() {
+        XCTAssertTrue(SPMySQLConnection().isNotMariadb103())
+    }
+
+    func testServerTypeChecksUseCachedVersionAfterDisconnect() {
+        let connection = SPMySQLConnection()
+        // Reproduce teardown: the MYSQL handle is nil, but the last server
+        // version remains cached for UI callbacks that can still run.
+        let cases: [(version: String, mariaDB: Bool, notMariaDB103: Bool)] = [
+            ("8.4.11", false, true),
+            ("10.2.44-MariaDB", true, true),
+            ("10.3.39-MariaDB", true, false),
+            ("10.11.14-MariaDB", true, true),
+            ("11.4.8-MariaDB", true, true),
+        ]
+        for testCase in cases {
+            connection.setValue(testCase.version, forKey: "serverVariableVersion")
+            connection.disconnect()
+
+            XCTAssertFalse(connection.isConnected())
+            XCTAssertEqual(connection.isMariaDB(), testCase.mariaDB, testCase.version)
+            XCTAssertEqual(connection.isNotMariadb103(), testCase.notMariaDB103, testCase.version)
+            XCTAssertEqual(connection.serverVersionString(), testCase.version)
+        }
+    }
+}
+
 // MARK: - SSH Tunnel Failure Tests
 
 final class SASSHTunnelFailureTests: XCTestCase {

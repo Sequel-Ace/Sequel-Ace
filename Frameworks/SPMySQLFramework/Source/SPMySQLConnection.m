@@ -693,7 +693,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)isNotMariadb103
 {
-    serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+    // Use the handshake's cached version; UI callbacks can run after the MYSQL handle is closed.
     NSLog(@"%@", [serverVariableVersion lowercaseString]);
     NSString *someRegexp = @"(.*)10(\\.[3-9]+[0-9]*(\\.[0-9]*))*-(mariadb)(.*)";
     NSPredicate *myTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", someRegexp];
@@ -706,7 +706,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 - (BOOL) isMariaDB
 {
-  serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+  // Use the handshake's cached version; UI callbacks can run after the MYSQL handle is closed.
   // See more: https://regex101.com/r/0QRlsG/1
   NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-[mariadb].*"];
   if ([predicate evaluateWithObject: [serverVariableVersion lowercaseString]]){
