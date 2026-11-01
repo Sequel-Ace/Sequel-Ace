@@ -3067,6 +3067,15 @@
 /* error deleting trigger informative message */
 "The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
 
+/* dialog authentication prompt : fallback message when the server sends no prompt text */
+"The server is asking for additional authentication." = "The server is asking for additional authentication.";
+
+
+/* dialog authentication prompt : warning shown when a password is asked for over a plaintext connection */
+"This connection is not encrypted, so your answer will be sent to the server in clear text." = "This connection is not encrypted, so your answer will be sent to the server in clear text.";
+
+/* dialog authentication prompt : warning before sending an answer over TLS without verified server identity */
+"This connection is encrypted, but the server's identity has not been verified. Only continue if you trust this server." = "This connection is encrypted, but the server's identity has not been verified. Only continue if you trust this server.";
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
 
@@ -3890,6 +3899,9 @@
 
 /* MFA authenticate button */
 "Authenticate" = "Authenticate";
+
+/* dialog authentication prompt : alert title */
+"Authentication Required" = "Authentication Required";
 
 /* AWS authorization failed alert title */
 "Authorization Failed" = "Authorization Failed";
