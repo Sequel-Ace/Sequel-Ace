@@ -70,9 +70,14 @@ suites to have test cases and rejects every non-passing live test except the
 explicit Sphinx-only skip (this job does not provision Sphinx).
 
 This CI change is independent of #2775. Its session-identity tests are not copied
-here; the verifier discovers every `*IntegrationTests: XCTestCase` declaration
-throughout the framework sources, so moving or renaming its test file cannot
-omit the session-identity suite from the required coverage. The full framework scheme already
+here; Xcode enumerates registered, compiled `*IntegrationTests` classes with the
+same scheme/settings used to run the tests. Comments and inactive conditional
+branches cannot invent suites, and source filenames do not affect discovery.
+Every enumerated live test must appear in the results, without skips. New tests
+must be registered in the framework's test target, as #2775's tests already are.
+Compiled cancellation, gate or statement-byte policy suites also require the live
+session-identity suite, so accidental unregistration of that suite fails coverage.
+The full framework scheme already
 includes its cancellation, gate and statement-byte tests once #2775 is merged.
 The verifier's synthetic positive/negative checks run before the native tests:
 `xcrun swift Scripts/verify-spmysql-results.swift --self-test`.

@@ -12,39 +12,62 @@ struct SATestResults: Decodable {
     let testNodes: [SATestNode]
 }
 
-func requiredSuites(in directory: URL) throws -> [String] {
-    var isDirectory: ObjCBool = false
-    var scanError: Error?
-    guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue,
-          let files = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: nil,
-              errorHandler: { _, error in scanError = error; return false }) else {
-        throw NSError(domain: "SACoverage", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot read framework sources: \(directory.path)"])
-    }
-    // These existing live suites are unconditional. Discover additional integration
-    // classes from declarations, so moving/renaming #2775's source cannot omit it.
-    var suites: Set<String> = ["SAEscapingBoundaryIntegrationTests", "SADatabaseAssertionIntegrationTests"]
-    let declaration = try NSRegularExpression(pattern: #"\bclass\s+([A-Za-z_]\w*IntegrationTests)\s*:\s*XCTestCase\b"#)
-    for case let file as URL in files where file.pathExtension == "swift" {
-        let source = try String(contentsOf: file, encoding: .utf8)
-        for match in declaration.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
-            if let range = Range(match.range(at: 1), in: source) { suites.insert(String(source[range])) }
-        }
-    }
-    if let scanError { throw scanError }
-    return suites.sorted()
+struct SAEnumerationNode: Decodable {
+    let name: String
+    let kind: String
+    let children: [SAEnumerationNode]?
 }
 
-func coverageErrors(in nodes: [SATestNode], requiredSuites: [String]) -> [String] {
+struct SATestEnumeration: Decodable {
+    let errors: [String]
+    let values: [SAEnumerationNode]
+}
+
+func testIdentifier(suite: String, test: String) -> String {
+    "\(suite)/\(test.hasSuffix("()") ? String(test.dropLast(2)) : test)"
+}
+
+func suiteName(_ name: String?) -> String? {
+    name?.split(separator: ".").last.map(String.init)
+}
+
+func requiredCoverage(in enumeration: SATestEnumeration) throws -> [String: Set<String>] {
+    guard enumeration.errors.isEmpty else {
+        throw NSError(domain: "SACoverage", code: 1, userInfo: [NSLocalizedDescriptionKey: enumeration.errors.joined(separator: "\n")])
+    }
+    // The two existing suites are unconditional coverage contracts. Additional
+    // compiled integration classes (including #2775's) come from Xcode, not source text.
+    var required: [String: Set<String>] = ["SAEscapingBoundaryIntegrationTests": [], "SADatabaseAssertionIntegrationTests": []]
+    func visit(_ node: SAEnumerationNode, suite: String? = nil) {
+        // These policy suites mean #2775's foundation is compiled. Its live
+        // identity contract must not disappear through accidental target unregistration.
+        if node.kind == "class", ["SAConnectionCancellationTests", "SASessionGateTests", "SAStatementBytesTests"].contains(suiteName(node.name) ?? "") {
+            if required["SASessionIdentityIntegrationTests"] == nil { required["SASessionIdentityIntegrationTests"] = [] }
+        }
+        let suite = node.kind == "class" ? (node.name.hasSuffix("IntegrationTests") ? suiteName(node.name) : nil) : suite
+        if let suite {
+            if required[suite] == nil { required[suite] = [] }
+            if node.kind == "test" { required[suite, default: []].insert(testIdentifier(suite: suite, test: node.name)) }
+        }
+        for child in node.children ?? [] { visit(child, suite: suite) }
+    }
+    for node in enumeration.values { visit(node) }
+    return required
+}
+
+func coverageErrors(in nodes: [SATestNode], requiredSuites: [String], expectedTests: Set<String> = []) -> [String] {
     // Sphinx is a separate product, not provided by this MySQL job. No other
     // live integration skip is allowed, including privilege/setup-related skips.
-    let optionalTest = "SADatabaseAssertionIntegrationTests/testSphinxQueryCanAssertEmptyDatabaseContext()"
+    let optionalTest = "SADatabaseAssertionIntegrationTests/testSphinxQueryCanAssertEmptyDatabaseContext"
     var seen: Set<String> = []
+    var seenTests: Set<String> = []
     var errors: [String] = []
 
     func visit(_ node: SATestNode, suite: String? = nil) {
-        let suite = node.nodeType == "Test Suite" ? node.name : suite
+        let suite = node.nodeType == "Test Suite" ? suiteName(node.name) : suite
         if node.nodeType == "Test Case", let suite, requiredSuites.contains(suite) {
-            let identifier = "\(suite)/\(node.name ?? "<unnamed>")"
+            let identifier = testIdentifier(suite: suite, test: node.name ?? "<unnamed>")
+            if node.name != nil { seenTests.insert(identifier) }
             if identifier != optionalTest && node.name != nil { seen.insert(suite) }
             if node.result != "Passed" && !(identifier == optionalTest && node.result == "Skipped") {
                 errors.append("\(identifier): \(node.result ?? "missing result")")
@@ -55,6 +78,9 @@ func coverageErrors(in nodes: [SATestNode], requiredSuites: [String]) -> [String
     for node in nodes { visit(node) }
     for suite in requiredSuites where !seen.contains(suite) {
         errors.append("\(suite): no test cases in result bundle")
+    }
+    for test in expectedTests.subtracting(seenTests) {
+        errors.append("\(test): enumerated test missing from result bundle")
     }
     return errors
 }
@@ -88,15 +114,19 @@ func selfTest() throws {
     let encoded = Data(#"{"testNodes":[{"nodeType":"Test Suite","name":"LiveTests","children":[{"nodeType":"Test Case","name":"testDatabase()","result":"Passed"}]}]}"#.utf8)
     let decoded = try JSONDecoder().decode(SATestResults.self, from: encoded)
     try check(coverageErrors(in: decoded.testNodes, requiredSuites: ["LiveTests"]).isEmpty, "JSON decoding lost coverage")
-    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    try FileManager.default.createDirectory(at: directory.appendingPathComponent("moved"), withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: directory) }
-    try "final class SASessionIdentityIntegrationTests: XCTestCase {}".write(
-        to: directory.appendingPathComponent("moved/RenamedTests.swift"), atomically: true, encoding: .utf8)
-    let discovered = try requiredSuites(in: directory)
-    try check(discovered.contains("SASessionIdentityIntegrationTests"), "moving a source omitted its live suite")
-    try check(!coverageErrors(in: decoded.testNodes, requiredSuites: discovered).isEmpty,
-              "accepted missing discovered live suites")
+    let enumerated = Data(#"{"errors":[],"values":[{"kind":"class","name":"SASessionIdentityIntegrationTests","children":[{"kind":"test","name":"testDatabase"}]}]}"#.utf8)
+    let discovery = try JSONDecoder().decode(SATestEnumeration.self, from: enumerated)
+    let required = try requiredCoverage(in: discovery)
+    try check(required["SASessionIdentityIntegrationTests"] == ["SASessionIdentityIntegrationTests/testDatabase"],
+              "lost an enumerated integration test")
+    try check(required["CommentedIntegrationTests"] == nil && required["InactiveIntegrationTests"] == nil,
+              "invented a suite absent from compiler enumeration")
+    let foundation = SATestEnumeration(errors: [], values: [SAEnumerationNode(name: "SASessionGateTests", kind: "class", children: nil)])
+    let foundationCoverage = try requiredCoverage(in: foundation)
+    try check(foundationCoverage["SASessionIdentityIntegrationTests"] != nil,
+              "accepted foundation tests without their live identity contract")
+    try check(!coverageErrors(in: fixture("Passed"), requiredSuites: ["LiveTests"], expectedTests: ["LiveTests/testMissing"]).isEmpty,
+              "accepted an enumerated test absent from results")
     print("Live-coverage verifier self-tests passed")
 }
 
@@ -107,11 +137,13 @@ do {
     } else {
         guard arguments.count == 2 else {
             throw NSError(domain: "SACoverage", code: 1, userInfo: [NSLocalizedDescriptionKey:
-                "Usage: swift verify-spmysql-results.swift tests.json framework-source-directory"])
+                "Usage: swift verify-spmysql-results.swift tests.json enumeration.json"])
         }
         let results = try JSONDecoder().decode(SATestResults.self, from: Data(contentsOf: URL(fileURLWithPath: arguments[0])))
-        let suites = try requiredSuites(in: URL(fileURLWithPath: arguments[1], isDirectory: true))
-        let errors = coverageErrors(in: results.testNodes, requiredSuites: suites)
+        let enumeration = try JSONDecoder().decode(SATestEnumeration.self, from: Data(contentsOf: URL(fileURLWithPath: arguments[1])))
+        let required = try requiredCoverage(in: enumeration)
+        let suites = required.keys.sorted()
+        let errors = coverageErrors(in: results.testNodes, requiredSuites: suites, expectedTests: Set(required.values.flatMap { $0 }))
         guard errors.isEmpty else {
             throw NSError(domain: "SACoverage", code: 1, userInfo: [NSLocalizedDescriptionKey: errors.joined(separator: "\n")])
         }

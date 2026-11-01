@@ -69,16 +69,23 @@ export TEST_RUNNER_SPMYSQL_TEST_PORT=13306
 export TEST_RUNNER_SPMYSQL_TEST_USER=root
 export TEST_RUNNER_SPMYSQL_TEST_PASSWORD=''
 
-xcodebuild test \
+test_arguments=(
   -project Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj \
   -scheme SPMySQL.framework \
   -destination "platform=macOS,arch=${TEST_ARCH:-$(uname -m)}" \
   -parallel-testing-enabled NO \
+  CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+)
+# Let Xcode discover compiled tests: comments, inactive #if branches and source
+# filenames cannot invent required suites. Reuse the same scheme and settings.
+xcodebuild test "${test_arguments[@]}" -enumerate-tests \
+  -test-enumeration-style hierarchical -test-enumeration-format json \
+  -test-enumeration-output-path "$results/enumeration.json" \
+  2>&1 | tee "$results/enumeration.log"
+xcodebuild test "${test_arguments[@]}" \
   -resultBundlePath "$results/FrameworkTests.xcresult" \
-  CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
   2>&1 | tee "$results/xcodebuild.log"
 
 xcrun xcresulttool get test-results tests --path "$results/FrameworkTests.xcresult" \
   >"$results/tests.json"
-# Discover live suite declarations throughout the framework, independent of filenames.
-xcrun swift Scripts/verify-spmysql-results.swift "$results/tests.json" Frameworks/SPMySQLFramework
+xcrun swift Scripts/verify-spmysql-results.swift "$results/tests.json" "$results/enumeration.json"
