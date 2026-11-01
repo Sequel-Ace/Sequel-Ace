@@ -29,8 +29,9 @@ Every dialog answer now requires user interaction, including over TLS:
 identity. The app warns on plaintext connections and on TLS connections without
 `SSL_MODE_VERIFY_IDENTITY`, and still lets the user proceed so no-TLS PAM remains
 usable. Cancelling sends no answer. The build applies the patch to a copy and
-fails if it does not apply. `test-dialog-plugin.swift` then exercises both slices
-of the actual binary through the plugin ABI: empty and nonempty questions,
+fails if it does not apply. `test-dialog-plugin.swift` compiles for both slices
+and runs each architecture supported by the build host through the plugin ABI:
+empty and nonempty questions,
 change-user packets, cancellation, accepted answers, and long multibyte answers
 under both simulated transport states. This replaces the earlier symbol check,
 which could not prove that the saved-password bypass was closed.

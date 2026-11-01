@@ -434,7 +434,7 @@ if [ "$status" -ne 0 ]; then
     echo "❌ verification failed; nothing copied"
     exit 1
 fi
-# Exercise both slices through the plugin ABI. This proves that empty-password
+# Exercise runnable slices through the plugin ABI. This proves that empty-password
 # and change-user packets cannot bypass consent, including over simulated TLS;
 # a symbol-presence check cannot establish that behavioral property.
 for arch in "${ARCHS[@]}"; do
@@ -442,6 +442,12 @@ for arch in "${ARCHS[@]}"; do
     xcrun swiftc "$script_dir/test-dialog-plugin.swift" \
         -I "$script_dir/../SPMySQLFramework/Source/MySQLClient" \
         -target "$arch-apple-macosx$DEPLOYMENT_TARGET" -o "$test_binary"
+    # Intel cannot execute ARM code; Apple silicon can execute Intel code only
+    # with Rosetta. Still compile each harness to validate its target ABI.
+    if [ "$arch" != "$(uname -m)" ] && ! /usr/bin/arch "-$arch" /usr/bin/true >/dev/null 2>&1; then
+        echo "***** $arch dialog tests compiled; execution unavailable on this host *****"
+        continue
+    fi
     "$test_binary" "$universal/plugin/dialog.so"
 done
 otool -L libmysqlclient.24.dylib plugin/*.so plugin/libfido2.1.dylib
