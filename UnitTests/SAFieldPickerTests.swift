@@ -143,6 +143,109 @@ final class SAFieldPickerTests: XCTestCase {
         XCTAssertTrue(picker.isDescendant(of: editor))
     }
 
+    func testSelectedFieldLookupReadsRowsLinearly() throws {
+        let editor = SACountingFieldRuleEditor(frame: NSRect(x: 0, y: 0, width: 600, height: 120))
+        let (controller, _) = try makeController(editor: editor)
+        defer { editor.unbind(NSBindingName("rows")) }
+        editor.nestingMode = .compound
+        let rules = (0..<24).map { savedRule(selectedName: $0.isMultiple(of: 2) ? "customer_email" : "billing_email") }
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: [
+            "filterClass": "groupNode", "isConjunction": true, "children": rules
+        ])
+        let criteria = (0..<editor.numberOfRows).filter { editor.rowType(forRow: $0) == .simple }
+            .map { editor.criteria(forRow: $0) }
+        editor.criteriaReadCount = 0
+
+        for row in criteria {
+            let selected = editor.delegate?.ruleEditor(editor, child: 0, forCriterion: row[0], with: .simple)
+            XCTAssertTrue((selected as AnyObject?) === (row[1] as AnyObject))
+        }
+
+        XCTAssertEqual(criteria.count, 24)
+        XCTAssertLessThanOrEqual(editor.criteriaReadCount, editor.numberOfRows * 3,
+                                "Selection lookup should build one row index, not scan every row for each field")
+    }
+
+    func testIndexedLookupUsesCurrentSelectionAndReplacementRows() throws {
+        let (controller, editor) = try makeController()
+        defer { editor.unbind(NSBindingName("rows")) }
+        editor.reloadCriteria()
+        let picker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
+        let model = picker.makePickerModel()
+        model.query = "billing"
+        model.chooseHighlighted()
+
+        editor.reloadCriteria()
+        XCTAssertEqual(try serializedFilter(controller)["column"] as? String, "billing_email")
+
+        // A new enable criterion at the same row index must replace the cached identity.
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: savedRule(selectedName: "customer_email"))
+        editor.reloadCriteria()
+        XCTAssertEqual(try serializedFilter(controller)["column"] as? String, "customer_email")
+    }
+
+    func testIndexedLookupSurvivesRowRemoval() throws {
+        let (controller, editor) = try makeController()
+        defer { editor.unbind(NSBindingName("rows")) }
+        editor.nestingMode = .compound
+        controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: [
+            "filterClass": "groupNode", "isConjunction": true,
+            "children": [savedRule(selectedName: "customer_name"), savedRule(selectedName: "billing_email"),
+                         savedRule(selectedName: "customer_email")]
+        ])
+        editor.reloadCriteria()
+        let firstRow = try XCTUnwrap((0..<editor.numberOfRows).first { editor.rowType(forRow: $0) == .simple })
+        editor.removeRows(at: IndexSet(integer: firstRow), includeSubrows: true)
+        let before = try serializedFilter(controller) as NSDictionary
+
+        editor.reloadCriteria()
+
+        XCTAssertEqual(try serializedFilter(controller) as NSDictionary, before)
+        let fields = (0..<editor.numberOfRows).compactMap {
+            (editor.displayValues(forRow: $0)[1] as? SAFieldPickerButton)?.titleOfSelectedItem
+        }
+        XCTAssertEqual(fields, ["billing_email", "customer_email"])
+    }
+
+    func testDisablingControllerPreventsPendingPickerSelection() throws {
+        let (controller, editor) = try makeController()
+        defer { editor.unbind(NSBindingName("rows")) }
+        let picker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
+        let model = picker.makePickerModel()
+        model.query = "billing"
+        controller.setValue(false, forKey: "enabled")
+        XCTAssertFalse(editor.isEnabled)
+
+        model.chooseHighlighted()
+
+        XCTAssertEqual(try serializedFilter(controller)["column"] as? String, "customer_name")
+        XCTAssertFalse(picker.accessibilityPerformPress())
+    }
+
+    func testSpaceKeyOpensSearchablePopover() throws {
+        let (controller, editor) = try makeController()
+        defer { editor.unbind(NSBindingName("rows")) }
+        let window = NSWindow(contentRect: editor.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = editor
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
+        let picker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
+        window.makeFirstResponder(picker)
+        let event = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                                                 timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                                 characters: " ", charactersIgnoringModifiers: " ", isARepeat: false, keyCode: 49))
+        // Bound the test if AppKit falls back to the native menu's tracking loop.
+        let cancelNativeMenu = Timer(timeInterval: 0.25, repeats: false) { _ in picker.menu?.cancelTracking() }
+        RunLoop.main.add(cancelNativeMenu, forMode: .common)
+        defer { cancelNativeMenu.invalidate(); picker.pickerPopover?.close() }
+
+        picker.keyDown(with: event)
+
+        XCTAssertEqual(picker.pickerPopover?.isShown, true)
+        XCTAssertEqual(try serializedFilter(controller)["column"] as? String, "customer_name")
+    }
+
     func testEscapeWithSearchDismissesWithoutChangingRule() throws {
         let (controller, editor) = try makeController()
         defer { editor.unbind(NSBindingName("rows")) }
@@ -210,10 +313,10 @@ final class SAFieldPickerTests: XCTestCase {
         try XCTUnwrap(controller.perform(NSSelectorFromString("serializedFilter"))?.takeUnretainedValue() as? [String: Any])
     }
 
-    private func makeController(selectedName: String = "customer_name") throws -> (NSObject, NSRuleEditor) {
+    private func makeController(selectedName: String = "customer_name",
+                                editor: NSRuleEditor = NSRuleEditor(frame: NSRect(x: 0, y: 0, width: 600, height: 120))) throws -> (NSObject, NSRuleEditor) {
         let controllerClass = try XCTUnwrap(NSClassFromString("SPRuleFilterController") as? NSObject.Type)
         let controller = controllerClass.init()
-        let editor = NSRuleEditor(frame: NSRect(x: 0, y: 0, width: 600, height: 120))
         editor.delegate = controller as? NSRuleEditorDelegate
         controller.setValue(editor, forKey: "filterRuleEditor")
         let model = try XCTUnwrap(controller.value(forKey: "_modelContainer"))
@@ -227,5 +330,14 @@ final class SAFieldPickerTests: XCTestCase {
         controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: savedRule(selectedName: selectedName))
         XCTAssertEqual(editor.numberOfRows, 1)
         return (controller, editor)
+    }
+}
+
+private final class SACountingFieldRuleEditor: NSRuleEditor {
+    var criteriaReadCount = 0
+
+    override func criteria(forRow row: Int) -> [Any] {
+        criteriaReadCount += 1
+        return super.criteria(forRow: row)
     }
 }

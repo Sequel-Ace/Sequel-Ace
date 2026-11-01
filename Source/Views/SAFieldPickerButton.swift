@@ -53,7 +53,7 @@ import SwiftUI
     }
 
     public override func mouseDown(with event: NSEvent) {
-        guard isEnabled else { return }
+        guard canChooseField else { return }
         if dismissingEventTimestamp == event.timestamp {
             dismissingEventTimestamp = nil
             return
@@ -62,13 +62,33 @@ import SwiftUI
     }
 
     public override func performClick(_ sender: Any?) {
-        guard isEnabled else { return }
+        guard canChooseField else { return }
         togglePicker()
     }
 
     public override func accessibilityPerformPress() -> Bool {
-        guard isEnabled else { return false }
+        guard canChooseField else { return false }
         togglePicker()
+        return true
+    }
+
+    public override func keyDown(with event: NSEvent) {
+        guard canChooseField else { return }
+        switch event.charactersIgnoringModifiers {
+        case " ", "\r", "\n", "\u{f700}", "\u{f701}":
+            togglePicker()
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    private var canChooseField: Bool {
+        guard isEnabled else { return false }
+        var ancestor = superview
+        while let view = ancestor {
+            if let editor = view as? NSRuleEditor { return editor.isEnabled }
+            ancestor = view.superview
+        }
         return true
     }
 
@@ -79,7 +99,7 @@ import SwiftUI
             entries: itemArray.map { SADatabasePickerEntry(name: $0.title, section: 0) },
             commands: [], currentDatabase: titleOfSelectedItem, clearsSearchOnCancel: false)
         model.onChooseDatabase = { [weak self] name in
-            guard let self, self.isEnabled, let item = self.item(withTitle: name) else { return }
+            guard let self, self.canChooseField, let item = self.item(withTitle: name) else { return }
             self.pickerPopover?.close()
             self.select(item)
             self.toolTip = name

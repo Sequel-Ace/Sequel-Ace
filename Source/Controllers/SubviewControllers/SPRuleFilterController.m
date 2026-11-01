@@ -242,6 +242,7 @@ const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 @property (readwrite, assign, nonatomic) CGFloat preferredHeight;
 /** The seeded starter row while it waits, unchecked, for its first edit; see -addStarterFilterExpression. */
 @property (strong, nonatomic) SARuleFilterPendingStarter *pendingStarter;
+@property (strong, nonatomic) SAFieldPickerSelection *fieldPickerSelection;
 
 /** Checks the unchecked starter row when `row` is that row, and updates the preview: editing it means filtering by it. */
 - (void)_enablePendingStarterInRow:(NSInteger)row;
@@ -295,6 +296,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 {
 	if((self = [super init])) {
 		columns = [[NSMutableArray alloc] init];
+		_fieldPickerSelection = [[SAFieldPickerSelection alloc] init];
 		_modelContainer = [[ModelContainer alloc] init];
 		preferredHeight = 0.0;
 		target = nil;
@@ -550,16 +552,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		RuleNodeType type = [(RuleNode *) criterion type];
 		// this is the column field
 		if (type == RuleNodeTypeEnable) {
-			// A custom field picker has one advertised child. On reload, that
-			// child must be this row's selected column, not always columns[0].
-			for (NSInteger row = 0; row < [editor numberOfRows]; row++) {
-				NSArray *rowCriteria = [editor criteriaForRow:row];
-				if ([rowCriteria count] > 1 && [rowCriteria firstObject] == criterion) {
-					NSUInteger selectedIndex = [columns indexOfObject:[rowCriteria objectAtIndex:1]];
-					if (selectedIndex != NSNotFound) return [columns objectAtIndex:selectedIndex];
-				}
-			}
-			return [columns objectAtIndex:index];
+			return [self.fieldPickerSelection selectedColumnInEditor:editor criterion:criterion columns:columns fallbackIndex:index];
 		}
 		// the children of the columns are their operators
 		if (type == RuleNodeTypeColumn) {
