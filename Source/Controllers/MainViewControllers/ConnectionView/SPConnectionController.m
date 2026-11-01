@@ -165,6 +165,30 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 @implementation SPConnectionController
 
+/**
+ * Whether Vault connection attempt `attemptID` is still the live one, asked from the background Vault queue.
+ *
+ * A closed tab's controller can now be freed, and its -dealloc tears down the connection view and its panels,
+ * which must happen on the main thread. So the background queue never releases a reference of its own: the weak
+ * variable is read here (by address, so the caller makes no strong temporary), and the reference that read takes
+ * is transferred to the main queue, which drops it there, even when it is the last one. The strong local's scope
+ * ends before the hand-off, while the transferred reference is still outstanding.
+ */
+static BOOL SAVaultAttemptIsLive(SPConnectionController * __weak const *weakController, NSUInteger attemptID)
+{
+	CFTypeRef reference = NULL;
+	BOOL live = NO;
+	{
+		SPConnectionController *controller = *weakController;
+		if (controller) {
+			live = !controller->cancellingConnection && controller->connectionAttemptID == attemptID;
+			reference = CFBridgingRetain(controller);
+		}
+	}
+	if (reference) dispatch_async(dispatch_get_main_queue(), ^{ CFRelease(reference); });
+	return live;
+}
+
 // Associated object keys for password visibility toggle (shared between methods)
 static void *kOriginalStringKey = &kOriginalStringKey;
 static void *kRedactedStringKey = &kRedactedStringKey;
@@ -691,8 +715,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSString *outUsername = nil;
             NSString *outPassword = nil;
 
-            SPConnectionController *strongSelf = weakSelf;
-            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+            // No strong reference to self on this queue (see SAVaultAttemptIsLive): it may outlive the tab.
+            if (!SAVaultAttemptIsLive(&weakSelf, vaultConnectionAttemptID)) {
                 [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
                 return;
             }
@@ -708,8 +732,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
 
             // User may cancel while the OIDC browser is open; bail without showing an error.
-            strongSelf = weakSelf;
-            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+            if (!SAVaultAttemptIsLive(&weakSelf, vaultConnectionAttemptID)) {
                 [VaultAuthManager clearCachedCredentialsForHost:credHost
                                                            port:credPort
                                                      oidcMount:credMount
@@ -911,8 +934,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         SPLog(@"self->keySelectionPanel.URL.class: %@", classStr);
 
+        // A cancelled panel (the user's Cancel, or the tab closing under it) has no URL to check or bookmark; the
+        // per-sender branches below clear the setting.
+        if (returnCode == NSModalResponseCancel) {
+            SPLog(@"key selection cancelled");
+        }
         // check it's really a URL
-        if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
+        else if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
 
             SPLog(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
 
@@ -2675,8 +2703,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [alert setAlertStyle:NSAlertStyleWarning];
 
     [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
-        if (returnCode == NSAlertThirdButtonReturn) {
-            // Cancel
+        // Proceed only for the two copy buttons: Cancel (third button) and a sheet ended without a button (a tab closed
+        // under it, NSModalResponseCancel) copy nothing.
+        if (returnCode != NSAlertFirstButtonReturn && returnCode != NSAlertSecondButtonReturn) {
             return;
         }
 
@@ -5384,7 +5413,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
-    [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
+    // SPBookmarksChangedNotification is a notification-centre registration (removed by
+    // -removeObserver: above), not KVO; removing it as a key path raised once this controller
+    // could actually deallocate.
 
 
     [self setConnectionKeychainID:nil];

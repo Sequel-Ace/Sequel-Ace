@@ -434,6 +434,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 			[alert setInformativeText:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")];
 			
 			[alert beginSheetModalForWindow:[tableDocumentInstance parentWindowControllerWindow] completionHandler:^(NSInteger returnCode) {
+				// the tab closed under the alert: don't reopen the export sheet
+				if (returnCode == NSModalResponseCancel) return;
 				[self performSelector:@selector(_openExportSheet) withObject:nil afterDelay:0.1];
 			}];
 			

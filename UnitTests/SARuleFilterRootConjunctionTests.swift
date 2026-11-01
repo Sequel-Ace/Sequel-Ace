@@ -673,6 +673,43 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(children(of: kids[1]).count, 1)
     }
 
+    // MARK: - Filter target lifetime
+
+    /// The filter target (SPTableContent) can be freed while the controller is still alive (a delayed resize or the
+    /// main-loop block of a row removal holds it): the reference must read nil then, not dangle.
+    func testTheFilterTargetIsZeroedWhenItIsFreed() throws {
+        let controller = try makeController(columns: ["name"])
+        autoreleasepool {
+            let target = NSObject()
+            controller.setValue(target, forKey: "target")
+            XCTAssertTrue(controller.value(forKey: "target") as AnyObject === target)
+        }
+        XCTAssertNil(controller.value(forKey: "target"))
+    }
+
+    /// With an action set, a live target receives it, and a target that was freed is not messaged (the weak
+    /// reference reads nil, so the controller's invocation is a no-op instead of a send to a dangling pointer).
+    func testAFreedFilterTargetIsToleratedByTheControllersUses() throws {
+        let controller = try makeController(columns: ["name"])
+        let setAction = NSSelectorFromString("setAction:")
+        typealias ActionSetter = @convention(c) (AnyObject, Selector, Selector) -> Void
+        let setter = unsafeBitCast(try XCTUnwrap(controller.method(for: setAction)), to: ActionSetter.self)
+        setter(controller, setAction, #selector(FilterTargetProbe.fire(_:)))
+        FilterTargetProbe.hits = 0
+
+        // Control: a live target is messaged once.
+        let live = FilterTargetProbe()
+        controller.setValue(live, forKey: "target")
+        controller.perform(NSSelectorFromString("_invokeFilterTargetActionWithObject:"), with: nil)
+        XCTAssertEqual(FilterTargetProbe.hits, 1, "a live target receives the action")
+
+        // A target freed while the controller lives is not messaged.
+        autoreleasepool { controller.setValue(FilterTargetProbe(), forKey: "target") }
+        controller.perform(NSSelectorFromString("_invokeFilterTargetActionWithObject:"), with: nil)
+        XCTAssertEqual(FilterTargetProbe.hits, 1, "a freed target must not be messaged")
+        withExtendedLifetime(live) {}
+    }
+
     // MARK: - Helpers
 
     /// Builds a serialized expression node in the controller's dictionary shape.
@@ -752,5 +789,14 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
     /// Calls `-serializedFilter` on the controller and bridges the result.
     private func serializedFilter(of controller: NSObject) -> [String: Any]? {
         return controller.perform(NSSelectorFromString("serializedFilter"))?.takeUnretainedValue() as? [String: Any]
+    }
+}
+
+/// Counts the filter action it receives, to tell a delivered action from a skipped one.
+private final class FilterTargetProbe: NSObject {
+    static var hits = 0
+
+    @objc func fire(_ sender: Any?) {
+        FilterTargetProbe.hits += 1
     }
 }
