@@ -1338,8 +1338,12 @@ class WorkflowRecoveryTest < Minitest::Test
   end
 
   def test_pr_jobs_do_not_persist_the_checkout_token
-    workflow = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
-    assert_equal 2, workflow.scan("persist-credentials: false").length
+    workflow = YAML.load_file(repo_path(".github/workflows/ci_pr_tests.yml"))
+    workflow.fetch("jobs").each do |name, job|
+      checkouts = job.fetch("steps").select { |step| step.fetch("uses", "").start_with?("actions/checkout@") }
+      refute_empty checkouts, "#{name} must check out the repository"
+      checkouts.each { |step| assert_equal false, step.dig("with", "persist-credentials"), name }
+    end
   end
 
   def test_fastlane_app_store_mutations_require_the_release_gate
@@ -1575,8 +1579,17 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes publisher, "runs-on: macos-15"
 
     ci = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
-    assert_equal 1, ci.scan("runs-on: macos-26").length
-    assert_equal 1, ci.scan("runs-on: macos-15").length
+    ci_jobs = YAML.safe_load(ci).fetch("jobs")
+    assert_equal "macos-26", ci_jobs.fetch("tests").fetch("runs-on")
+    assert_equal "macos-15", ci_jobs.fetch("release_tools").fetch("runs-on")
+    framework_job = ci_jobs.fetch("framework_tests")
+    assert_equal "macos-latest", framework_job.fetch("runs-on")
+    ci_jobs.values_at("tests", "framework_tests").each do |job|
+      refute job.fetch("env", {}).key?("DEVELOPER_DIR")
+      job.fetch("steps").each { |step| refute step.fetch("env", {}).key?("DEVELOPER_DIR") }
+    end
+    refute framework_job.fetch("env").key?("TEST_ARCH")
+    framework_job.fetch("steps").each { |step| refute step.fetch("env", {}).key?("TEST_ARCH") }
     assert_includes ci, "GitHub-hosted public-repository runner label"
 
     Dir.glob(repo_path(".github/workflows/*.{yml,yaml}")).each do |path|
