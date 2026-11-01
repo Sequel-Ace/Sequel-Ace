@@ -38,6 +38,20 @@ public final class SAProxyReconnectCoordinator: NSObject {
         waitingForAuthentication || connectionAttemptPending
     }
 
+    /// Whether the reconnect goes through the proxy as it stands, without waiting for it to go
+    /// idle and connecting it again: when only the MySQL session over it was replaced, nothing
+    /// was asked of the proxy, and one that still reports a connection is the tunnel to use -
+    /// the wait for idle would run until the attempt's budget is out, with nothing left for the
+    /// connect itself, and `connect` on a connected tunnel does nothing anyway. A proxy in any
+    /// other state, or one that was told to disconnect, is waited for and connected as before.
+    @objc(reconnectsThroughProxyInState:untouchedBySessionReplacement:)
+    public func reconnectsThroughProxy(
+        in state: SPMySQLConnectionProxyState,
+        untouchedBySessionReplacement: Bool
+    ) -> Bool {
+        untouchedBySessionReplacement && state == SPMySQLProxyConnected
+    }
+
     /// Routes proxy teardown through the main thread. Internal reconnect cleanup
     /// preserves a request queued behind the current proxy lifecycle when the
     /// proxy supports that distinction; explicit teardown always cancels it.
