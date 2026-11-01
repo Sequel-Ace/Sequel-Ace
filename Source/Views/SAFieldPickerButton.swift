@@ -13,6 +13,7 @@ import SwiftUI
 @objc public final class SAFieldPickerButton: NSPopUpButton, NSPopoverDelegate {
     private(set) var pickerPopover: NSPopover?
     private var dismissingEventTimestamp: TimeInterval?
+    private var ruleEditorEnabledObservation: NSKeyValueObservation?
 
     @objc public var representedObject: Any? { selectedItem?.representedObject }
 
@@ -83,13 +84,16 @@ import SwiftUI
     }
 
     private var canChooseField: Bool {
-        guard isEnabled else { return false }
+        isEnabled && (enclosingRuleEditor?.isEnabled ?? true)
+    }
+
+    private var enclosingRuleEditor: NSRuleEditor? {
         var ancestor = superview
         while let view = ancestor {
-            if let editor = view as? NSRuleEditor { return editor.isEnabled }
+            if let editor = view as? NSRuleEditor { return editor }
             ancestor = view.superview
         }
-        return true
+        return nil
     }
 
     /// Shared picker behavior, fed directly from this control's column nodes.
@@ -127,11 +131,17 @@ import SwiftUI
         controller.sizingOptions = .preferredContentSize
         popover.contentViewController = controller
         pickerPopover = popover
+        // The editor does not propagate its enabled state to embedded controls.
+        // Observe only while presented; the selection guard also covers pending callbacks.
+        ruleEditorEnabledObservation = enclosingRuleEditor?.observe(\.isEnabled, options: [.new]) { [weak self] editor, _ in
+            if !editor.isEnabled { self?.pickerPopover?.close() }
+        }
         highlight(true)
         popover.show(relativeTo: bounds, of: self, preferredEdge: isFlipped ? .maxY : .minY)
     }
 
     public func popoverDidClose(_ notification: Notification) {
+        ruleEditorEnabledObservation = nil
         highlight(false)
         if let event = NSApp.currentEvent, event.type == .leftMouseDown,
            event.window === window,
