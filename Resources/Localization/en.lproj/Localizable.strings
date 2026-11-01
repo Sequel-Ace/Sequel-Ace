@@ -4442,3 +4442,12 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+
+/* Content filter: field selector search placeholder. */
+"Search Fields" = "Search Fields";
+
+/* Content filter: no fields match the search. */
+"No Matching Fields" = "No Matching Fields";
+
+/* Content filter: field selector accessibility label. */
+"Filter Field" = "Filter Field";
