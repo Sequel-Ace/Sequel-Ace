@@ -1339,7 +1339,7 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_pr_jobs_do_not_persist_the_checkout_token
     workflow = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
-    assert_equal 2, workflow.scan("persist-credentials: false").length
+    assert_equal 3, workflow.scan("persist-credentials: false").length
   end
 
   def test_fastlane_app_store_mutations_require_the_release_gate
@@ -1575,7 +1575,7 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes publisher, "runs-on: macos-15"
 
     ci = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
-    assert_equal 1, ci.scan("runs-on: macos-26").length
+    assert_equal 2, ci.scan("runs-on: macos-26").length
     assert_equal 1, ci.scan("runs-on: macos-15").length
     assert_includes ci, "GitHub-hosted public-repository runner label"
 
