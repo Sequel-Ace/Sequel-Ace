@@ -47,7 +47,8 @@ bash Scripts/test-spmysql-framework.sh # from the repository root
 ```
 
 The job uses `macos-latest` and its selected full Xcode, rather than a versioned
-developer-directory path or a fixed processor architecture. The script honors a
+developer-directory path or a fixed processor architecture. Both app and framework
+test scripts share `Scripts/select-xcode.sh`. It honors a
 `DEVELOPER_DIR` override, rejects Command Line Tools-only installations, logs the
 actual Xcode version and checks for the xcresult API it needs before starting a
 database. MySQL stays on the **8.4 LTS series**, accepting Homebrew's patch updates

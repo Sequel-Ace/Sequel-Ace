@@ -1584,6 +1584,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_equal "macos-15", ci_jobs.fetch("release_tools").fetch("runs-on")
     framework_job = ci_jobs.fetch("framework_tests")
     assert_equal "macos-latest", framework_job.fetch("runs-on")
+    refute ci_jobs.fetch("tests").fetch("env").key?("DEVELOPER_DIR")
     refute framework_job.fetch("env").key?("DEVELOPER_DIR")
     refute framework_job.fetch("env").key?("TEST_ARCH")
     assert_includes ci, "GitHub-hosted public-repository runner label"

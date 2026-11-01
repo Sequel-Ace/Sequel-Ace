@@ -30,6 +30,8 @@ if ! hash xcpretty 2> /dev/null; then
 fi
 
 if [ "$MODE" = "tests" ]; then
+  source "$(dirname "$0")/select-xcode.sh"
+  xcodebuild -version
   echo "Running Sequel Ace Unit tests (${TEST_ARCH})"
   set -o pipefail && xcodebuild test -project sequel-ace.xcodeproj -scheme "Unit Tests" -destination "platform=macOS,arch=${TEST_ARCH}" test CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty -c
   success="1"
