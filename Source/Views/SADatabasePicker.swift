@@ -38,6 +38,7 @@ final class SADatabasePickerModel: ObservableObject {
     let entries: [SADatabasePickerEntry]
     let commands: [SADatabasePickerCommand]
     let currentDatabase: String?
+    let clearsSearchOnCancel: Bool
 
     @Published var query: String = "" {
         didSet {
@@ -61,10 +62,12 @@ final class SADatabasePickerModel: ObservableObject {
 
     init(entries: [SADatabasePickerEntry],
          commands: [SADatabasePickerCommand],
-         currentDatabase: String?) {
+         currentDatabase: String?,
+         clearsSearchOnCancel: Bool = true) {
         self.entries = entries
         self.commands = commands
         self.currentDatabase = currentDatabase
+        self.clearsSearchOnCancel = clearsSearchOnCancel
         self.visibleEntries = entries
         self.highlightedName = Self.initialHighlight(in: entries, query: "", currentDatabase: currentDatabase)
     }
@@ -143,9 +146,9 @@ final class SADatabasePickerModel: ObservableObject {
         onChooseDatabase(name)
     }
 
-    /// Escape clears a non-empty search first, then dismisses.
+    /// Database searches clear first; field searches dismiss immediately.
     func cancel() {
-        if query.isEmpty {
+        if query.isEmpty || !clearsSearchOnCancel {
             onCancel()
         } else {
             query = ""
@@ -158,6 +161,9 @@ final class SADatabasePickerModel: ObservableObject {
 struct SADatabasePickerView: View {
 
     @ObservedObject var model: SADatabasePickerModel
+    // Field selectors share the same list and keyboard behavior.
+    var searchPlaceholder = NSLocalizedString("Search Databases", comment: "database picker : search field placeholder")
+    var noMatchesTitle = NSLocalizedString("No Matching Databases", comment: "database picker : shown when the search matches no database")
 
     private static let rowHeight: CGFloat = 22
     private static let maxListHeight: CGFloat = 420
@@ -165,7 +171,7 @@ struct SADatabasePickerView: View {
     var body: some View {
         VStack(spacing: 0) {
             SADatabasePickerSearchField(text: $model.query,
-                                        placeholder: Self.searchPlaceholder,
+                                        placeholder: searchPlaceholder,
                                         onMove: { model.moveHighlight(by: $0) },
                                         onSubmit: { model.chooseHighlighted() },
                                         onCancel: { model.cancel() })
@@ -173,7 +179,7 @@ struct SADatabasePickerView: View {
 
             Divider()
 
-            SADatabasePickerList(model: model, listHeight: listHeight)
+            SADatabasePickerList(model: model, listHeight: listHeight, noMatchesTitle: noMatchesTitle)
 
             if !model.commands.isEmpty {
                 Divider()
@@ -198,14 +204,13 @@ struct SADatabasePickerView: View {
         let rows = max(model.entries.count, 3)
         return min(CGFloat(rows) * Self.rowHeight + 8, Self.maxListHeight)
     }
-
-    private static let searchPlaceholder = NSLocalizedString("Search Databases", comment: "database picker : search field placeholder")
 }
 
 private struct SADatabasePickerList: View {
 
     @ObservedObject var model: SADatabasePickerModel
     let listHeight: CGFloat
+    let noMatchesTitle: String
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -234,7 +239,7 @@ private struct SADatabasePickerList: View {
             }
             .overlay {
                 if model.visibleEntries.isEmpty {
-                    Text(Self.noMatchesTitle)
+                    Text(noMatchesTitle)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -251,8 +256,6 @@ private struct SADatabasePickerList: View {
             }
         }
     }
-
-    private static let noMatchesTitle = NSLocalizedString("No Matching Databases", comment: "database picker : shown when the search matches no database")
 }
 
 private struct SADatabasePickerRow: View, Equatable {

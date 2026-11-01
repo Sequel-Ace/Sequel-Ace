@@ -24,4 +24,15 @@ import Foundation
     public class func isEncrypted(handle: UnsafeMutableRawPointer) -> Bool {
         mysql_get_ssl_cipher(handle.assumingMemoryBound(to: MYSQL.self)) != nil
     }
+
+    /// A negotiated cipher proves encryption, not who owns the server. Only
+    /// VERIFY_IDENTITY checks both the certificate chain and the host name.
+    @objc(isServerVerifiedForHandle:)
+    public class func isServerVerified(handle: UnsafeMutableRawPointer) -> Bool {
+        let mysql = handle.assumingMemoryBound(to: MYSQL.self)
+        var mode = SSL_MODE_DISABLED
+        return mysql_get_ssl_cipher(mysql) != nil
+            && mysql_get_option(mysql, MYSQL_OPT_SSL_MODE, &mode) == 0
+            && mode == SSL_MODE_VERIFY_IDENTITY
+    }
 }

@@ -23,8 +23,8 @@ final class SADialogAuthPromptTests: XCTestCase {
 
     // MARK: - Prompt text
 
-    private func message(_ prompt: String?, secure: Bool = false, isEncrypted: Bool = true) -> String {
-        SADialogAuthPrompt.message(for: prompt, secure: secure, isEncrypted: isEncrypted)
+    private func message(_ prompt: String?, secure: Bool = false, isEncrypted: Bool = true, isServerVerified: Bool = true) -> String {
+        SADialogAuthPrompt.message(for: prompt, secure: secure, isEncrypted: isEncrypted, isServerVerified: isServerVerified)
     }
 
     func testServerPromptIsShownAsSent() {
@@ -69,8 +69,28 @@ final class SADialogAuthPromptTests: XCTestCase {
         XCTAssertLessThan(warningAt.lowerBound, questionAt.lowerBound)
     }
 
-    func testPasswordOverTLSIsNotWarnedAbout() {
+    func testPasswordOverVerifiedTLSIsNotWarnedAbout() {
         XCTAssertEqual(message("Password:", secure: true, isEncrypted: true), "Password:")
+    }
+
+    func testUnverifiedTLSWarnsBeforeTheServerSuppliedQuestion() {
+        let question = String(repeating: "Please confirm your identity. ", count: 200)
+        let warned = message(question, secure: true, isServerVerified: false)
+        XCTAssertTrue(warned.hasPrefix("This connection is encrypted, but the server's identity has not been verified."))
+        XCTAssertTrue(warned.hasSuffix(question.trimmingCharacters(in: .whitespacesAndNewlines)))
+    }
+
+    func testQuestionTypeCannotSuppressUnverifiedTLSWarning() {
+        let password = message("Password:", secure: true, isServerVerified: false)
+        let ordinary = message("Password:", secure: false, isServerVerified: false)
+        XCTAssertEqual(password, ordinary)
+        XCTAssertTrue(ordinary.contains("identity has not been verified"))
+    }
+
+    func testMissingVerificationDefaultsToWarning() {
+        let warned = SADialogAuthPrompt.message(for: nil, secure: true, isEncrypted: true)
+        XCTAssertTrue(warned.contains("identity has not been verified"))
+        XCTAssertTrue(warned.hasSuffix(message(nil)))
     }
 
     func testOrdinaryQuestionOverPlaintextIsAlsoWarnedAbout() {

@@ -3073,6 +3073,9 @@
 
 /* dialog authentication prompt : warning shown when a password is asked for over a plaintext connection */
 "This connection is not encrypted, so your answer will be sent to the server in clear text." = "This connection is not encrypted, so your answer will be sent to the server in clear text.";
+
+/* dialog authentication prompt : warning before sending an answer over TLS without verified server identity */
+"This connection is encrypted, but the server's identity has not been verified. Only continue if you trust this server." = "This connection is encrypted, but the server's identity has not been verified. Only continue if you trust this server.";
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
 
@@ -4451,3 +4454,12 @@
 
 /* connection view : ssl : key file picker : wrong format error title */
 "“%@” is not a valid private key file." = "“%@” is not a valid private key file.";
+
+/* Content filter: field selector search placeholder. */
+"Search Fields" = "Search Fields";
+
+/* Content filter: no fields match the search. */
+"No Matching Fields" = "No Matching Fields";
+
+/* Content filter: field selector accessibility label. */
+"Filter Field" = "Filter Field";

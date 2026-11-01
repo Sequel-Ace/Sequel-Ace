@@ -168,11 +168,10 @@ fi
 
 # --- The dialog plugin's source -------------------------------------------
 # Upstream answers an empty password question straight from mysql->passwd and
-# never calls the client's callback, so on a plaintext connection a server (or
-# anyone who can rewrite the server's plugin announcement) collects the stored
-# password with no interaction at all. The patch gates both of those unasked
-# replies on an encrypted transport and changes nothing else; a question the
-# user actually sees still goes to the callback, which warns.
+# never calls the client's callback. TLS alone does not verify the peer, so
+# even an encrypted connection can disclose the stored password to an impostor.
+# The patch sends both paths through the callback, which requires user consent
+# and warns about plaintext or an unverified TLS peer.
 # It is applied to a copy, so the extracted tree stays pristine and a re-run
 # never double-applies. A version bump that moves these lines fails here
 # rather than silently shipping an unpatched plugin.
@@ -270,18 +269,10 @@ for arch in "${ARCHS[@]}"; do
     # a MODULE is an MH_BUNDLE with no install name (like every other plugin
     # here), MYSQL_DYNAMIC_PLUGIN keeps plugin.h from pulling in the server's
     # sql_plugin.h, and plugin.h reaches OpenSSL headers through my_sys.h.
-    #
-    # dynamic_lookup resolves mysql_get_ssl_cipher, which the patch calls,
-    # against whoever loaded the plugin - libmysqlclient, already in memory,
-    # since it is the one calling dlopen. Recording a dependency on the client
-    # library instead would name a second path to the same file and risk a
-    # second copy of it; MySQL links its own non-client plugins against their
-    # host for exactly this reason.
     echo "***** building the dialog client plugin for $arch *****"
     "$CXX" -std=c++17 -O2 -fPIC -bundle \
         -arch "$arch" -isysroot "$sysroot" \
         -mmacosx-version-min="$DEPLOYMENT_TARGET" \
-        -Wl,-undefined,dynamic_lookup \
         -DMYSQL_DYNAMIC_CLIENT_PLUGIN -DMYSQL_DYNAMIC_PLUGIN \
         $prefix_map \
         -I"$build/include" -I"$src/include" -I"$src" \
@@ -438,16 +429,21 @@ if [ ! -f plugin/dialog.so ]; then
 elif ! nm -gU plugin/dialog.so | grep "_mysql_client_plugin_declaration_" > /dev/null; then
     echo "❌ plugin/dialog.so exports no client plugin declaration"
     status=1
-elif ! nm -u plugin/dialog.so | grep "_mysql_get_ssl_cipher" > /dev/null; then
-    # Only the patched source asks what the transport negotiated, so this is
-    # what separates the shipped plugin from stock upstream.
-    echo "❌ plugin/dialog.so does not check the transport before answering from the stored password"
-    status=1
 fi
 if [ "$status" -ne 0 ]; then
     echo "❌ verification failed; nothing copied"
     exit 1
 fi
+# Exercise both slices through the plugin ABI. This proves that empty-password
+# and change-user packets cannot bypass consent, including over simulated TLS;
+# a symbol-presence check cannot establish that behavioral property.
+for arch in "${ARCHS[@]}"; do
+    test_binary="$work_dir/test-dialog-plugin-$arch"
+    xcrun swiftc "$script_dir/test-dialog-plugin.swift" \
+        -I "$script_dir/../SPMySQLFramework/Source/MySQLClient" \
+        -target "$arch-apple-macosx$DEPLOYMENT_TARGET" -o "$test_binary"
+    "$test_binary" "$universal/plugin/dialog.so"
+done
 otool -L libmysqlclient.24.dylib plugin/*.so plugin/libfido2.1.dylib
 
 # --- Copy into the framework ----------------------------------------------

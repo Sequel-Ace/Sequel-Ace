@@ -21,17 +21,24 @@ from the app, so the questions become an alert instead of the `fgets(stdin)`
 the plugin falls back to.
 
 It is the one source file here that is **not** shipped as Oracle wrote it.
-`dialog-plaintext-consent.patch` gates the plugin's two unasked replies — the
+`dialog-plaintext-consent.patch` redirects the plugin's two unasked replies — the
 `mysql_change_user` packet and a password question with an empty prompt, both
-of which answer straight from `mysql->passwd` — on
-`mysql_get_ssl_cipher()`. Without it a server that selects `dialog` on a
-plaintext connection, or anyone able to rewrite the server's plugin
-announcement, collects the stored password with no prompt and no warning,
-because those paths never reach the callback. Patched, an unencrypted
-connection asks the user instead. The build applies it to a copy of the file
-and fails if it does not apply, and verification fails if the built plugin
-does not reference `mysql_get_ssl_cipher`, so a version bump cannot quietly
-ship the stock plugin.
+of which answer straight from `mysql->passwd` — through the client callback.
+Every dialog answer now requires user interaction, including over TLS:
+`mysql_get_ssl_cipher()` establishes encryption but does not verify the server's
+identity. The app warns on plaintext connections and on TLS connections without
+`SSL_MODE_VERIFY_IDENTITY`, and still lets the user proceed so no-TLS PAM remains
+usable. Cancelling sends no answer. The build applies the patch to a copy and
+fails if it does not apply. `test-dialog-plugin.swift` then exercises both slices
+of the actual binary through the plugin ABI: empty and nonempty questions,
+change-user packets, cancellation, accepted answers, and long multibyte answers
+under both simulated transport states. This replaces the earlier symbol check,
+which could not prove that the saved-password bypass was closed.
+
+This is a dialog-specific consent policy. The app's existing `PREFERRED` and
+`REQUIRED` TLS modes do not verify peer identity, and MySQL's built-in SHA-256
+authentication plugins can still send a saved password on such a connection.
+The dialog change does not fix that separate, pre-existing client-wide policy.
 
 Both scripts are self-contained and **use nothing from Homebrew**. Every
 dependency is either bundled in the MySQL tarball (zlib, zstd, lz4, ICU,

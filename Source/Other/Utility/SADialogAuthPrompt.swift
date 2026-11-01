@@ -42,11 +42,12 @@ enum SADialogAuthPrompt {
     /// The server writes the question and it is shown as-is, so a server that
     /// sends nothing still gets a sentence the user can act on.
     ///
-    /// Every question asked over an unencrypted connection carries a warning,
+    /// Every question asked over plaintext or unverified TLS carries a warning,
     /// whatever type the server gave it. The dialog protocol sends each answer
     /// in clear text, and the client only *requires* TLS when SSL or the
     /// cleartext plugin was asked for (`SACleartextAuthPolicy`), so a server
     /// that picks `dialog` can reach this prompt on a plaintext connection.
+    /// A TLS cipher alone does not verify the peer; only VERIFY_IDENTITY does.
     /// Keying the warning off the question type instead would let that same
     /// server turn it off by calling a password question "ordinary".
     ///
@@ -54,7 +55,7 @@ enum SADialogAuthPrompt {
     /// height and scrolls the overflow, so a long enough question — which the
     /// server also writes — would push a trailing warning below the fold and
     /// out of sight of someone about to answer.
-    static func message(for prompt: String?, secure: Bool, isEncrypted: Bool) -> String {
+    static func message(for prompt: String?, secure: Bool, isEncrypted: Bool, isServerVerified: Bool = false) -> String {
         let trimmed = prompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let question = trimmed.isEmpty
             ? NSLocalizedString(
@@ -63,10 +64,13 @@ enum SADialogAuthPrompt {
             )
             : trimmed
 
-        guard !isEncrypted else {
+        guard !isEncrypted || !isServerVerified else {
             return question
         }
-        let warning = NSLocalizedString(
+        let warning = isEncrypted ? NSLocalizedString(
+            "This connection is encrypted, but the server's identity has not been verified. Only continue if you trust this server.",
+            comment: "dialog authentication prompt : warning before sending an answer over TLS without verified server identity"
+        ) : NSLocalizedString(
             "This connection is not encrypted, so your answer will be sent to the server in clear text.",
             comment: "dialog authentication prompt : warning shown when a password is asked for over a plaintext connection"
         )
@@ -84,9 +88,9 @@ enum SADialogAuthPrompt {
     /// Asks on the main thread and blocks the caller until the user answers.
     /// `nil` means the user cancelled; the plugin turns that into a failed
     /// authentication.
-    static func ask(prompt: String?, secure: Bool, isEncrypted: Bool) -> String? {
-        let message = message(for: prompt, secure: secure, isEncrypted: isEncrypted)
-        let warning = !isEncrypted
+    static func ask(prompt: String?, secure: Bool, isEncrypted: Bool, isServerVerified: Bool = false) -> String? {
+        let message = message(for: prompt, secure: secure, isEncrypted: isEncrypted, isServerVerified: isServerVerified)
+        let warning = !isEncrypted || !isServerVerified
         if Thread.isMainThread {
             return present(message: message, secure: secure, warning: warning)
         }

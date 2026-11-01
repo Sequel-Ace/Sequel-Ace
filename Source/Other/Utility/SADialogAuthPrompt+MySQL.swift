@@ -32,11 +32,13 @@ public func saMySQLAuthenticationDialogAsk(
     // The plugin always passes its handle; with none there is no way to tell
     // what the transport negotiated, so warn rather than imply encryption.
     let isEncrypted = mysql.map { SADialogAuthTransport.isEncrypted(handle: $0) } ?? false
+    let isServerVerified = mysql.map { SADialogAuthTransport.isServerVerified(handle: $0) } ?? false
 
     guard let answer = SADialogAuthPrompt.ask(
         prompt: question,
         secure: SADialogAuthPrompt.isSecure(type: type),
-        isEncrypted: isEncrypted
+        isEncrypted: isEncrypted,
+        isServerVerified: isServerVerified
     ) else {
         return nil
     }
