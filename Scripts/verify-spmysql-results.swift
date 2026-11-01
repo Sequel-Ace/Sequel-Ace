@@ -12,6 +12,28 @@ struct SATestResults: Decodable {
     let testNodes: [SATestNode]
 }
 
+func requiredSuites(in directory: URL) throws -> [String] {
+    var isDirectory: ObjCBool = false
+    var scanError: Error?
+    guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue,
+          let files = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: nil,
+              errorHandler: { _, error in scanError = error; return false }) else {
+        throw NSError(domain: "SACoverage", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot read framework sources: \(directory.path)"])
+    }
+    // These existing live suites are unconditional. Discover additional integration
+    // classes from declarations, so moving/renaming #2775's source cannot omit it.
+    var suites: Set<String> = ["SAEscapingBoundaryIntegrationTests", "SADatabaseAssertionIntegrationTests"]
+    let declaration = try NSRegularExpression(pattern: #"\bclass\s+([A-Za-z_]\w*IntegrationTests)\s*:\s*XCTestCase\b"#)
+    for case let file as URL in files where file.pathExtension == "swift" {
+        let source = try String(contentsOf: file, encoding: .utf8)
+        for match in declaration.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+            if let range = Range(match.range(at: 1), in: source) { suites.insert(String(source[range])) }
+        }
+    }
+    if let scanError { throw scanError }
+    return suites.sorted()
+}
+
 func coverageErrors(in nodes: [SATestNode], requiredSuites: [String]) -> [String] {
     // Sphinx is a separate product, not provided by this MySQL job. No other
     // live integration skip is allowed, including privilege/setup-related skips.
@@ -66,6 +88,15 @@ func selfTest() throws {
     let encoded = Data(#"{"testNodes":[{"nodeType":"Test Suite","name":"LiveTests","children":[{"nodeType":"Test Case","name":"testDatabase()","result":"Passed"}]}]}"#.utf8)
     let decoded = try JSONDecoder().decode(SATestResults.self, from: encoded)
     try check(coverageErrors(in: decoded.testNodes, requiredSuites: ["LiveTests"]).isEmpty, "JSON decoding lost coverage")
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory.appendingPathComponent("moved"), withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try "final class SASessionIdentityIntegrationTests: XCTestCase {}".write(
+        to: directory.appendingPathComponent("moved/RenamedTests.swift"), atomically: true, encoding: .utf8)
+    let discovered = try requiredSuites(in: directory)
+    try check(discovered.contains("SASessionIdentityIntegrationTests"), "moving a source omitted its live suite")
+    try check(!coverageErrors(in: decoded.testNodes, requiredSuites: discovered).isEmpty,
+              "accepted missing discovered live suites")
     print("Live-coverage verifier self-tests passed")
 }
 
@@ -74,12 +105,12 @@ do {
     if arguments == ["--self-test"] {
         try selfTest()
     } else {
-        guard arguments.count >= 2 else {
+        guard arguments.count == 2 else {
             throw NSError(domain: "SACoverage", code: 1, userInfo: [NSLocalizedDescriptionKey:
-                "Usage: swift verify-spmysql-results.swift tests.json RequiredSuite [RequiredSuite ...]"])
+                "Usage: swift verify-spmysql-results.swift tests.json framework-source-directory"])
         }
         let results = try JSONDecoder().decode(SATestResults.self, from: Data(contentsOf: URL(fileURLWithPath: arguments[0])))
-        let suites = Array(arguments.dropFirst())
+        let suites = try requiredSuites(in: URL(fileURLWithPath: arguments[1], isDirectory: true))
         let errors = coverageErrors(in: results.testNodes, requiredSuites: suites)
         guard errors.isEmpty else {
             throw NSError(domain: "SACoverage", code: 1, userInfo: [NSLocalizedDescriptionKey: errors.joined(separator: "\n")])

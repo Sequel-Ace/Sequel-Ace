@@ -3,8 +3,9 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-results="$PWD/build/spmysql-ci"
-mkdir -p "$results"
+results_root="$PWD/build/spmysql-ci"
+mkdir -p "$results_root"
+results="$(mktemp -d "$results_root/run.XXXXXX")"
 # Honor a caller's full-Xcode selection; otherwise use the runner's selected Xcode.
 # Avoid versioned /Applications paths and reject Command Line Tools-only installs.
 xcode_developer_dir="${DEVELOPER_DIR:-$(xcode-select -p)}"
@@ -17,7 +18,7 @@ xcodebuild -version | tee "$results/xcode-version.log"
 # Fail early if the selected toolchain lacks the result API used by the verifier.
 xcrun xcresulttool get test-results tests --help >/dev/null
 
-mysql_prefix="$(brew --prefix mysql@8.4)"
+mysql_prefix="$(brew --prefix "${SPMYSQL_TEST_MYSQL_FORMULA:-mysql@8.4}")"
 server_dir="$(mktemp -d /tmp/sa-mysql.XXXXXX)"
 socket="$server_dir/mysql.sock"
 server_pid=""
@@ -86,10 +87,5 @@ xcodebuild test \
 
 xcrun xcresulttool get test-results tests --path "$results/FrameworkTests.xcresult" \
   >"$results/tests.json"
-required_suites=(SAEscapingBoundaryIntegrationTests SADatabaseAssertionIntegrationTests)
-# Independent of #2775: once its source is present, missing registration or skipped
-# session-identity coverage must fail CI too. No implementation from that PR is copied.
-if [[ -f 'Frameworks/SPMySQLFramework/SPMySQL Unit Tests/SASessionIdentityIntegrationTests.swift' ]]; then
-  required_suites+=(SASessionIdentityIntegrationTests)
-fi
-xcrun swift Scripts/verify-spmysql-results.swift "$results/tests.json" "${required_suites[@]}"
+# Discover live suite declarations throughout the framework, independent of filenames.
+xcrun swift Scripts/verify-spmysql-results.swift "$results/tests.json" Frameworks/SPMySQLFramework

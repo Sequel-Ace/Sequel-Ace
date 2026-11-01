@@ -62,14 +62,16 @@ which is stopped and removed on exit. Do not point this job at a shared server:
 the integration tests create users/databases and temporarily change global
 settings. Tests run serially so those settings cannot race between suites.
 
-Results and logs are retained in `build/spmysql-ci/` and uploaded by CI, including
+Each invocation gets a fresh results directory under `build/spmysql-ci/`, so local
+reruns do not collide with an existing xcresult bundle. Logs are uploaded by CI, including
 on failure. The result verifier requires the escaping and database-assertion live
 suites to have test cases and rejects every non-passing live test except the
 explicit Sphinx-only skip (this job does not provision Sphinx).
 
 This CI change is independent of #2775. Its session-identity tests are not copied
-here; when `SASessionIdentityIntegrationTests.swift` is present, the verifier also
-requires that suite to execute without skips. The full framework scheme already
+here; the verifier discovers every `*IntegrationTests: XCTestCase` declaration
+throughout the framework sources, so moving or renaming its test file cannot
+omit the session-identity suite from the required coverage. The full framework scheme already
 includes its cancellation, gate and statement-byte tests once #2775 is merged.
 The verifier's synthetic positive/negative checks run before the native tests:
 `xcrun swift Scripts/verify-spmysql-results.swift --self-test`.

@@ -1579,9 +1579,10 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes publisher, "runs-on: macos-15"
 
     ci = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
-    assert_equal 1, ci.scan("runs-on: macos-26").length
-    assert_equal 1, ci.scan("runs-on: macos-15").length
-    framework_job = YAML.safe_load(ci).fetch("jobs").fetch("framework_tests")
+    ci_jobs = YAML.safe_load(ci).fetch("jobs")
+    assert_equal "macos-26", ci_jobs.fetch("tests").fetch("runs-on")
+    assert_equal "macos-15", ci_jobs.fetch("release_tools").fetch("runs-on")
+    framework_job = ci_jobs.fetch("framework_tests")
     assert_equal "macos-latest", framework_job.fetch("runs-on")
     refute framework_job.fetch("env").key?("DEVELOPER_DIR")
     refute framework_job.fetch("env").key?("TEST_ARCH")
