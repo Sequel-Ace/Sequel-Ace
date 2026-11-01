@@ -39,12 +39,20 @@ developers will be more than happy to help you out.
 
 The PR Tests workflow runs the framework's own `SPMySQL.framework` scheme in a
 separate GitHub-hosted macOS job; the app's `Unit Tests` scheme does not include
-these tests. To run the same job locally on a Mac with Xcode 26.6 and Homebrew:
+these tests. To run the same job locally on a Mac with full Xcode and Homebrew:
 
 ```sh
 brew install mysql@8.4
 bash Scripts/test-spmysql-framework.sh # from the repository root
 ```
+
+The job uses `macos-latest` and its selected full Xcode, rather than a versioned
+developer-directory path or a fixed processor architecture. The script honors a
+`DEVELOPER_DIR` override, rejects Command Line Tools-only installations, logs the
+actual Xcode version and checks for the xcresult API it needs before starting a
+database. MySQL stays on the **8.4 LTS series**, accepting Homebrew's patch updates
+without floating onto an incompatible Innovation/major release. GitHub Actions
+remain pinned by commit for supply-chain integrity.
 
 The script initializes a private MySQL 8.4 data directory under `/tmp`, binds TCP
 to loopback port 13306, and passes its private socket and port to XCTest using

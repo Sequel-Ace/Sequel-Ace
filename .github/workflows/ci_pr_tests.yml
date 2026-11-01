@@ -24,11 +24,9 @@ jobs:
 
   framework_tests:
     name: SPMySQL Framework Tests
-    runs-on: macos-26
+    runs-on: macos-latest
     timeout-minutes: 30
     env:
-      DEVELOPER_DIR: '/Applications/Xcode_26.6.app/Contents/Developer'
-      TEST_ARCH: arm64
       HOMEBREW_NO_AUTO_UPDATE: '1'
     steps:
     - name: Checkout the Git repository
@@ -37,7 +35,7 @@ jobs:
         persist-credentials: false
     - name: Test the live-coverage result check
       run: xcrun swift Scripts/verify-spmysql-results.swift --self-test
-    - name: Install MySQL 8.4 for the disposable test server
+    - name: Install MySQL 8.4 LTS for the disposable test server
       run: brew list --versions mysql@8.4 || brew install mysql@8.4
     - name: Build and run framework tests with a disposable database
       run: bash Scripts/test-spmysql-framework.sh

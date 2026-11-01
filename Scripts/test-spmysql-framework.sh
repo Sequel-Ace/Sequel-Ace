@@ -5,6 +5,18 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 results="$PWD/build/spmysql-ci"
 mkdir -p "$results"
+# Honor a caller's full-Xcode selection; otherwise use the runner's selected Xcode.
+# Avoid versioned /Applications paths and reject Command Line Tools-only installs.
+xcode_developer_dir="${DEVELOPER_DIR:-$(xcode-select -p)}"
+if [[ ! -d "$xcode_developer_dir/Platforms/MacOSX.platform" ]]; then
+  echo "Select a full Xcode installation with xcode-select or DEVELOPER_DIR: $xcode_developer_dir" >&2
+  exit 1
+fi
+export DEVELOPER_DIR="$xcode_developer_dir"
+xcodebuild -version | tee "$results/xcode-version.log"
+# Fail early if the selected toolchain lacks the result API used by the verifier.
+xcrun xcresulttool get test-results tests --help >/dev/null
+
 mysql_prefix="$(brew --prefix mysql@8.4)"
 server_dir="$(mktemp -d /tmp/sa-mysql.XXXXXX)"
 socket="$server_dir/mysql.sock"
