@@ -166,6 +166,54 @@ final class SAFieldPickerTests: XCTestCase {
                                 "Selection lookup should build one row index, not scan every row for each field")
     }
 
+    func testReloadCriteriaKeepsFieldLookupReadsBounded() throws {
+        for rowCount in [24, 48] {
+            let editor = SACountingFieldRuleEditor(frame: NSRect(x: 0, y: 0, width: 600, height: 120))
+            let (controller, _) = try makeController(editor: editor)
+            defer { editor.unbind(NSBindingName("rows")) }
+            editor.nestingMode = .compound
+            let rules = (0..<rowCount).map { index -> [String: Any] in
+                var rule = savedRule(selectedName: index.isMultiple(of: 2) ? "customer_email" : "billing_email")
+                rule["enabled"] = !index.isMultiple(of: 3)
+                return rule
+            }
+            controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: [
+                "filterClass": "groupNode", "isConjunction": true, "children": rules
+            ])
+            let before = try serializedFilter(controller) as NSDictionary
+            editor.criteriaReadCount = 0
+
+            editor.reloadCriteria()
+
+            // Measured on macOS 27.2: 216 reads for 24 rows, 432 for 48 (9 per row).
+            // Allow one-third overhead for AppKit variation while catching full-row rescans.
+            XCTAssertLessThanOrEqual(editor.criteriaReadCount, rowCount * 12)
+            XCTAssertEqual(try serializedFilter(controller) as NSDictionary, before)
+        }
+    }
+
+    func testDisablingEditorClosesPresentedPopover() throws {
+        let (controller, editor) = try makeController()
+        defer { editor.unbind(NSBindingName("rows")) }
+        let window = NSWindow(contentRect: editor.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = editor
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
+        let picker = try XCTUnwrap(editor.displayValues(forRow: 0)[1] as? SAFieldPickerButton)
+        picker.performClick(nil)
+        let presented = expectation(description: "Popover has completed presentation")
+        DispatchQueue.main.async { presented.fulfill() }
+        wait(for: [presented], timeout: 2)
+        let popover = try XCTUnwrap(picker.pickerPopover)
+        XCTAssertTrue(popover.isShown)
+
+        controller.setValue(false, forKey: "enabled")
+
+        XCTAssertFalse(popover.isShown)
+        XCTAssertNil(picker.pickerPopover)
+    }
+
     func testIndexedLookupUsesCurrentSelectionAndReplacementRows() throws {
         let (controller, editor) = try makeController()
         defer { editor.unbind(NSBindingName("rows")) }
