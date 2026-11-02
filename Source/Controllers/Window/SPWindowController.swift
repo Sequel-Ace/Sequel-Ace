@@ -49,27 +49,72 @@ import SnapKit
 
         setupFramePersistence()
         setupAppearance()
-        observeTitlebarTintPreference()
+        observeConnectionColourStyle()
+        window?.toolbarStyle = .unified
     }
 
+    override func windowDidLoad() {
+        super.windowDidLoad()
+        if let window = window {
+            let tabBar = SAClaudeWindowTabBarController(window: window)
+            tabBar.onVisibilityChange = { [weak self] _ in self?.applyConnectionColourChrome() }
+            self.tabBar = tabBar
+            // Only one of the bar and the overlay draws the line at a time.
+            colourLine.attach(to: window)
+            namePill.attach(to: window)
+        }
+        applyConnectionColourChrome()
+        databaseListSubscription = NotificationCenter.default.observe(name: .SPDatabaseCreatedRemovedRenamed, object: nil) { [weak self] _ in
+            guard let self, let document = self.databaseDocument as? SADatabaseSelectionDelegate else { return }
+            SADatabaseListManager.clearSelectionIfDropped(delegate: document, isWorking: self.databaseDocument.isWorking())
+        }
+    }
+
+    /// Clears the selection of a dropped database (see `SADatabaseListManager.clearSelectionIfDropped`).
+    private var databaseListSubscription: NotificationToken?
+
+    /// The Claude tab bar under the toolbar (in place of macOS's tab strip).
+    private(set) var tabBar: SAClaudeWindowTabBarController?
+
+    /// What this tab's chip shows: the tab title and whether the connection uses SSL.
+    private(set) var tabBarTitle = ""
+    private(set) var tabBarIsSSL = false
+
     /// The favourite colour of the connection in this tab, or `nil` when it has
-    /// none or the tab is not connected. Kept so the title bar can be repainted
-    /// when the preference is toggled, without waiting for a title update.
+    /// none or the tab is not connected. Kept so the chrome can be redone when
+    /// the preference changes or the tab bar shows or hides, without waiting for
+    /// a title update.
     private var favoriteColor: NSColor?
 
     /// Holds the preference observer for the window's lifetime; the token
     /// unregisters it on deinit.
-    private var titlebarTintSubscription: NotificationToken?
+    private var connectionColourSubscription: NotificationToken?
+
+    /// The "Show the connection colour as" choice the chips were last built for.
+    private var chipConnectionColourStyle = SAConnectionColourStyle.current(.standard)
+
+    /// The connection's Underline line right under the toolbar while the tab
+    /// bar is hidden (see `applyConnectionColourChrome`).
+    private lazy var colourLine = SAConnectionColourLineOverlay()
+
+    /// The window title in Name pill mode, in place of the native one's text
+    /// (see `applyNamePill`). Installed in `windowDidLoad`.
+    private lazy var namePill = SAConnectionNamePillAccessory()
+
+    /// The window's subtitle (the MySQL version, when shown), kept for the name
+    /// pill, which draws it itself while the native title is hidden.
+    private var windowSubtitle = ""
 
     // MARK: - Accessory
     private lazy var tabAccessoryView: SPWindowTabAccessory = SPWindowTabAccessory()
 
-    /// Opaque backing for the content area. The tinted title bar (see
-    /// `applyTitlebarTint`) is painted by the window's own background, which also
-    /// shows through anywhere the document view doesn't draw - split view gaps,
-    /// the frame or two before subviews catch up with a live resize. This keeps
-    /// the connection colour in the window top instead of leaking below it.
-    /// `NSBox` resolves its fill colour at draw time, so it follows light/dark.
+    /// Opaque backing for the content area. The Claude bar colour of the title
+    /// bar (see `applyConnectionColourChrome`) is painted by the window's own
+    /// background, which also shows through anywhere the document view doesn't
+    /// draw - split view gaps, the frame or two before subviews catch up with a
+    /// live resize. This keeps the bar colour in the window top instead of
+    /// leaking below it. `NSBox` resolves its fill colour at draw time, so it
+    /// follows light/dark.
     private lazy var contentBackground: NSBox = {
         let box = NSBox()
         box.boxType = .custom
@@ -107,8 +152,8 @@ private extension SPWindowController {
     /// Put the document's view into the window and hook up the tab accessory.
     ///
     /// The opaque `contentBackground` goes in first so it sits *below* the
-    /// document view: it is the backstop for the tinted window background (see
-    /// `applyTitlebarTint`), not part of the document's own chrome.
+    /// document view: it is the backstop for the window background (see
+    /// `applyConnectionColourChrome`), not part of the document's own chrome.
     func setupAppearance() {
         databaseDocument.updateWindowTitle(self)
 
@@ -126,50 +171,94 @@ private extension SPWindowController {
         }
     }
 
-    /// Paint the whole window top - title bar, unified toolbar and the native
-    /// tab bar - in the favourite colour of the connection this tab holds, or
-    /// restore the stock title bar when there is no colour (#1856).
+    /// Show the connection colour of this tab the way "Show the connection
+    /// colour as" asks: never a filled title bar, but the Underline line (in
+    /// the tab bar while it shows, else an overlay along the top edge of the
+    /// content, right under the toolbar) or, with Tab underline, the chips' lines (built by the tab bar).
+    /// Neither line changes the title bar's height.
     ///
     /// `SAWindowTitlebarTint` decides what the chrome should look like; this
     /// only applies it. Every tab is its own `NSWindow`, so the colour follows
     /// whichever tab is selected without any extra bookkeeping.
-    func applyTitlebarTint(_ color: NSColor?) {
+    func applyConnectionColourChrome() {
         guard let window = window else {
             return
         }
 
         let tint = SAWindowTitlebarTint(
-            favoriteColor: color,
-            isEnabled: UserDefaults.standard.bool(forKey: SPDisplayConnectionColorInTitlebar)
+            style: SAConnectionColourStyle.current(.standard),
+            favoriteColor: favoriteColor,
+            tabBarVisible: tabBar?.isShowing ?? false
         )
 
-        // Every defaults change wakes the observer below, so skip the work -
-        // and the redraw it triggers - unless the chrome actually differs.
-        guard window.titlebarAppearsTransparent != tint.titlebarAppearsTransparent
-                || window.backgroundColor != tint.backgroundColor
-                || window.titlebarSeparatorStyle != tint.separatorStyle else {
-            return
+        // Every Claude setting change wakes the observer below, so skip the work -
+        // and the redraw it triggers - for what is already right.
+        if window.titlebarAppearsTransparent != tint.titlebarAppearsTransparent {
+            window.titlebarAppearsTransparent = tint.titlebarAppearsTransparent
+        }
+        if window.backgroundColor != tint.backgroundColor {
+            window.backgroundColor = tint.backgroundColor
+        }
+        if window.titlebarSeparatorStyle != tint.separatorStyle {
+            window.titlebarSeparatorStyle = tint.separatorStyle
         }
 
-        window.titlebarAppearsTransparent = tint.titlebarAppearsTransparent
-        window.backgroundColor = tint.backgroundColor
-        window.titlebarSeparatorStyle = tint.separatorStyle
+        // Before `windowDidLoad` there is neither; it applies the chrome again.
+        guard let tabBar = tabBar else {
+            return
+        }
+        colourLine.colour = tint.bottomLineInTabBar ? nil : tint.bottomLine
+        tabBar.bottomLineColour = tint.bottomLineInTabBar ? tint.bottomLine : nil
+        applyNamePill(showsNamePill: tint.showsNamePill)
     }
 
-    /// Repaint the title bar when the preference is toggled, so turning the
-    /// colour on or off reaches open windows immediately rather than at the
-    /// next title update.
-    func observeTitlebarTintPreference() {
-        titlebarTintSubscription = NotificationCenter.default.observe(
-            name: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
+    /// Name pill mode: show the pill title (the connection's name in its colour,
+    /// then "db/table", the subtitle under it) in place of the native title's
+    /// text while the window has a colour and a connected title; otherwise the
+    /// native title. The pill decides where it draws and sets `titleVisibility`
+    /// to match (see `SAConnectionNamePillAccessory`): with the toolbar shown it
+    /// draws over the native title, which keeps its room, so no toolbar item moves.
+    /// `window.title` is always kept, for the Window menu and Mission Control.
+    /// Neither changes the title bar's height.
+    func applyNamePill(showsNamePill: Bool) {
+        guard let window = window, tabBar != nil else {
+            return
+        }
+        let parts = showsNamePill
+            ? SAWindowTitleBuilder.namePillParts(windowTitle: window.title, tabTitle: tabBarTitle, connectionName: databaseDocument.name())
+            : nil
+        if let parts = parts, let colour = favoriteColor {
+            namePill.show(parts: parts, subtitle: windowSubtitle, colour: colour, accessibilityTitle: window.title)
+        } else {
+            namePill.hide()
+        }
+    }
+
+    /// `applyNamePill` for the current choice and colour, after a title change.
+    func refreshNamePill() {
+        let tint = SAWindowTitlebarTint(
+            style: SAConnectionColourStyle.current(.standard),
+            favoriteColor: favoriteColor,
+            tabBarVisible: tabBar?.isShowing ?? false
+        )
+        applyNamePill(showsNamePill: tint.showsNamePill)
+    }
+
+    /// Redo the chrome when the choice changes, so it reaches open windows
+    /// immediately rather than at the next title update; the chips are rebuilt
+    /// too when the choice changes their lines.
+    func observeConnectionColourStyle() {
+        connectionColourSubscription = NotificationToken(token: SAClaudeAppearanceChange.addObserver { [weak self] _ in
             guard let self = self else {
                 return
             }
-            self.applyTitlebarTint(self.favoriteColor)
-        }
+            self.applyConnectionColourChrome()
+            let style = SAConnectionColourStyle.current(.standard)
+            if style != self.chipConnectionColourStyle {
+                self.chipConnectionColourStyle = style
+                self.tabBar?.refresh()
+            }
+        })
     }
 }
 
@@ -180,21 +269,53 @@ private extension SPWindowController {
         window?.title = title
         if #available(macOS 10.13, *) {
             window?.tab.title = tabTitle
+            // The window title is the full path; the tab shows only its tail.
+            window?.tab.toolTip = title
         }
-        
+
         tabAccessoryView.setTitle(title: tabTitle)
+        tabAccessoryView.setToolTipPath(title)
+        tabBarTitle = tabTitle
+        tabBarItemDidChange()
+        refreshNamePill()
+    }
+
+    func updateWindow(title: String, tabTitle: String, subtitle: String) {
+        windowSubtitle = subtitle
+        updateWindow(title: title, tabTitle: tabTitle)
+        if window?.subtitle != subtitle { window?.subtitle = subtitle }
     }
 
     /// Reflect the connection this tab holds in the window chrome: the colour
-    /// line on the tab accessory, the SSL padlock, and the title bar tint.
+    /// dot on the tab accessory, the SSL padlock, and the connection colour
+    /// (see `applyConnectionColourChrome`).
     ///
     /// The single funnel for all three, called from
     /// `-[SPDatabaseDocument updateWindowTitle:]`. A `nil` colour means "no
-    /// favourite colour, or not connected" and clears the line and the tint.
+    /// favourite colour, or not connected" and clears the dot and the colour.
     func updateWindowAccessory(color: NSColor?, isSSL: Bool) {
         favoriteColor = color
+        tabBarIsSSL = isSSL
         tabAccessoryView.update(color: color, isSSL: isSSL)
-        applyTitlebarTint(color)
+        applyConnectionColourChrome()
+        tabBarItemDidChange()
+    }
+
+    /// The favourite colour of this tab's chip: the favourite's `-tab` colour, `nil` when there is none.
+    var tabBarColour: NSColor? {
+        SPWindowTabAccessory.tabColour(for: favoriteColor)
+    }
+
+    /// Called by the tab bar for every window of the group it rebuilds. The native tab content keeps its
+    /// selected style, though macOS's strip is hidden; it shows again only if a future macOS stops hosting the strip
+    /// the way the bar hides it.
+    func tabBarSelectionDidChange(isSelected: Bool) {
+        tabAccessoryView.setSelected(isSelected)
+    }
+
+    /// The title, colour or SSL state of this tab changed: rebuild the chips of its group.
+    private func tabBarItemDidChange() {
+        tabBar?.refresh()
     }
 }
 
@@ -215,6 +336,10 @@ extension SPWindowController: NSWindowDelegate {
         // the exclusive autosave name (only one live window can): the most recently closed
         // window wins, so the next new window restores the frame the user saw last (#1307).
         window?.saveFrame(usingName: Self.frameAutosaveName)
+
+        // ⌘W and the tab bar refuse a tab with a sheet up, but a direct -close (quit, scripted closes) doesn't:
+        // a sheet left attached keeps this window and the sheet alive after the tab is gone. End each as cancelled.
+        if let window { SASheetEnding.endAll(of: window) }
 
         // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
         NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)

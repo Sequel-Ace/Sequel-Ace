@@ -234,18 +234,10 @@ NSString * const SPUserClosedHelpViewerNotification = @"SPUserClosedHelpViewer";
 }
 
 - (NSString *)generateHelp:(NSString *)theTitle theHelp:(NSString *)theHelp {
-	NSString *addBodyClass = @"";
-	// Add CSS class if running in dark UI mode (10.14+)
-	if (@available(macOS 10.14, *)) {
-		NSString *match = [[[controller window] effectiveAppearance] bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
-		// aqua is already the default theme
-		if ([NSAppearanceNameDarkAqua isEqualToString:match]) {
-			addBodyClass = @"dark";
-		}
-	}
-
+	// Colours and light/dark come from the Claude palette (the editor theme), not the window's appearance.
 	return [engine processTemplate:helpHTMLTemplate withVariables:@{
-		@"bodyClass": addBodyClass,
+		@"bodyClass": [SAClaudeHintCardStyler currentIsDark] ? @"dark" : @"",
+		@"palette": [SAClaudeHintCardStyler currentPageStyle],
 		@"title": theTitle,
 		@"body": theHelp,
 	}];

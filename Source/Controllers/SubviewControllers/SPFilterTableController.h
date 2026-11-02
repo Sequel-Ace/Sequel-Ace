@@ -61,7 +61,7 @@
 	NSString *filterTableDefaultOperator;
 	NSString *lastEditedFilterTableValue;
 
-	id target;
+	__weak id target; // weak: the target (the table content) owns this controller
 	SEL action;
 }
 
@@ -123,7 +123,7 @@
  *
  * Results may be inconsistent if not called on the main thread!
  */
-@property (strong, nonatomic) id target;
+@property (weak, nonatomic) id target;
 @property (nonatomic) SEL action;
 
 @end

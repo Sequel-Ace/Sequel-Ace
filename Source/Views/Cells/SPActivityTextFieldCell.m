@@ -30,6 +30,7 @@
 
 #import "SPActivityTextFieldCell.h"
 #import "SPTableInfo.h"
+#import "sequel-ace-Swift.h"
 
 #define FAVORITE_NAME_FONT_SIZE 12.0f
 
@@ -62,8 +63,8 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 - (instancetype)init
 {
 	if ((self = [super init])) {
-		mainStringColor = [NSColor blackColor];
-		subStringColor = [NSColor grayColor];
+		mainStringColor = [SAClaudeStyle textSecondary];
+		subStringColor = [SAClaudeStyle textMuted];
 		activityName = nil;
 		activityInfo = nil;
 		cancelButton = nil;
@@ -312,8 +313,8 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
  */
 - (void)restoreFontColors
 {
-	mainStringColor = [NSColor blackColor];
-	subStringColor = [NSColor grayColor];
+	mainStringColor = [SAClaudeStyle textSecondary];
+	subStringColor = [SAClaudeStyle textMuted];
 }
 
 #pragma mark - Private API

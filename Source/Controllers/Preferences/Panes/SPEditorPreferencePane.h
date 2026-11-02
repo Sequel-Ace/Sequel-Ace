@@ -76,6 +76,17 @@
 - (IBAction)duplicateTheme:(id)sender;
 - (IBAction)removeTheme:(id)sender;
 - (IBAction)editThemeList:(id)sender;
+- (IBAction)resetSystemFont:(id)sender;
+
+/**
+ * The folder of saved .spTheme files (Application Support/Sequel Ace/Themes); empty when it can't be made.
+ */
+@property (readonly) NSString *themesDirectory;
+
+/**
+ * Asks before discarding unsaved ("User-defined") colours; YES to go ahead. Closes the colour panel either way.
+ */
+- (BOOL)confirmDiscardUnsavedTheme;
 
 - (void)updateDisplayedEditorFontName;
 - (void)updateColorSchemeSelectionMenu;

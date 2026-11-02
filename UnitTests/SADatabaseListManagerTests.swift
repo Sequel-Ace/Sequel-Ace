@@ -298,6 +298,43 @@ final class SADatabaseListManagerTests: XCTestCase {
         XCTAssertEqual(popup.numberOfItems, firstCount)
         XCTAssertEqual(popup.titleOfSelectedItem, "mysql")
     }
+
+    /// Verifies every database item in the toolbar pop-up shows the clay database icon,
+    /// and the command items do not.
+    // MARK: - Dropped database
+
+    func testSelectionOfADroppedDatabaseIsCleared() {
+        XCTAssertTrue(SADatabaseListManager.isDroppedSelection("test_again", popupTitles: ["Choose Database...", "shop"], isWorking: false))
+    }
+
+    func testSelectionStillListedIsKept() {
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("shop", popupTitles: ["Choose Database...", "shop"], isWorking: false))
+    }
+
+    func testNoSelectionIsKept() {
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection(nil, popupTitles: ["Choose Database..."], isWorking: false))
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("", popupTitles: ["Choose Database..."], isWorking: false))
+    }
+
+    /// A rename rebuilds the popup with the new name, then selects it in a task: the old name is missing
+    /// meanwhile, but it is not a drop.
+    func testSelectionIsKeptWhileTheDocumentIsWorking() {
+        XCTAssertFalse(SADatabaseListManager.isDroppedSelection("old_name", popupTitles: ["Choose Database...", "new_name"], isWorking: true))
+    }
+
+    func testDatabaseItemsShowTheDatabaseIcon() {
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        _ = SADatabaseListManager.configurePopup(popup,
+                                                 databases: ["mysql", "shop_prod"],
+                                                 currentDatabase: "shop_prod",
+                                                 addDatabaseSelector: #selector(NSResponder.noResponder(for:)),
+                                                 refreshDatabasesSelector: #selector(NSResponder.noResponder(for:)))
+        XCTAssertNil(popup.item(at: 0)?.image, "Choose Database…")
+        for title in ["mysql", "shop_prod"] {
+            XCTAssertEqual(popup.item(withTitle: title)?.image?.accessibilityDescription, "Database", title)
+        }
+        XCTAssertNil(popup.item(withTitle: NSLocalizedString("Add Database...", comment: "menu item to add db"))?.image)
+    }
 }
 
 final class SATableListResultParserTests: XCTestCase {

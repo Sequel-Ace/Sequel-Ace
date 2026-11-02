@@ -321,7 +321,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSWindow *)getCreateTableSyntaxWindow;
 
 - (void)refreshCurrentDatabase;
-- (void)setCurrentDatabaseFromQueryContext:(NSString *)databaseName;
+- (void)setCurrentDatabaseFromQueryContext:(nullable NSString *)databaseName;
 
 - (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(nullable NSString *)contextInfo;
 - (BOOL)saveDocumentWithFilePath:(nullable NSString *)fileName inBackground:(BOOL)saveInBackground onlyPreferences:(BOOL)saveOnlyPreferences contextInfo:(nullable NSDictionary*)contextInfo;
@@ -441,6 +441,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)toggleConsole;
 - (void)showConsole;
 - (void)toggleNavigator;
+- (void)toggleTableList;
 
 #pragma mark Database menu
 

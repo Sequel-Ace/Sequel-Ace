@@ -243,6 +243,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [self->paginationPopover setDelegate:(SPTableContent<NSPopoverDelegate> *)self];
     [self->paginationPopover setContentViewController:self->paginationViewController];
     [self->paginationPopover setBehavior:NSPopoverBehaviorTransient];
+    [SAClaudeFilterBarStyler stylePaginationPopover:self->paginationPopover];
 
     [self->tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
@@ -250,13 +251,16 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [recordViewController installOverlayInView:tableContentContainer
                                          resizingView:[tableContentView enclosingScrollView]
                                     shortcutTableView:tableContentView
-                                         bottomInset:25
+                                         bottomInset:[SAClaudeTabBarStyler stripHeight]
                                             topInset:0
                                         autosaveName:@"SARecordViewContentWidth"];
 
     __weak __typeof__(self) weakSelf = self;
     [recordViewController setShowHandler:^{
         [weakSelf _updateRecordView];
+    }];
+    [recordViewController setRowStepHandler:^(NSInteger delta) {
+        [weakSelf _recordViewStepRowBy:delta];
     }];
     [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldID) {
         SPTableContent *strongSelf = weakSelf;
@@ -358,6 +362,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
                                                  name:SPDocumentWillCloseNotification
                                                object:nil];
 
+    [SAClaudeTabBarStyler attachToContainer:tableContentContainer barTop:25 content:[tableContentView enclosingScrollView] status:countText search:columnFilterSearchField label:nil];
 }
 
 - (void)toggleRecordView
@@ -1700,6 +1705,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 }
 
+/**
+ * Is the filter rule editor bar currently shown (as opposed to merely enabled for interaction)?
+ */
+- (BOOL)isFilterRuleEditorVisible
+{
+	return showFilterRuleEditor;
+}
+
 - (IBAction)toggleRuleEditorVisible:(id)sender
 {
 	BOOL shouldShow = !showFilterRuleEditor;
@@ -2241,17 +2254,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	BOOL reloadAfterRemovingRow = [prefs boolForKey:SPReloadAfterRemovingRow];
 
 
-	BOOL queryWarningEnabled = [prefs boolForKey:SPQueryWarningEnabled];
+	// "Ask twice before deleting rows" works on its own, whether or not "Confirm before running changes" is on.
 	BOOL queryDoubleCheckWarningEnabled = [prefs boolForKey:SPShowWarningBeforeDeleteQuery];
     BOOL isDeleteSomeRowsRequest = alertReturnCode == NSAlertFirstButtonReturn;
     BOOL isDeleteAllRowsRequest = allowDeletingAllRows && alertReturnCode == NSAlertSecondButtonReturn;
 
     BOOL retCode = (isDeleteSomeRowsRequest || isDeleteAllRowsRequest);
 
-	if (retCode == YES && queryWarningEnabled == YES && queryDoubleCheckWarningEnabled == YES) {
+	if (retCode == YES && queryDoubleCheckWarningEnabled == YES) {
         NSAlert *doubleCheckAlert = [[NSAlert alloc] init];
         [doubleCheckAlert setMessageText:NSLocalizedString(@"Double Check", @"Double Check")];
-        [doubleCheckAlert setInformativeText:NSLocalizedString(@"Double checking as you have 'Show warning before executing a query' set in Preferences", @"Double check delete query")];
+        [doubleCheckAlert setInformativeText:NSLocalizedString(@"ClaudeSettings.pointer.deleteDoubleCheck.message", @"Claude Settings pointer: Double check delete query")];
         [doubleCheckAlert addButtonWithTitle:NSLocalizedString(@"Proceed", @"Proceed")];
         [doubleCheckAlert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel")];
         [doubleCheckAlert setShowsSuppressionButton: YES];
@@ -2918,7 +2931,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// If no rows have been changed, show error if appropriate.
 	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
 		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
 		} else {
 			NSBeep();
 		}
@@ -3666,7 +3679,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// This shouldn't happen – for safety reasons
 		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"ClaudeSettings.pointer.noRowsAffected.message", @"Claude Settings pointer: message of panel when no rows have been affected after writing to the db") callback:nil];
 			} else {
 				NSBeep();
 			}
@@ -4041,6 +4054,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 	[dropBox setHidden:![layout dropZoneVisible]];
 
+	// The AND/OR pop-up and Apply / Add Filter are as tall as the rule rows' pills and sit on the drop zone's centre
+	// line (on the plain bar's middle without it), a fixed gap apart (and from the zone). Not animated: they snap to
+	// the final line, which moves when the drop zone preference changes or a short pane clamps the drop zone's height.
+	if (dropBoxReserved > 0) {
+		NSArray<NSView *> *barControls = [ruleFilterController barControls];
+		[SARuleFilterDropZoneLayoutPolicy centreBarControls:barControls
+		                                               onY:[SARuleFilterDropZoneLayoutPolicy barCentreYWithDropZoneVisible:[layout dropZoneVisible]
+		                                                                                                    dropZoneFrame:dropBoxRect
+		                                                                                                        barHeight:dropBoxReserved]];
+		if ([layout dropZoneVisible]) [SARuleFilterDropZoneLayoutPolicy spaceBarControls:barControls afterX:NSMaxX(dropBoxRect)];
+	}
+
 	//disable rubberband scrolling as long as there is nothing to scroll
     NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
     if (ruleEditorRect.size.height >= MAX(requestedHeight, 29)) {
@@ -4234,6 +4259,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
             [self clearTableLoadTimer];
             [_comboBoxSelectionTracker discardPendingSelection];
+            // The Advanced Filter window is free-standing: a window still on screen would outlive its tab
+            if ([filterTableController isWindowLoaded]) [filterTableController close];
         }
     }
 }
@@ -4575,6 +4602,23 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	return [SARecordViewColumnMapping tableColumnForFieldID:fieldID inTableView:tableContentView];
 }
 
+/**
+ * Selects the previous (-1) or next (+1) row for the record view. Programmatic selection skips the
+ * delegate's shouldSelectRow:, so ask it first; the selection-change notification refreshes the panel.
+ */
+- (void)_recordViewStepRowBy:(NSInteger)delta
+{
+	NSInteger selectedRow = [self _recordViewSelectedRow];
+	if (selectedRow < 0) return;
+
+	NSInteger targetRow = selectedRow + delta;
+	if (targetRow < 0 || (NSUInteger)targetRow >= tableRowsCount) return;
+	if (![self tableView:tableContentView shouldSelectRow:targetRow]) return;
+
+	[tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)targetRow] byExtendingSelection:NO];
+	[tableContentView scrollRowToVisible:targetRow];
+}
+
 - (void)_updateRecordView
 {
 	if (!recordViewController.isVisible) return;
@@ -4612,11 +4656,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[fields addObject:@{
 			@"id": @(storageIndex),
 			@"name": columnDefinition[@"name"] ?: [[tableColumn headerCell] stringValue] ?: @"",
-			@"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
+			@"value": [self _recordViewStringForValue:value tableColumn:tableColumn],
+			@"type": columnDefinition[@"type"] ?: @"",
+			@"isNull": @([value isNSNull]),
+			@"notLoaded": @([value isSPNotLoaded])
 		}];
 	}
 
-	[recordViewController updateWithFields:fields selectedRowCount:1];
+	[recordViewController updateWithFields:fields
+	                      selectedRowCount:1
+	                              rowIndex:selectedRow
+	                              rowCount:(NSInteger)tableRowsCount
+	                                 title:selectedTable ?: @""];
 }
 
 - (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
@@ -5111,7 +5162,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if ([tableView editedColumn] != -1
 			&& [tableView editedRow] == rowIndex
 			&& (NSUInteger)[[[[tableView tableColumns] safeObjectAtIndex:[tableView editedColumn]] identifier] integerValue] == columnIndex) {
-			[cell setTextColor:textForegroundColor];
+			[SAClaudeGridCellStyler styleCell:cell role:SAClaudeGridCellRoleText];
 			if (cellIsLinkCell) [cell setLinkActive:NO];
 			return;
 		}
@@ -5133,14 +5184,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		if (cellIsNullOrUnloaded) {
-			[cell setTextColor:(rowIndex == [tableContentView selectedRow] ? textForegroundColor : nullHighlightColor)];
+			[SAClaudeGridCellStyler styleCell:cell role:(rowIndex == [tableContentView selectedRow] ? SAClaudeGridCellRoleText : SAClaudeGridCellRoleNull)];
 		}
 		else {
-			[cell setTextColor:textForegroundColor];
+			[SAClaudeGridCellStyler styleCell:cell role:SAClaudeGridCellRoleText];
 			BOOL hasDisplayOverride = [self cellValueIsDisplayedAsHexForColumn:[[tableColumn identifier] integerValue]] ||
 				[[cell formatter] isKindOfClass:[SABaseFormatter class]];
 			if (hasDisplayOverride && rowIndex != [tableContentView selectedRow]) {
-				[cell setTextColor:displayOverrideHighlightColor];
+				[SAClaudeGridCellStyler styleCell:cell role:SAClaudeGridCellRoleDisplayOverride];
 			}
 		}
 

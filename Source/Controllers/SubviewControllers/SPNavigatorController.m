@@ -996,7 +996,8 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	if([outlineView levelForItem:item] == 3 && [outlineView isExpandable:[outlineView itemAtRow:[outlineView rowForItem:item]-1]])
 		return 5.0f;
 
-	return 18.0f;
+	// The Claude sidebar look gives the tree its own row height (SAClaudeNavigatorStyler).
+	return [SAClaudeUtilitySidebarMetrics rowHeightForTable:outlineView proposed:18.0f];
 }
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView shouldExpandItem:(id)item
@@ -1202,7 +1203,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
 	// Use first row as dummy to increase the distance between content and header
-	return (row == 0) ? 5.0f : 16.0f;
+	return (row == 0) ? 5.0f : [SAClaudeUtilitySidebarMetrics rowHeightForTable:tableView proposed:16.0f];
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView shouldSelectRow:(NSInteger)rowIndex

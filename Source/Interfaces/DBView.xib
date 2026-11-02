@@ -430,7 +430,7 @@
                                                                             <rect key="frame" x="1" y="1" width="689" height="268"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
-                                                                                <tableView identifier="TableStructureColumnsTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" multipleSelection="NO" autosaveName="SPTableStructureSource" rowHeight="25" headerView="3926" id="232" customClass="SPTableView">
+                                                                                <tableView identifier="TableStructureColumnsTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" multipleSelection="NO" autosaveName="SPTableStructureSource" rowHeight="25" headerView="3926" id="232" customClass="SAClaudeTableView">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="689" height="251"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -624,7 +624,7 @@
                                                                             <rect key="frame" x="674" y="17" width="15" height="274"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
-                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3926">
+                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3926" customClass="SAClaudeTableHeaderView">
                                                                             <rect key="frame" x="0.0" y="0.0" width="689" height="17"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                             <connections>
@@ -786,7 +786,7 @@
                                                                             <rect key="frame" x="1" y="1" width="691" height="158"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
-                                                                                <tableView identifier="TableStructureIndexesTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="16" headerView="3923" id="289" customClass="SPTableView">
+                                                                                <tableView identifier="TableStructureIndexesTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="16" headerView="3923" id="289" customClass="SAClaudeTableView">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="691" height="141"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -918,7 +918,7 @@
                                                                             <rect key="frame" x="611" y="17" width="15" height="126"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
-                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3923">
+                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3923" customClass="SAClaudeTableHeaderView">
                                                                             <rect key="frame" x="0.0" y="0.0" width="691" height="17"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </tableHeaderView>
@@ -1088,7 +1088,7 @@
                                                                             <rect key="frame" x="1" y="1" width="693" height="470"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
-                                                                                <tableView identifier="TableContentTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="3920" id="36" customClass="SPCopyTable">
+                                                                                <tableView identifier="TableContentTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="3920" id="36" customClass="SAClaudeCopyTable">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="693" height="453"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -1124,7 +1124,7 @@
                                                                             <rect key="frame" x="680" y="17" width="15" height="450"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
-                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3920" customClass="SATableHeaderView" customModule="Sequel_Ace" customModuleProvider="target">
+                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3920" customClass="SAClaudeTableHeaderView">
                                                                             <rect key="frame" x="0.0" y="0.0" width="693" height="17"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                             <connections>
@@ -1405,7 +1405,7 @@
                                                                                         <rect key="frame" x="0.0" y="213" width="695" height="25"/>
                                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                                         <subviews>
-                                                                                            <popUpButton fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7221">
+                                                                                            <popUpButton fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7221" customClass="SAClaudeEditorOptionsButton">
                                                                                                 <rect key="frame" x="5" y="0.0" width="35" height="25"/>
                                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                                 <popUpButtonCell key="cell" type="bevel" bezelStyle="regularSquare" imagePosition="only" alignment="center" alternateImage="NSActionTemplate" lineBreakMode="truncatingTail" inset="2" pullsDown="YES" autoenablesItems="NO" selectedItem="7236" id="7231">
@@ -1629,7 +1629,7 @@ Gw
                                                                                                     </binding>
                                                                                                 </connections>
                                                                                             </popUpButton>
-                                                                                            <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8316" customClass="SPComboPopupButton">
+                                                                                            <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8316" customClass="SAClaudeRunButton">
                                                                                                 <rect key="frame" x="482" y="0.0" width="200" height="22"/>
                                                                                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
                                                                                                 <popUpButtonCell key="cell" type="roundRect" title="Run Current" bezelStyle="roundedRect" alignment="left" controlSize="small" lineBreakMode="clipping" borderStyle="border" imageScaling="proportionallyDown" inset="2" pullsDown="YES" selectedItem="8319" id="8317" customClass="SPComboPopupButtonCell">
@@ -1662,6 +1662,12 @@ Gw
                                                                                                                     <action selector="runExplainQueryAction:" target="134" id="AE2-29-1A0"/>
                                                                                                                 </connections>
                                                                                                             </menuItem>
+                                                                                                            <menuItem title="Run All as Script" keyEquivalent="r" id="SAS-cr-1E0">
+                                                                                                                <modifierMask key="keyEquivalentModifierMask" shift="YES" option="YES" command="YES"/>
+                                                                                                                <connections>
+                                                                                                                    <action selector="runAllAsScriptAction:" target="134" id="SAS-cr-1A0"/>
+                                                                                                                </connections>
+                                                                                                            </menuItem>
                                                                                                         </items>
                                                                                                     </menu>
                                                                                                 </popUpButtonCell>
@@ -1678,7 +1684,7 @@ Gw
                                                                                             <rect key="frame" x="1" y="1" width="695" height="203"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                             <subviews>
-                                                                                                <tableView identifier="CustomQueryResultsTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="7227" id="7224" customClass="SPCopyTable">
+                                                                                                <tableView identifier="CustomQueryResultsTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="7227" id="7224" customClass="SAClaudeCopyTable">
                                                                                                     <rect key="frame" x="0.0" y="0.0" width="695" height="186"/>
                                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -1714,7 +1720,7 @@ Gw
                                                                                             <rect key="frame" x="680" y="17" width="15" height="191"/>
                                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                                         </scroller>
-                                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="7227">
+                                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="7227" customClass="SAClaudeTableHeaderView">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="695" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                                         </tableHeaderView>
@@ -2196,7 +2202,7 @@ Gw
                                                             <rect key="frame" x="1" y="1" width="695" height="471"/>
                                                             <autoresizingMask key="autoresizingMask"/>
                                                             <subviews>
-                                                                <tableView identifier="TableRelationsTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="5545" id="5548" customClass="SPCopyTable">
+                                                                <tableView identifier="TableRelationsTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="5545" id="5548" customClass="SAClaudeCopyTable">
                                                                     <rect key="frame" x="0.0" y="0.0" width="695" height="454"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -2305,7 +2311,7 @@ Gw
                                                             <rect key="frame" x="674" y="17" width="15" height="453"/>
                                                             <autoresizingMask key="autoresizingMask"/>
                                                         </scroller>
-                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="5545">
+                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="5545" customClass="SAClaudeTableHeaderView">
                                                             <rect key="frame" x="0.0" y="0.0" width="695" height="17"/>
                                                             <autoresizingMask key="autoresizingMask"/>
                                                         </tableHeaderView>
@@ -2375,7 +2381,7 @@ Gw
                                                             <rect key="frame" x="1" y="1" width="695" height="471"/>
                                                             <autoresizingMask key="autoresizingMask"/>
                                                             <subviews>
-                                                                <tableView identifier="TableTriggersTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="6704" id="6701" customClass="SPCopyTable">
+                                                                <tableView identifier="TableTriggersTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="6704" id="6701" customClass="SAClaudeCopyTable">
                                                                     <rect key="frame" x="0.0" y="0.0" width="695" height="454"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -2484,7 +2490,7 @@ Gw
                                                             <rect key="frame" x="674" y="17" width="15" height="453"/>
                                                             <autoresizingMask key="autoresizingMask"/>
                                                         </scroller>
-                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="6704">
+                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="6704" customClass="SAClaudeTableHeaderView">
                                                             <rect key="frame" x="0.0" y="0.0" width="695" height="17"/>
                                                             <autoresizingMask key="autoresizingMask"/>
                                                         </tableHeaderView>
@@ -4101,7 +4107,7 @@ Gw
             <rect key="frame" x="0.0" y="0.0" width="269" height="32"/>
             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
             <subviews>
-                <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6293">
+                <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6293" customClass="SAClaudeHistorySegmentedControl">
                     <rect key="frame" x="201" y="3" width="61" height="24"/>
                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                     <segmentedCell key="cell" borderStyle="border" alignment="left" style="separated" trackingMode="momentary" id="6294">
@@ -4115,7 +4121,7 @@ Gw
                         <action selector="historyControlClicked:" target="6297" id="6300"/>
                     </connections>
                 </segmentedControl>
-                <popUpButton toolTip="Select a database to view (⇧⌘D)" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3995" customClass="SADatabasePopUpButton" customModule="Sequel_Ace" customModuleProvider="target">
+                <popUpButton toolTip="Select a database to view (⇧⌘D)" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3995" customClass="SAClaudeDatabasePopUpButton">
                     <rect key="frame" x="0.0" y="3" width="200" height="25"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                     <popUpButtonCell key="cell" type="push" title="Choose Database..." bezelStyle="rounded" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" inset="2" selectedItem="3998" id="3996">
@@ -4307,6 +4313,7 @@ Gw
                 <outlet property="queryInfoButton" destination="7970" id="7974"/>
                 <outlet property="queryInfoPaneSplitView" destination="7206" id="7338"/>
                 <outlet property="runPrimaryActionButton" destination="8316" id="8322"/>
+                <outlet property="editorOptionsButton" destination="7221" id="cLk-eo-btn"/>
                 <outlet property="runPrimaryActionMenuItem" destination="8323" id="8332"/>
                 <outlet property="runSecondaryActionMenuItem" destination="8324" id="8331"/>
                 <outlet property="saveHistoryMenuItem" destination="7276" id="7373"/>
@@ -4431,6 +4438,7 @@ Gw
                 <outlet property="toolbarActionsButton" destination="7859" id="7943"/>
                 <outlet property="toolbarAddButton" destination="7850" id="7853"/>
                 <outlet property="toolbarReloadButton" destination="7954" id="7958"/>
+                <outlet property="infoPanelToggleButton" destination="7959" id="cLk-ip-tgl"/>
                 <outlet property="truncateTableButton" destination="7920" id="7946"/>
                 <outlet property="truncateTableContextMenuItem" destination="6184" id="7681"/>
             </connections>

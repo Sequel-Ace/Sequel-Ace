@@ -58,7 +58,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
 
 	CGFloat preferredHeight;
 	
-	id __unsafe_unretained target;
+	id __weak target;
 	SEL action;
 
 	BOOL enabled;
@@ -263,11 +263,18 @@ NSString * const SPRuleFilterHeightChangedNotification;
 - (CGFloat)dropBoxReservedHeight;
 
 /**
+ * The bar's controls beside the drop box - the AND/OR pop-up and the Apply /
+ * Add Filter buttons - for the container's layout code to centre on the
+ * drop box (see SARuleFilterDropZoneLayoutPolicy).
+ */
+- (NSArray<NSView *> *)barControls;
+
+/**
  * Used when the rule editor wants to trigger filtering
  *
  * SHOULD be called on the UI thread, or results may be inconsistent!
  */
-@property (unsafe_unretained, nonatomic, nullable) id target;
+@property (weak, nonatomic, nullable) id target;
 @property (assign, nonatomic, nullable) SEL action;
 
 - (BOOL)isEnabled;

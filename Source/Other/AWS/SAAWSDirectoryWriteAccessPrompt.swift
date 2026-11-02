@@ -42,6 +42,8 @@ import OSLog
     @objc(requestWriteAccessIfNeededForProfile:)
     static func requestWriteAccessIfNeeded(forProfile profileName: String?) {
         guard Thread.isMainThread, !declinedThisSession else { return }
+        // Only a bookmark can widen access; a private build reads ~/.aws directly with the user's own permissions.
+        guard SAPrivateBuildPolicy.usesAWSDirectoryBookmark(isPrivateBuild: SAPrivateBuildPolicy.isPrivateBuild(infoDictionary: Bundle.main.infoDictionary)) else { return }
 
         let trimmedProfile = profileName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard let profile = try? AWSCredentials(profile: trimmedProfile.isEmpty ? "default" : trimmedProfile),

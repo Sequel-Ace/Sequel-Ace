@@ -50,6 +50,11 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPContentFilterManager () <NSMenuItemValidation, NSControlTextEditingDelegate, SATextViewDelegate>
+
+/// Where this window's local filters live, resolved when the list opens (SAContentFilterLocalScope): the saved
+/// connection's filters, headed by its name, or the file's filters as before. Save writes back to the same place.
+@property (nonatomic, strong) SAContentFilterLocalScope *localScope;
+
 @end
 
 @implementation SPContentFilterManager
@@ -121,19 +126,17 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		delegatesFileURLStr = delegatesFileURLStr.stringByRemovingPercentEncoding;
 	}
 	
+	// Claude look: a window on a saved connection lists that connection's filters, headed by its name.
+	self.localScope = [SAContentFilterLocalScope filterScopeForDocument:tableDocumentInstance];
+
 	// Build doc-based filters
 	[contentFilters addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-		[delegatesFileURLStr lastPathComponent], @"MenuLabel",
+		[self.localScope connectionName] ?: [delegatesFileURLStr lastPathComponent], @"MenuLabel",
 		[documentFileURL absoluteString], @"headerOfFileURL",
 		@"", @"Clause",
 		nil]];
-	
-	if ([[SPQueryController sharedQueryController] contentFilterForFileURL:documentFileURL]) {
-		id filters = [[SPQueryController sharedQueryController] contentFilterForFileURL:documentFileURL];
-		if([filters objectForKey:filterType])
-			for(id fav in [filters objectForKey:filterType])
-				[contentFilters addObject:[fav mutableCopy]];
-	}
+
+	[contentFilters addObjectsFromArray:[self.localScope editableFiltersOfType:filterType]];
 
 	// Select the first query if any
 	NSUInteger i = 0;
@@ -152,6 +155,10 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	// Register drag types
 	[contentFilterTableView registerForDraggedTypes:@[SPContentFilterPasteboardDragType]];
+
+	// A window that isn't a saved file lists no empty document ("Untitled") section (SAManagerDocumentSection).
+	// (A saved connection's section is a real place and stays listed when empty.)
+	[SAManagerDocumentSection hideEmptySectionIn:contentFilterArrayController items:contentFilters documentIsUntitled:[self.localScope hidesEmptySection]];
 
 	[contentFilterArrayController setContent:contentFilters];
 	[contentFilterTableView reloadData];
@@ -428,9 +435,11 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 		if ([contentFilterTableView numberOfSelectedRows] == 1)
 			[[self window] makeFirstResponder:contentFilterTableView];
 
-		// Update current document's content filters in the SPQueryController
-		[[SPQueryController sharedQueryController] replaceContentFilterByArray:
-			[self contentFilterForFileURL:documentFileURL] ofType:filterType forFileURL:documentFileURL];
+		// Update current document's content filters (the saved connection's, or the file's in the SPQueryController)
+		// (a connection's filters keep other windows' saves made while this was open)
+		[self.localScope saveEditedFilters:[self contentFilterForFileURL:documentFileURL]
+		                              rows:[SAManagerDocumentSection itemsIn:contentFilters sectionHeader:([documentFileURL absoluteString] ?: @"")]
+		                            ofType:filterType];
 
 		// Update global preferences' list
 		id cf = [[prefs objectForKey:SPContentFilters] mutableCopy];
@@ -474,7 +483,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView
 {
-	return [contentFilters count];
+	return [SAManagerDocumentSection visibleRowCountOf:contentFilters];
 }
 
 /**
@@ -543,7 +552,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (CGFloat)tableView:(NSTableView *)aTableView heightOfRow:(NSInteger)rowIndex
 {
-	return ([[contentFilters objectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18;
+	// The Claude sidebar look gives the list its own row height (SAClaudeManagerSheetStyler).
+	return [SAClaudeUtilitySidebarMetrics rowHeightForTable:aTableView row:rowIndex proposed:([[contentFilters objectAtIndex:rowIndex] objectForKey:@"headerOfFileURL"]) ? 20 : 18];
 }
 
 /**

@@ -54,8 +54,8 @@ typedef struct {
 @interface SPTextView : NSTextView <NSTextStorageDelegate>
 {
 	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
-	IBOutlet SPTablesList *tablesListInstance;
-	IBOutlet SPCustomQuery *customQueryInstance;
+	IBOutlet __weak SPTablesList *tablesListInstance; // weak: the document owns the tables list
+	IBOutlet __weak SPCustomQuery *customQueryInstance; // weak: the custom query owns this text view
 
     BOOL autoindentEnabled;
     BOOL autocompleteEnabled;
@@ -70,7 +70,7 @@ typedef struct {
 
 	NSString *showMySQLHelpFor;
 	
-	IBOutlet NSScrollView *scrollView;
+	IBOutlet __weak NSScrollView *scrollView; // weak: our enclosing scroll view owns us
 	SPNarrowDownCompletion *completionPopup;
 
 	NSUserDefaults *prefs;

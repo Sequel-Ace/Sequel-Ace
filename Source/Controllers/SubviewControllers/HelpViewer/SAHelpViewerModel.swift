@@ -67,7 +67,8 @@ enum SAHelpNavigationDecision: Equatable {
 ///
 /// Deliberately free of AppKit, WebKit and project Objective-C types: the file is
 /// a member of both the app and the "Unit Tests" target (which has no bridging
-/// header), so everything in here must compile standalone.
+/// header), so everything in here must compile standalone. (The hint-card palette
+/// it reads for the theme hook is a pure type shared by both targets.)
 final class SAHelpViewerModel: ObservableObject {
 
     /// Legacy parity: the old controller capped the WebView's back/forward list
@@ -100,6 +101,20 @@ final class SAHelpViewerModel: ObservableObject {
 
     @Published var searchString: String = ""
     @Published var target: SAHelpTarget = .mysql
+
+    /// `target` as the index of its segment in the target tabs (0 MySQL, 1 Page, 2 Web), which the tabs bind to;
+    /// an index with no target is ignored.
+    var targetIndex: Int {
+        get { target.rawValue }
+        set {
+            guard let target = SAHelpTarget(rawValue: newValue) else { return }
+            self.target = target
+        }
+    }
+
+    /// Whether the search field holds the keyboard focus (its Claude chrome draws the accent outline), as the
+    /// field reports its first-responder changes.
+    @Published var isSearchFieldFocused = false
 
     /// Bumped to move the keyboard focus into the search field (⌘F, window opening).
     @Published private(set) var focusSearchFieldRequest: Int = 0
@@ -233,10 +248,41 @@ final class SAHelpViewerModel: ObservableObject {
 
     // MARK: - Theme
 
-    /// JavaScript calling the help template's theme hook, as the legacy
-    /// `-themeChanged` did on `effectiveAppearance` changes.
-    static func themeChangeScript(isDarkAppearance: Bool) -> String {
-        "window.onThemeChange('\(isDarkAppearance ? "dark" : "light")')"
+    /// JavaScript calling the help template's theme hook with the palette's lightness and its CSS variables, so a
+    /// theme, accent or appearance change restyles the open page without re-rendering it.
+    static func themeChangeScript(palette: SAClaudeHintCardPalette) -> String {
+        "window.onThemeChange('\(palette.isDark ? "dark" : "light")', \(SAClaudeHintCardCSS.json(palette)))"
+    }
+
+    /// Decides when a theme change has to reach the page through JavaScript. Running script in a web view that has not
+    /// loaded anything starts a WebContent process (and a display link) for every document's help viewer, whether or
+    /// not the help is ever opened; until a page is requested there is nothing to restyle, and the page that is
+    /// requested is generated from the then-current palette.
+    struct PageTheming {
+
+        private var hasRequestedPage = false
+        private var changedSinceRequest = false
+
+        /// A theme, accent or appearance change. Returns whether to run the theme script on the page now.
+        mutating func themeChanged() -> Bool {
+            guard hasRequestedPage else { return false }
+            changedSinceRequest = true
+            return true
+        }
+
+        /// A help page is being handed to the web view. Its HTML was generated from the current palette, so earlier
+        /// changes are already in it.
+        mutating func requestPage() {
+            hasRequestedPage = true
+            changedSinceRequest = false
+        }
+
+        /// The requested page committed. Returns whether the palette changed while it was loading, in which case the
+        /// script may have run against the previous document and has to run again on this one.
+        mutating func pageCommitted() -> Bool {
+            defer { changedSinceRequest = false }
+            return hasRequestedPage && changedSinceRequest
+        }
     }
 
     // MARK: - Context menu (pure)

@@ -271,6 +271,19 @@ enum SARuleFilterContextMenu {
     ) -> Bool {
         return (!visibilityWasApplied || !wasVisible || tableChanged) && willBeVisible && editorIsEmpty
     }
+
+    /// After the user removes rules with the − button, an editor left with no
+    /// rule at all falls back to a blank, unchecked starter row instead of the
+    /// empty Add Filter state. Rows emptied any other way (table switch,
+    /// restoring saved filters, hiding the bar) never re-seed.
+    @objc(shouldReseedStarterAfterUserDeletionWithEditorIsEmpty:barVisible:deletionWasUserDriven:)
+    public static func shouldReseedStarterAfterUserDeletion(
+        editorIsEmpty: Bool,
+        barVisible: Bool,
+        deletionWasUserDriven: Bool
+    ) -> Bool {
+        return editorIsEmpty && barVisible && deletionWasUserDriven
+    }
 }
 
 /// Presentation strings and checks for a group row's AND/OR choice, kept in
@@ -396,6 +409,70 @@ enum SARuleFilterContextMenu {
     /// the button row (Apply/Add Filter + AND/OR popup, 27 pt plus padding).
     private static let buttonBarHeight: CGFloat = 31
 
+    /// The line the bar's controls (the AND/OR pop-up, Apply / Add Filter) are centred on: the drop zone's centre
+    /// while it shows - at the XIB's places they sat lower than the zone and touched the grid header - else the
+    /// middle of the plain button bar, which is where the XIB puts them.
+    ///
+    /// - Parameters:
+    ///   - dropZoneVisible: Whether the drop zone shows.
+    ///   - dropZoneFrame: The drop zone's frame in the filter container.
+    ///   - barHeight: The height reserved for the bottom bar.
+    /// - Returns: The centre line's y in the filter container.
+    @objc(barCentreYWithDropZoneVisible:dropZoneFrame:barHeight:)
+    public static func barCentreY(dropZoneVisible: Bool, dropZoneFrame: NSRect, barHeight: CGFloat) -> CGFloat {
+        return dropZoneVisible ? dropZoneFrame.midY : barHeight / 2
+    }
+
+    /// The gap between the drop zone, the AND/OR pill and the Apply / Add Filter pill.
+    @objc public static let barControlGap: CGFloat = 8
+
+    /// The origin y, on whole points, that centres a bar control of `height` on `centreY`. The filter cells draw
+    /// their pill centred in the control's frame, so with the frame at the pill's own height (`centreBarControls`)
+    /// the pill's edges land on whole points too.
+    ///
+    /// - Parameters:
+    ///   - height: The control's height.
+    ///   - centreY: The centre line (`barCentreY`).
+    /// - Returns: The control's origin y.
+    @objc(barControlOriginYForHeight:centreY:)
+    public static func barControlOriginY(height: CGFloat, centreY: CGFloat) -> CGFloat {
+        return (centreY - height / 2).rounded(.down)
+    }
+
+    /// Gives the bar's controls the height of the rule rows' pills (`SAClaudeFilterChrome.controlHeight`: the XIB's
+    /// 22pt pop-up drew a 24pt pill past its frame and the 27pt buttons a 24pt pill off their middle, so the pills
+    /// differed in where they sat) and centres them on `centreY`. Frames only - their masks pin them to the
+    /// container's bottom, so it holds when the container resizes, and nothing touches the constraints.
+    ///
+    /// - Parameters:
+    ///   - controls: The AND/OR pop-up and the Apply / Add Filter buttons.
+    ///   - centreY: The centre line (`barCentreY`).
+    @objc(centreBarControls:onY:)
+    public static func centreBarControls(_ controls: [NSView], onY centreY: CGFloat) {
+        let height = SAClaudeFilterChrome.controlHeight
+        let y = barControlOriginY(height: height, centreY: centreY)
+        for control in controls where control.frame.minY != y || control.frame.height != height {
+            control.frame = NSRect(x: control.frame.minX, y: y, width: control.frame.width, height: height)
+        }
+    }
+
+    /// Spaces the bar's controls `barControlGap` apart, starting that far right of the drop zone: the AND/OR pop-up,
+    /// then the Apply / Add Filter buttons (which share one place, one of them hidden). Moves only their x origin.
+    ///
+    /// - Parameters:
+    ///   - controls: The AND/OR pop-up and the Apply / Add Filter buttons.
+    ///   - zoneMaxX: The drop zone's right edge in the filter container.
+    @objc(spaceBarControls:afterX:)
+    public static func spaceBarControls(_ controls: [NSView], afterX zoneMaxX: CGFloat) {
+        var x = zoneMaxX + barControlGap
+        func place(_ views: [NSView]) {
+            for view in views where view.frame.minX != x { view.setFrameOrigin(NSPoint(x: x, y: view.frame.minY)) }
+            x += (views.map { $0.frame.width }.max() ?? 0) + barControlGap
+        }
+        place(controls.filter { $0 is NSPopUpButton })
+        place(controls.filter { !($0 is NSPopUpButton) })
+    }
+
     static func metrics(
         editorVisible: Bool,
         editorHasRows: Bool,
@@ -420,6 +497,26 @@ enum SARuleFilterContextMenu {
             ruleEditorOriginY: bottomBarHeight + ruleEditorTopMargin,
             containerRequestedHeight: editorVisible ? bottomBarHeight + ruleEditorHeight : 0
         )
+    }
+}
+
+/// The rule editor's autoresizing mask.
+///
+/// `NSRuleEditor` sizes its own height to its rows: `setFrameSize(_:)` refuses any other height. DBView.xib
+/// still gives the filter rule editor a flexible height and a flexible top margin. Under Auto Layout (the
+/// document window has constraints) AppKit turns that mask into constraints; when the engine moves a view whose
+/// mask has two flexible items on one axis, AppKit regenerates its constraints and asks the window for another
+/// Update Constraints pass. With the height refused, the engine's answer at some fractional clip heights (the
+/// filter bar's animation passes through them) never matched, every pass asked for another, and AppKit raised for
+/// a window with more Update Constraints passes than views - the crash on Table History Forward.
+///
+/// The vertical items are dropped: the height belongs to the rule editor, so nothing is derived from the clip
+/// view, and a mask with at most one flexible item per axis is updated in place instead of regenerated.
+enum SARuleFilterRuleEditorSizing {
+    /// - Parameter mask: The mask the rule editor was given.
+    /// - Returns: The mask it keeps: the same without a flexible height or vertical margin.
+    static func autoresizingMask(from mask: NSView.AutoresizingMask) -> NSView.AutoresizingMask {
+        return mask.subtracting([.height, .minYMargin, .maxYMargin])
     }
 }
 
@@ -448,6 +545,14 @@ enum SARuleFilterContextMenu {
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([Self.rowDropType])
+        // The nib's mask is decoded without the setter below.
+        autoresizingMask = super.autoresizingMask
+    }
+
+    /// Never vertically flexible: the rule editor sizes its own height (see `SARuleFilterRuleEditorSizing`).
+    override public var autoresizingMask: NSView.AutoresizingMask {
+        get { super.autoresizingMask }
+        set { super.autoresizingMask = SARuleFilterRuleEditorSizing.autoresizingMask(from: newValue) }
     }
 
     /// Right-click on a row's background (the controls inside a row keep

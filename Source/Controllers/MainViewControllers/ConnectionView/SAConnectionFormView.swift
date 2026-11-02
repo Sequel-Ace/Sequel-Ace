@@ -469,9 +469,9 @@ private struct SATimeZonePicker: View, Equatable {
 
 // MARK: - Colour picker
 
-/// The XIB's SPColorSelectorView: one swatch per entry of
-/// SPFavoriteColorSupport's list, plus a "no colour" state. The stored
-/// index is -1 when no colour is set (see SAConnectionInfo+Favorite).
+/// The XIB's SPColorSelectorView: one named swatch per colour of
+/// SPFavoriteColorSupport's list, in rainbow order, plus a "no colour" state.
+/// The stored index is -1 when no colour is set (see SAConnectionInfo+Favorite).
 private struct SAFavoriteColorPicker: View {
 
     @Binding var colorIndex: Int
@@ -484,32 +484,24 @@ private struct SAFavoriteColorPicker: View {
     }
 
     var body: some View {
+        let colors = colors
         Picker(selection: $colorIndex) {
             Text("None", comment: "connection view : no favorite colour")
                 .tag(Self.noColorIndex)
-            ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
-                // A label as well as the swatch, so the choice is distinguishable
+            ForEach(SAVividColour.rainbowOrder.filter { $0.rawValue < colors.count }, id: \.rawValue) { colour in
+                // A name as well as the swatch, so the choice is distinguishable
                 // without relying on colour perception.
                 Label {
-                    Text(colorLabel(at: index))
+                    Text(colour.localizedName)
                 } icon: {
-                    Circle().fill(Color(nsColor: color))
+                    Circle().fill(Color(nsColor: colors[colour.rawValue]))
                 }
-                .tag(index)
+                .tag(colour.rawValue)
             }
         } label: {
             Text("Colour", comment: "connection view : field label")
         }
         .pickerStyle(.menu)
-    }
-
-    /// The list is positional and its length is not guaranteed, so the label is
-    /// derived from the index rather than a parallel array of hardcoded names —
-    /// a shorter or reordered list would otherwise mislabel the swatches.
-    private func colorLabel(at index: Int) -> String {
-        String(format: NSLocalizedString("Colour %ld",
-                                         comment: "connection view : favorite colour by position"),
-               index + 1)
     }
 }
 

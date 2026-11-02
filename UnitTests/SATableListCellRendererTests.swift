@@ -104,19 +104,21 @@ final class SATableListCellRendererTests: XCTestCase {
         XCTAssertEqual(paragraph?.lineBreakMode, .byTruncatingTail)
     }
 
-    func testSelectedCommentUsesReadableTextColor() {
+    /// The selection is a soft grey pill, never the emphasized accent bar, so a
+    /// comment uses the Claude muted text colour whether or not its row is selected.
+    func testSelectedCommentUsesMutedTextColor() {
         let name = EmphasizedNameCell(textCell: "orders")
         let comment = RecordingCommentCell(textCell: "Order details")
         render(name: name, comment: comment)
 
-        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, .selectedControlTextColor)
+        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, SAClaudeStyle.textMuted)
     }
 
-    func testUnselectedCommentUsesSecondaryTextColor() {
+    func testUnselectedCommentUsesMutedTextColor() {
         let comment = RecordingCommentCell(textCell: "Order details")
         render(name: makeName("orders"), comment: comment)
 
-        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, .secondaryLabelColor)
+        XCTAssertEqual(comment.attributedStringValue.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor, SAClaudeStyle.textMuted)
     }
 
     func testLayoutHandlesTinyWidthsAndNonzeroOrigins() {
@@ -154,6 +156,22 @@ final class SATableListCellRendererTests: XCTestCase {
             XCTFail("A zero-width cell must not draw its name")
         }
         XCTAssertNil(comment.drawnFrame)
+    }
+
+    /// The info panel indents its header with a paragraph head indent, which
+    /// NSAttributedString.size() leaves out; the name frame must still fit the
+    /// whole text after the indent, or "Table information" truncates.
+    func testNameFrameIncludesTheParagraphIndent() {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.firstLineHeadIndent = 16
+        paragraph.headIndent = 16
+        let font = NSFont.systemFont(ofSize: 13)
+        let name = NSTextFieldCell(textCell: "")
+        name.attributedStringValue = NSAttributedString(string: "Table information", attributes: [.font: font, .paragraphStyle: paragraph])
+        let textWidth = NSAttributedString(string: "Table information", attributes: [.font: font]).size().width
+        var drawnFrame: NSRect?
+        render(name: name, comment: nil, width: 300) { drawnFrame = $0 }
+        XCTAssertGreaterThanOrEqual(drawnFrame?.width ?? 0, ceil(textWidth) + 16)
     }
 
     private func makeName(_ text: String) -> NSTextFieldCell {

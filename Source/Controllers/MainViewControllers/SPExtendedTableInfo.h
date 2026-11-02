@@ -41,7 +41,7 @@
 	IBOutlet SPTablesList *tablesListInstance;
 	IBOutlet SPTableData *tableDataInstance;
 	IBOutlet SPDatabaseData *databaseDataInstance;
-	IBOutlet id tableSourceInstance;
+	IBOutlet __weak id tableSourceInstance; // weak: the table structure points back at us
 
 	IBOutlet id resetAutoIncrementResetButton;
 

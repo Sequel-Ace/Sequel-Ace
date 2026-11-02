@@ -673,6 +673,29 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(children(of: kids[1]).count, 1)
     }
 
+    // MARK: - Filter target lifetime
+
+    /// The filter target (SPTableContent) can be freed while the controller is still alive (a delayed resize or the
+    /// main-loop block of a row removal holds it): the reference must read nil then, not dangle.
+    func testTheFilterTargetIsZeroedWhenItIsFreed() throws {
+        let controller = try makeController(columns: ["name"])
+        autoreleasepool {
+            let target = NSObject()
+            controller.setValue(target, forKey: "target")
+            XCTAssertTrue(controller.value(forKey: "target") as AnyObject === target)
+        }
+        XCTAssertNil(controller.value(forKey: "target"))
+    }
+
+    /// With the target gone the controller's filter action and its bar-visibility question are no-ops.
+    func testAFreedFilterTargetIsToleratedByTheControllersUses() throws {
+        let controller = try makeController(columns: ["name"])
+        autoreleasepool { controller.setValue(NSObject(), forKey: "target") }
+        controller.perform(NSSelectorFromString("_invokeFilterTargetActionWithObject:"), with: nil)
+        let shows = controller.perform(NSSelectorFromString("_targetShowsFilterRuleEditor"))
+        XCTAssertNil(shows, "NO (a null pointer through perform) when the target can't say")
+    }
+
     // MARK: - Helpers
 
     /// Builds a serialized expression node in the controller's dictionary shape.

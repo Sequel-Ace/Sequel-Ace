@@ -1,0 +1,188 @@
+//
+//  SAClaudeToolbarItems.swift
+//  Sequel Ace
+//
+//  Draws the main window toolbar's image items as Claude buttons: a 16pt
+//  outline glyph, a hover fill, and an accent-tinted chip with an accent
+//  glyph on the selected view. Identifiers, labels, tooltips, targets,
+//  actions and validation stay the document's; only the drawing changes.
+//  App target only.
+//
+
+import AppKit
+
+/// The main window toolbar. It keeps the selected view itself rather than passing it to AppKit, which
+/// would draw its own selection bezel and accent-coloured label under the Claude chip; the document
+/// reads and writes the selection through this same property, so nothing else changes.
+@objc(SAClaudeToolbar) final class SAClaudeToolbar: NSToolbar {
+    private var claudeSelectedItemIdentifier: NSToolbarItem.Identifier?
+
+    override var selectedItemIdentifier: NSToolbarItem.Identifier? {
+        get { claudeSelectedItemIdentifier }
+        set {
+            claudeSelectedItemIdentifier = newValue
+            items.forEach { $0.view?.needsDisplay = true }
+        }
+    }
+}
+
+@objc(SAClaudeToolbarItems) final class SAClaudeToolbarItems: NSObject {
+
+    @objc static var defaultItemIdentifiers: [String] { SAClaudeToolbarLayout.defaultItems }
+
+    /// A Claude-drawn copy of an image item with a Claude glyph; any other item is returned unchanged.
+    @objc(styledItem:)
+    static func styled(_ item: NSToolbarItem?) -> NSToolbarItem? {
+        guard let item else { return nil }
+        // No system bezel (the glass capsule on recent macOS): the Claude views draw their own pills.
+        item.isBordered = false
+        // A segmented control still gets the glass capsule; inside a plain container it's a custom view.
+        if let control = item.view as? NSSegmentedControl {
+            item.view = SAClaudeToolbarItemContainer(wrapping: control)
+            // Its control sets the item's enabled state (the Table History label follows its chevrons).
+            item.autovalidates = false
+        }
+        guard item.view == nil, let glyph = SAClaudeToolbarLayout.glyph(for: item.itemIdentifier.rawValue) else { return item }
+        let styled = SAClaudeToolbarItem(itemIdentifier: item.itemIdentifier)
+        styled.isBordered = false
+        styled.label = item.label
+        styled.paletteLabel = item.paletteLabel
+        styled.toolTip = item.toolTip
+        styled.target = item.target
+        styled.action = item.action
+
+        let button = SAClaudeToolbarButton(glyph: glyph, selectable: SAClaudeToolbarLayout.selectableItems.contains(item.itemIdentifier.rawValue))
+        button.target = item.target
+        button.action = item.action
+        button.toolTip = item.toolTip
+        button.setAccessibilityLabel(item.label)
+        button.toolbarItem = styled
+        styled.view = button
+
+        let menuItem = NSMenuItem(title: item.label, action: item.action, keyEquivalent: "")
+        menuItem.target = item.target
+        menuItem.image = SAClaudeGlyphs.image(glyph, tint: SAClaudeStyle.textMuted)
+        styled.menuFormRepresentation = menuItem
+        return styled
+    }
+}
+
+/// A view-based item that still asks its target to validate it, as image items do.
+@objc(SAClaudeToolbarItem) final class SAClaudeToolbarItem: NSToolbarItem {
+    // NSToolbarItem forwards setImage: to its view, and -[SPDatabaseDocument validateToolbarItem:] sets the
+    // Console item's image on every validation pass; store it without touching (and invalidating) the button.
+    private var storedImage: NSImage?
+    override var image: NSImage? {
+        get { storedImage }
+        set { storedImage = newValue }
+    }
+
+    override func validate() {
+        var enabled = true
+        if let action, let target = target as? NSObject {
+            let selector = NSSelectorFromString("validateToolbarItem:")
+            if target.responds(to: selector) {
+                typealias Validate = @convention(c) (AnyObject, Selector, NSToolbarItem) -> Bool
+                let implementation = unsafeBitCast(target.method(for: selector), to: Validate.self)
+                enabled = implementation(target, selector, self)
+            } else {
+                enabled = target.responds(to: action)
+            }
+        }
+        isEnabled = enabled
+        (view as? NSControl)?.isEnabled = enabled
+    }
+}
+
+/// The 40×32 Claude toolbar button (20pt glyph).
+final class SAClaudeToolbarButton: NSButton {
+
+    weak var toolbarItem: NSToolbarItem?
+    private let glyph: SAClaudeGlyph
+    private let showsSelection: Bool
+    private var trackingArea: NSTrackingArea?
+    private var isHovered = false { didSet { if isHovered != oldValue { needsDisplay = true } } }
+
+    init(glyph: SAClaudeGlyph, selectable: Bool) {
+        self.glyph = glyph
+        self.showsSelection = selectable
+        super.init(frame: NSRect(x: 0, y: 0, width: 40, height: 32))
+        title = ""
+        isBordered = false
+        setButtonType(.momentaryChange)
+        imagePosition = .noImage
+        // The selected glyph is drawn in the accent: redraw (it re-renders the tinted image) when it changes.
+        SAClaudeAccent.observe(self) { $0.needsDisplay = true }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override var intrinsicContentSize: NSSize { NSSize(width: 40, height: 32) }
+
+    private var isSelectedItem: Bool {
+        guard showsSelection, let item = toolbarItem else { return false }
+        return item.toolbar?.selectedItemIdentifier == item.itemIdentifier
+    }
+
+    override func isAccessibilitySelected() -> Bool { isSelectedItem }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect], owner: self)
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) { isHovered = true }
+    override func mouseExited(with event: NSEvent) { isHovered = false }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
+    private var isDark: Bool { effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua }
+
+    /// The selected view's chip: the accent at the vivid palette's tint alpha (its glyph is the accent).
+    static func selectedFill(dark: Bool) -> NSColor {
+        SAClaudeAccent.accent.withAlphaComponent(dark ? SAVividColour.tintAlphaDark : SAVividColour.tintAlphaLight)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        bounds.intersection(dirtyRect).clip()
+
+        let selected = isSelectedItem
+        let pressed = cell?.isHighlighted ?? false
+        if selected || (isEnabled && (isHovered || pressed)) {
+            (selected ? Self.selectedFill(dark: isDark) : SAClaudeStyle.hoverFill).setFill()
+            NSBezierPath(roundedRect: bounds, xRadius: 8, yRadius: 8).fill()
+        }
+        let tint = selected ? SAClaudeStatusChrome.clay : SAClaudeStyle.textMuted
+        let image = SAClaudeGlyphs.image(glyph, tint: tint)
+        let rect = NSRect(x: bounds.midX - 10, y: bounds.midY - 10, width: 20, height: 20)
+        image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: isEnabled ? 1 : 0.35, respectFlipped: true, hints: nil)
+    }
+}
+
+/// A plain view hosting a toolbar control, so the toolbar treats the item as a custom view and draws no
+/// system bezel around it. The control stays the same object (its outlets and actions are unchanged).
+final class SAClaudeToolbarItemContainer: NSView {
+    init(wrapping control: NSView) {
+        super.init(frame: NSRect(origin: .zero, size: control.intrinsicContentSize))
+        translatesAutoresizingMaskIntoConstraints = false
+        control.removeFromSuperview()
+        control.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(control)
+        NSLayoutConstraint.activate([
+            control.leadingAnchor.constraint(equalTo: leadingAnchor),
+            control.trailingAnchor.constraint(equalTo: trailingAnchor),
+            control.topAnchor.constraint(equalTo: topAnchor),
+            control.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+}

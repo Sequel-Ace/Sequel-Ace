@@ -57,7 +57,7 @@
 
 	NSLayoutManager  *layoutManager;
 	NSTextContainer  *container;
-	NSTextView       *clientView;
+	__weak NSTextView *clientView; // weak like NSRulerView.clientView: the text view owns this ruler
 
 }
 

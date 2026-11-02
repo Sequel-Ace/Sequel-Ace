@@ -106,10 +106,10 @@ enum SARuleFilterDropBoxLayout {
 ///   the live WHERE preview, a click opens the filter menu instead (see
 ///   `SARuleFilterDropBoxClickPolicy`).
 ///
-/// Rendered as a dashed rounded rectangle with a short centred prompt.
-/// During a drag the border flips to the system accent colour and the
-/// interior fills with the native selection tint so the user has clear
-/// affordance that they are hovering over a valid target.
+/// Rendered as a dashed rounded rectangle with a short centred prompt, in the
+/// editor theme's muted tones. During a drag the border turns solid clay and
+/// the interior takes a faint clay fill so the user has clear affordance that
+/// they are hovering over a valid target.
 @objc public class SPRuleFilterDropBox: NSView {
     private static let rowDropType = NSPasteboard.PasteboardType(SPCellValuePasteboard.pasteboardRowTypeRaw)
 
@@ -123,7 +123,7 @@ enum SARuleFilterDropBoxLayout {
         let l = NSTextField(labelWithString: SPRuleFilterDropBox.promptText)
         l.alignment = .center
         l.textColor = .secondaryLabelColor
-        l.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        l.font = NSFont.systemFont(ofSize: 11.5)
         l.isSelectable = false
         // Don't add an ellipsis when the container is tight; the drop
         // box bounds already clip the label visually, and a clipped
@@ -197,6 +197,46 @@ enum SARuleFilterDropBoxLayout {
         return view
     }()
 
+    /// The editor theme's palette, resolved under this view's appearance; the colours below follow it.
+    private var palette = SAClaudeEditorChrome.palette(from: .standard)
+    /// The idle dashed outline, derived from the same theme text and background as `palette`.
+    private var dropStroke = SPRuleFilterDropBox.dropStroke(from: .standard)
+    private var defaultsObserver: NSObjectProtocol?
+
+    /// Re-derives the palette (the editor theme and the appearance can both change it) and recolours the
+    /// label, the chevron and the outline.
+    private func refreshPalette() {
+        var resolved: SAClaudeEditorChrome.Palette?
+        var resolvedStroke: NSColor?
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            resolved = SAClaudeEditorChrome.palette(from: .standard)
+            resolvedStroke = Self.dropStroke(from: .standard)
+        }
+        guard let resolved, let resolvedStroke else { return }
+        label.textColor = resolved.icon
+        menuIndicator.contentTintColor = resolved.icon
+        guard resolved != palette || resolvedStroke != dropStroke else { return }
+        palette = resolved
+        dropStroke = resolvedStroke
+        needsDisplay = true
+    }
+
+    /// The outline colour for the editor's current theme: text read the way `SAClaudeEditorChrome.palette(from:)` reads it.
+    private static func dropStroke(from defaults: UserDefaults) -> NSColor {
+        let text = SAArchiving.color(from: defaults.data(forKey: SAEditorThemeLoader.textColourKey)) ?? .textColor
+        let background = SAArchiving.color(from: defaults.data(forKey: SAEditorThemeLoader.backgroundColourKey)) ?? .textBackgroundColor
+        return SAClaudeFilterChrome.dropStroke(text: text, background: background)
+    }
+
+    override public func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        refreshPalette()
+    }
+
+    deinit {
+        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+    }
+
     private var isDragHovering: Bool = false {
         didSet {
             if isDragHovering != oldValue { needsDisplay = true }
@@ -219,6 +259,12 @@ enum SARuleFilterDropBoxLayout {
         addSubview(menuIndicator)
         registerForDraggedTypes([Self.rowDropType])
         toolTip = SPRuleFilterDropBox.promptTooltip
+        refreshPalette()
+        defaultsObserver = SAClaudeAppearanceChange.addObserver { [weak self] _ in
+            self?.refreshPalette()
+        }
+        // The drag-over fill and stroke are the accent; they are drawn, so a redraw picks the new one up.
+        SAClaudeAccent.observe(self) { $0.needsDisplay = true }
         placeSubviews()
     }
 
@@ -298,19 +344,19 @@ enum SARuleFilterDropBoxLayout {
 
     override public func draw(_ dirtyRect: NSRect) {
         let inset = bounds.insetBy(dx: 1, dy: 1)
-        let path = NSBezierPath(roundedRect: inset, xRadius: 6, yRadius: 6)
+        let path = NSBezierPath(roundedRect: inset, xRadius: 7, yRadius: 7)
 
         if isDragHovering {
-            // Native selection tint + solid accent border.
-            NSColor.selectedContentBackgroundColor.setFill()
+            // A faint clay fill and a solid clay border.
+            SAClaudeFilterChrome.dropHoverFill(background: palette.background).setFill()
             path.fill()
-            NSColor.controlAccentColor.setStroke()
+            SAClaudeStatusChrome.clay.setStroke()
             path.lineWidth = 1.5
             path.stroke()
         } else {
-            // Subtle dashed border – the standard empty-placeholder
-            // idiom for a drop zone.
-            NSColor.separatorColor.setStroke()
+            // Dashed outline - the standard empty-placeholder idiom for a
+            // drop zone - bright enough to see in dark mode.
+            dropStroke.setStroke()
             path.lineWidth = 1.0
             path.setLineDash([4.0, 3.0], count: 2, phase: 0)
             path.stroke()

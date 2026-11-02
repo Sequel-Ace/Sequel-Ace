@@ -22,6 +22,82 @@ enum SAAppStoreReceiptPolicy {
     }
 }
 
+/// A private build — a personally signed build of a fork, stamped at packaging time — carries
+/// `SAPrivateBuild = YES` in its Info.plist. It is not an upstream release, so like an App Store install it
+/// never uses the upstream GitHub updater: no "Check for Updates…" item and no automatic check.
+enum SAPrivateBuildPolicy {
+    /// Keep in sync with the packaging step that stamps it.
+    static let infoPlistKey = "SAPrivateBuild"
+
+    static func isPrivateBuild(infoDictionary: [String: Any]?) -> Bool {
+        switch infoDictionary?[infoPlistKey] {
+        case let flag as Bool:
+            return flag
+        case let number as NSNumber:
+            return number.boolValue
+        case let text as String:
+            return ["yes", "true", "1"].contains(text.lowercased())
+        default:
+            return false
+        }
+    }
+
+    static func offersGitHubUpdates(isAppStoreInstall: Bool, isPrivateBuild: Bool) -> Bool {
+        !isAppStoreInstall && !isPrivateBuild
+    }
+
+    /// The "App Sandbox Issue" alerts for stale or missing secure bookmarks (at launch, and in Settings ▸ Network's
+    /// known-hosts check). A private build is unsandboxed and reads files without bookmarks, so it never shows them.
+    static func showsStaleBookmarkAlert(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
+        !isPrivateBuild && staleBookmarkCount > 0
+    }
+
+    /// Stale bookmarks hold back the launch auto-connect only where they matter: in the sandboxed build.
+    static func staleBookmarksAllowAutoConnect(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
+        isPrivateBuild || staleBookmarkCount == 0
+    }
+
+    /// Settings ▸ Files marks stale bookmarks (red entries, the stale hint, the re-select panel) only in the sandboxed
+    /// build: an unsandboxed private build doesn't need security-scoped bookmarks — it opens the files without them (its
+    /// stale entries are typically bookmarks minted for a differently signed, sandboxed app). The stored bookmarks are
+    /// left as they are.
+    static func marksStaleBookmarks(isPrivateBuild: Bool, staleBookmarkCount: Int) -> Bool {
+        !isPrivateBuild && staleBookmarkCount > 0
+    }
+
+    /// Whether ~/.aws is reached through a security-scoped bookmark the user grants ("Authorize Access to ~/.aws…",
+    /// the write-access re-grant for console sign-in). The sandboxed build needs one; an unsandboxed private build
+    /// reads ~/.aws directly, with no authorization step.
+    static func usesAWSDirectoryBookmark(isPrivateBuild: Bool) -> Bool {
+        !isPrivateBuild
+    }
+
+    /// Whether AWS IAM favourites can save, test, connect and list profiles now, the one decision every AWS directory
+    /// gate goes through (`AWSDirectoryBookmarkManager.directoryAccess`).
+    /// - Parameters:
+    ///   - sandboxedAccess: the sandboxed build's check (a bookmark that resolves, or a directly readable
+    ///     credentials file); not consulted in a private build.
+    ///   - awsFilesExist: a private build's check: ~/.aws, or the credentials / config file, exists.
+    static func awsDirectoryAccess(isPrivateBuild: Bool, sandboxedAccess: () -> Bool, awsFilesExist: () -> Bool) -> SAAWSDirectoryAccess {
+        if usesAWSDirectoryBookmark(isPrivateBuild: isPrivateBuild) {
+            return sandboxedAccess() ? .available : .needsAuthorization
+        }
+        return awsFilesExist() ? .available : .missing
+    }
+}
+
+/// How AWS IAM favourites reach ~/.aws (`SAPrivateBuildPolicy.awsDirectoryAccess`).
+@objc enum SAAWSDirectoryAccess: Int {
+    /// Profiles can be read: through the bookmark (sandboxed) or directly (private build).
+    case available
+    /// Sandboxed build without a working bookmark: the user must authorize ~/.aws first (saving, testing and
+    /// connecting are refused until then).
+    case needsAuthorization
+    /// Private build without ~/.aws (nor the credentials / config file): nothing to authorize, no profiles to list;
+    /// saving is allowed, connecting reports the missing profile.
+    case missing
+}
+
 /// Prevents App Store builds and opted-out background checks from using the GitHub updater.
 @objc final class SAGitHubReleaseCheckPolicy: NSObject {
     @objc(shouldCheckWithIsUserInitiated:automaticChecksEnabled:isAppStoreInstall:)

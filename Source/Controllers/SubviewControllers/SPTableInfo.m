@@ -76,12 +76,15 @@
 											   object:nil];
 
 	// Add activities header
-	[activities addObject:@{@"name" : NSLocalizedString(@"ACTIVITIES", @"header for activities pane")}];
+	[activities addObject:@{@"name" : NSLocalizedString(@"Activities", @"header for activities pane")}];
 	[activitiesTable reloadData];
 
 	// Add Information header
-	[info addObject:NSLocalizedString(@"TABLE INFORMATION", @"header for table info pane")];
+	[info addObject:NSLocalizedString(@"Table information", @"header for table info pane")];
 	[infoTable reloadData];
+
+	[SAClaudeSidebarChrome styleInfoTable:infoTable];
+	[SAClaudeSidebarChrome styleSidebarTable:activitiesTable];
 }
 
 #pragma mark -
@@ -108,7 +111,7 @@
 	NSMutableArray *acts = [NSMutableArray array];
 	
 	[acts removeAllObjects];
-	[acts addObject:@{@"name" : NSLocalizedString(@"ACTIVITIES", @"header for activities pane")}];
+	[acts addObject:@{@"name" : NSLocalizedString(@"Activities", @"header for activities pane")}];
 	[acts addObjectsFromArray:[tableDocumentInstance runningActivities]];
 	[acts addObjectsFromArray:[SPAppDelegate runningActivities]];
 	
@@ -135,10 +138,10 @@
 	[info removeAllObjects];
 
 	if (![tableListInstance tableName]) {
-		[info addObject:NSLocalizedString(@"INFORMATION", @"header for blank info pane")];
+		[info addObject:NSLocalizedString(@"Information", @"header for blank info pane")];
 
 		if ([[tableListInstance selectedTableItems] count]) {
-			[info addObject:NSLocalizedString(@"multiple selection", @"multiple selection")];
+			[info addObject:NSLocalizedString(@"Multiple selection", @"info pane text shown when several tables are selected")];
 		}
 		
 		[infoTable reloadData];
@@ -149,7 +152,7 @@
 	// Get TABLE information
 	if ([tableListInstance tableType] == SPTableTypeTable) {
 
-		[info addObject:NSLocalizedString(@"TABLE INFORMATION", @"header for table info pane")];
+		[info addObject:NSLocalizedString(@"Table information", @"header for table info pane")];
 
 		if ([tableListInstance tableName]) {
 
@@ -247,9 +250,9 @@
 	else if ([tableListInstance tableType] == SPTableTypeProc || [tableListInstance tableType] == SPTableTypeFunc) {
 
 		if ([tableListInstance tableType] == SPTableTypeProc)
-			[info addObject:NSLocalizedString(@"PROCEDURE INFORMATION", @"header for procedure info pane")];
+			[info addObject:NSLocalizedString(@"Procedure information", @"header for procedure info pane")];
 		else
-			[info addObject:NSLocalizedString(@"FUNCTION INFORMATION", @"header for function info pane")];
+			[info addObject:NSLocalizedString(@"Function information", @"header for function info pane")];
 
 		if ([tableListInstance tableName]) {
 
@@ -295,7 +298,7 @@
 	// Get VIEW information
 	else if ([tableListInstance tableType] == SPTableTypeView) {
 
-		[info addObject:NSLocalizedString(@"VIEW INFORMATION", @"header for view info pane")];
+		[info addObject:NSLocalizedString(@"View information", @"header for view info pane")];
 
 		if ([tableListInstance tableName]) {
 
@@ -373,11 +376,11 @@
 	} 
 	else {
 		if (rowIndex == 0) {
-			SPTableTextFieldCell *c = [[SPTableTextFieldCell alloc] initTextCell:NSLocalizedString(@"ACTIVITIES", @"header for activities pane")];
+			SPTableTextFieldCell *c = [[SPTableTextFieldCell alloc] initTextCell:NSLocalizedString(@"Activities", @"header for activities pane")];
 			
 			[tableColumn setDataCell:c];
 			
-			return NSLocalizedString(@"ACTIVITIES", @"header for activities pane");
+			return NSLocalizedString(@"Activities", @"header for activities pane");
 		}
 		else if (!_activitiesWillBeUpdated && rowIndex > 0 && rowIndex < (NSInteger)[activities count]) {
             NSDictionary *dict = [activities safeObjectAtIndex:rowIndex];
@@ -415,7 +418,8 @@
  */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
-	return (row == 0 ? 25 : [tableView rowHeight]);
+	// The Table information header gets 6pt more than the 24pt rows; the activities pane keeps 25.
+	return (row == 0 ? (tableView == infoTable ? 36 : 25) : [tableView rowHeight]);
 }
 
 /**
@@ -485,31 +489,47 @@
 }
 
 /**
- * Draw the top row of either pane as a group row.
+ * The top row of either pane is its header. It is styled in
+ * -tableView:willDisplayCell:forTableColumn:row: rather than drawn as an AppKit
+ * group row, so the Claude-style panel has no header bar.
  */
 - (BOOL)tableView:(NSTableView *)tableView isGroupRow:(NSInteger)row
 {
-	// This makes the top row (TABLE INFORMATION/ACTIVITIES) have the diff styling
-	return row == 0;
+	return NO;
 }
 
 /**
- * Give the table information rows their property icon before they are drawn.
+ * Style the panels before their cells are drawn.
  *
- * The header row, the other columns and the activities table are left plain.
+ * Row 0 of either table is the pane header. Table information rows below it
+ * become a muted label and a right-aligned value. Activity rows below the header
+ * are SPActivityTextFieldCell instances that draw themselves, so they are left
+ * completely untouched.
  */
 - (void)tableView:(NSTableView *)tableView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
-	if (tableView == infoTable) {
-		if (rowIndex > 0 && [[tableColumn identifier] isEqualToString:@"info"]) {
-			[(ImageAndTextCell*)cell setImage:[NSImage imageNamed:@"table-property"]];
-			[(ImageAndTextCell*)cell setIndentationLevel:0];
-			[(ImageAndTextCell*)cell setDrawsBackground:NO];
-		} 
-		else {
-			[(ImageAndTextCell*)cell setImage:nil];
-			[(ImageAndTextCell*)cell setIndentationLevel:0];
-		}
+	// Activities rows (not the header) draw themselves: change nothing.
+	if (tableView == activitiesTable && rowIndex > 0) return;
+
+	if (![cell isKindOfClass:[NSTextFieldCell class]]) return;
+	NSTextFieldCell *textCell = (NSTextFieldCell *)cell;
+
+	if ([cell isKindOfClass:[ImageAndTextCell class]]) {
+		[(ImageAndTextCell *)cell setImage:nil];
+		[(ImageAndTextCell *)cell setIndentationLevel:0];
+	}
+	[textCell setDrawsBackground:NO];
+
+	if (rowIndex == 0) {
+		// Pane header: "Table information" / "Activities", indented like the rows.
+		[textCell setAttributedStringValue:[SAClaudeInfoRow attributedHeaderForText:[textCell stringValue] ?: @""]];
+		return;
+	}
+
+	// Table information rows (infoTable, rowIndex > 0).
+	if (tableView == infoTable && [[tableColumn identifier] isEqualToString:@"info"]) {
+		NSString *text = [textCell stringValue] ?: @"";
+		[textCell setAttributedStringValue:[SAClaudeInfoRow attributedRowForText:text width:[tableColumn width]]];
 	}
 }
 

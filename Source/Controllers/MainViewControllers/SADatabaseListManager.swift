@@ -323,14 +323,17 @@ import AppKit
         // Skip empty-string names defensively — mirrors the
         // -safeAddItemWith(title:) helper used by the original code,
         // inlined here so this file has no cross-file dependency.
+        let databaseIcon = SAClaudeGlyphs.image(.database, tint: SAClaudeStyle.tintDatabase)
         for database in partition.systemDatabases where !database.isEmpty {
             popup.addItem(withTitle: database)
+            popup.lastItem?.image = databaseIcon
         }
         if !partition.systemDatabases.isEmpty {
             popup.menu?.addItem(NSMenuItem.separator())
         }
         for database in partition.userDatabases where !database.isEmpty {
             popup.addItem(withTitle: database)
+            popup.lastItem?.image = databaseIcon
         }
 
         if let current = currentDatabase, !current.isEmpty {
@@ -361,6 +364,27 @@ import AppKit
     /// The caller is responsible for wrapping the call in an
     /// `@autoreleasepool` if invoked from a long-lived background
     /// thread (the original `-_selectDatabaseAndItem:` did this).
+    /// Whether `selected` names a database that was dropped: `-_removeDatabase` rebuilds the popup without
+    /// it but leaves the selection naming it. Never while the document is working — a rename rebuilds the
+    /// popup with the new name and then selects it in a task of its own.
+    static func isDroppedSelection(_ selected: String?, popupTitles: [String], isWorking: Bool) -> Bool {
+        guard !isWorking, let selected, !selected.isEmpty else { return false }
+        return !popupTitles.contains(selected)
+    }
+
+    /// After a database is dropped the window kept its name (title, tab) and Add Table ran against it:
+    /// fall back to no database, as right after connecting.
+    @objc static func clearSelectionIfDropped(delegate: SADatabaseSelectionDelegate, isWorking: Bool) {
+        guard let popup = delegate.chooseDatabaseButton,
+              isDroppedSelection(delegate.currentSelectedDatabase, popupTitles: popup.itemTitles, isWorking: isWorking) else { return }
+        popup.selectItem(at: 0)
+        delegate.currentSelectedDatabase = nil
+        delegate.currentSelectedTable = nil
+        delegate.resetDatabaseData()
+        delegate.reattachTablesListConnection()
+        delegate.refreshWindowTitle()
+    }
+
     @objc static func performSelection(database: String,
                                        item: String?,
                                        delegate: SADatabaseSelectionDelegate) {

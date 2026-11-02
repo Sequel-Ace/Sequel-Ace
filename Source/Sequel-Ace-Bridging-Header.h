@@ -56,6 +56,12 @@
 #import "SPFavoritesController.h"
 #import "SPCompatibility.h"
 #import "SPSplitView.h"
+#import "SPOutlineView.h"
+#import "ImageAndTextCell.h"
+#import "SPNavigatorOutlineView.h"
+#import <ShortcutRecorder/SRRecorderControl.h>
+#import "SPComboPopupButton.h"
+#import "NoodleLineNumberView.h"
 #import "SPTreeNode.h"
 #import "SPGroupNode.h"
 #import "SPFavoriteNode.h"
@@ -66,6 +72,14 @@
 #import "SPHelpViewerClient.h"
 // Base class + protocol for the Swift preference pane SPMCPPreferencePane.swift.
 #import "SPPreferencePane.h"
+// SAClaudeSettingsWindowHost (SAClaudeSettingsWindow.swift) installs the Settings content for this controller.
+#import "SPPreferenceController.h"
+// The Settings rows call these panes' font, favourite and theme code (SAClaudeSettingsPanes.swift).
+#import "SPGeneralPreferencePane.h"
+#import "SPEditorPreferencePane.h"
+// ... and these panes' SSH choosers, cipher list, accessible files (SAClaudeSettingsSecurity.swift).
+#import "SPNetworkPreferencePane.h"
+#import "SPFilePreferencePane.h"
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 // Also pulls in SPMySQLResult and the querying category (queryString:,
 // escapeAndQuoteString:, queryErrored, ...) needed by SPAppController+MCP.swift.
