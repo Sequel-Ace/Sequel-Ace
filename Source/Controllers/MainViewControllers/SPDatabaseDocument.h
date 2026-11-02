@@ -328,6 +328,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setIsSavedInBundle:(BOOL)savedInBundle;
 - (void)setFileURL:(NSURL *)fileURL;
 - (void)connect;
+- (void)connectUnlessUsingSSHAgent;
 
 // Accessor methods
 - (NSString *)host;

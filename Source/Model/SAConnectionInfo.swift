@@ -105,6 +105,12 @@ struct SAConnectionInfo {
 
     var sshRemoteSocketPath: String = ""
 
+    /// The connection's own SSH agent choice (`SASSHAgentSource.Kind` raw
+    /// value). Empty means "use the default from Preferences".
+    var sshAgentSource: String = ""
+    /// The agent socket for the `custom` source.
+    var sshAgentSocketPath: String = ""
+
     // MARK: Keychain
 
     var connectionKeychainID: String = ""
@@ -379,6 +385,16 @@ struct SAConnectionInfo {
     @objc var sshRemoteSocketPath: String {
         get { info.sshRemoteSocketPath }
         set { info.sshRemoteSocketPath = newValue }
+    }
+
+    @objc var sshAgentSource: String {
+        get { info.sshAgentSource }
+        set { info.sshAgentSource = newValue }
+    }
+
+    @objc var sshAgentSocketPath: String {
+        get { info.sshAgentSocketPath }
+        set { info.sshAgentSocketPath = newValue }
     }
 
     // MARK: Keychain

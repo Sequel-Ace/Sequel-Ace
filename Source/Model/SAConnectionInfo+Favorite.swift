@@ -69,6 +69,8 @@ private enum FavoriteKey {
     static let sshKeyLocation = "sshKeyLocation"
     static let sshPort = "sshPort"
     static let sshRemoteSocketPath = "sshRemoteSocketPath"
+    static let sshAgentSource = "sshAgentSource"
+    static let sshAgentSocketPath = "sshAgentSocketPath"
 }
 
 // MARK: - Lenient value readers
@@ -162,6 +164,9 @@ extension SAConnectionInfo {
         info.sshKeyLocation = stringValue(fav[FavoriteKey.sshKeyLocation], default: "")
         info.sshPort = stringValue(fav[FavoriteKey.sshPort], default: "")
         info.sshRemoteSocketPath = stringValue(fav[FavoriteKey.sshRemoteSocketPath], default: "")
+        // Absent in favorites that never chose an agent: they follow the default.
+        info.sshAgentSource = stringValue(fav[FavoriteKey.sshAgentSource], default: "")
+        info.sshAgentSocketPath = stringValue(fav[FavoriteKey.sshAgentSocketPath], default: "")
 
         return info
     }

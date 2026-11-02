@@ -268,8 +268,16 @@ struct SAConnectionFormView: View {
                     title: Text("SSH Key", comment: "connection view : ssh key label"),
                     kind: .sshKey,
                     isEnabled: $model.sshKeyLocationEnabled,
-                    path: $model.info.sshKeyLocation
+                    path: $model.info.sshKeyLocation,
+                    // With an agent, a .pub file selects which agent key to offer.
+                    agentSourceForPublicKeys: model.info.sshAgentSource
                 )
+                // Empty means "use the default from Preferences > Network".
+                SASSHAgentSourcePicker(source: $model.info.sshAgentSource, customPath: $model.info.sshAgentSocketPath,
+                                       includesUseDefault: true) {
+                    Text("SSH Agent", comment: "connection view : field label")
+                }
+                SASSHAgentConnectionStatus(source: model.info.sshAgentSource, customPath: model.info.sshAgentSocketPath)
             }
 
             Section {
@@ -526,6 +534,11 @@ private struct SAOptionalFileRow: View {
     let kind: SAConnectionFileKind
     @Binding var isEnabled: Bool
     @Binding var path: String
+    /// For the SSH key row: the connection's agent choice. A public key is
+    /// accepted only if an agent is in effect, judged when a file is chosen —
+    /// the default agent can change in the settings sheet without this view
+    /// being redrawn. `nil` for rows that never take public keys.
+    var agentSourceForPublicKeys: String?
 
     /// Same split as the form's validation alert: the Bool binds by key path.
     @State private var rejection: SAConnectionFileRejection?
@@ -590,7 +603,8 @@ private struct SAOptionalFileRow: View {
 
         // Reject a file of the wrong shape before storing it, so the failure
         // surfaces here rather than as an opaque connection error later.
-        if let rejection = SAConnectionFileValidator.rejection(forFileAt: url, kind: kind) {
+        if let rejection = SAConnectionFileValidator.rejection(forFileAt: url, kind: kind,
+                                                               allowingPublicKey: agentSourceForPublicKeys.map { SASSHAgentRelay.isAgentInEffect(connectionSource: $0) } ?? false) {
             self.rejection = rejection
             isPresentingRejection = true
             return

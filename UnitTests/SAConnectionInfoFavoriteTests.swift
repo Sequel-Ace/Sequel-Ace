@@ -321,6 +321,59 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         XCTAssertNil(SAConnectionInfoObjC.rawFavoriteString([1, 2, 3]))
     }
 
+    // MARK: - SSH agent choice
+
+    /// Every favorite saved before SSH agent support lacks these keys. They
+    /// must decode to "no choice", which follows the default — off unless the
+    /// user turned it on.
+    func testFavoriteWithoutAgentKeysMakesNoAgentChoice() {
+        let info = SAConnectionInfo.fromFavoriteDictionary([
+            "type": 2,
+            "sshHost": "bastion.example.com",
+            "sshKeyLocationEnabled": NSNumber(value: 1),
+            "sshKeyLocation": "~/.ssh/id_ed25519"
+        ])
+
+        XCTAssertEqual(info.sshAgentSource, "")
+        XCTAssertEqual(info.sshAgentSocketPath, "")
+        XCTAssertEqual(SASSHAgentSource.effective(connectionSource: info.sshAgentSource,
+                                                  connectionCustomPath: info.sshAgentSocketPath,
+                                                  defaultSource: "", defaultCustomPath: ""), .off)
+    }
+
+    func testAgentChoiceDecodes() {
+        let info = SAConnectionInfo.fromFavoriteDictionary([
+            "type": 2,
+            "sshHost": "bastion.example.com",
+            "sshAgentSource": "custom",
+            "sshAgentSocketPath": "~/Library/Containers/agent/Data/socket.ssh"
+        ])
+
+        XCTAssertEqual(info.sshAgentSource, "custom")
+        XCTAssertEqual(info.sshAgentSocketPath, "~/Library/Containers/agent/Data/socket.ssh")
+        XCTAssertEqual(SASSHAgentSource.stored(info.sshAgentSource, customPath: info.sshAgentSocketPath),
+                       SASSHAgentSource(kind: .custom, customPath: "~/Library/Containers/agent/Data/socket.ssh"))
+    }
+
+    func testAgentChoiceSurvivesTheObjCBridge() {
+        let bridged = SAConnectionInfoObjC.info(fromFavoriteDictionary: [
+            "type": 2, "sshAgentSource": "1password"
+        ])
+        XCTAssertEqual(bridged.sshAgentSource, "1password")
+        bridged.sshAgentSource = "off"
+        bridged.sshAgentSocketPath = "/tmp/a.sock"
+        XCTAssertEqual(bridged.info.sshAgentSource, "off")
+        XCTAssertEqual(bridged.info.sshAgentSocketPath, "/tmp/a.sock")
+    }
+
+    /// A new favorite makes no agent choice, so it gains no keys: the template's
+    /// key set is part of the favorites wire format.
+    func testNewFavoriteTemplateCarriesNoAgentKeys() {
+        let template = SAConnectionInfoObjC.defaultNewFavoriteDictionary(withID: NSNumber(value: 1))
+        XCTAssertNil(template["sshAgentSource"])
+        XCTAssertNil(template["sshAgentSocketPath"])
+    }
+
     // MARK: - New-favorite template (Phase D2)
 
     func testDefaultNewFavoriteTemplateMatchesHistoricalKeySet() {

@@ -12,6 +12,33 @@ import XCTest
 
 final class SAConnectionDetailsValidatorTests: XCTestCase {
 
+    // MARK: - Public key without an SSH agent
+
+    /// The chooser accepts a .pub key only while an agent is in use. If the
+    /// agent is then turned off, connecting must say so instead of letting
+    /// ssh fail with "Permission denied".
+    func testPublicKeyWithoutAnAgentIsCaughtBeforeConnecting() {
+        let failure = SAConnectionDetailsValidator.publicKeyFailure(
+            type: .sshTunnel, sshKeyLocationEnabled: true, sshKeyLocation: "~/.ssh/id_ed25519.PUB", agentInEffect: false)
+
+        XCTAssertEqual(failure?.kind, .sshKeyIsPublicKey)
+        XCTAssertTrue(failure?.alertTitle.contains("id_ed25519.PUB") ?? false)
+    }
+
+    func testPublicKeyIsFineWhileAnAgentIsInUse() {
+        XCTAssertNil(SAConnectionDetailsValidator.publicKeyFailure(
+            type: .sshTunnel, sshKeyLocationEnabled: true, sshKeyLocation: "~/.ssh/id_ed25519.pub", agentInEffect: true))
+    }
+
+    func testPublicKeyCheckLeavesPrivateKeysDisabledRowsAndOtherTypesAlone() {
+        XCTAssertNil(SAConnectionDetailsValidator.publicKeyFailure(
+            type: .sshTunnel, sshKeyLocationEnabled: true, sshKeyLocation: "~/.ssh/id_ed25519", agentInEffect: false))
+        XCTAssertNil(SAConnectionDetailsValidator.publicKeyFailure(
+            type: .sshTunnel, sshKeyLocationEnabled: false, sshKeyLocation: "~/.ssh/id_ed25519.pub", agentInEffect: false))
+        XCTAssertNil(SAConnectionDetailsValidator.publicKeyFailure(
+            type: .tcpIP, sshKeyLocationEnabled: true, sshKeyLocation: "~/.ssh/id_ed25519.pub", agentInEffect: false))
+    }
+
     // MARK: - Helpers
 
     /// Calls the validator with sensible "everything fine" defaults

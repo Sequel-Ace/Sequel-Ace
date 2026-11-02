@@ -153,6 +153,11 @@ import Foundation
             }
         }
 
+        // A connection string can be a clicked link that connects without a
+        // confirmation. It never uses an SSH agent — not one it names (there is
+        // no parameter for that) and not the user's default either.
+        details["sshAgentSource"] = SASSHAgentSource.sourceForConnectionString
+
         // Set default connection type if not specified, based on query parameter hints
         if details["type"] == nil {
             let hasAWSIAMIndicators = (details["aws_profile"] as? String)?.isEmpty == false ||

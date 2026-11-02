@@ -570,6 +570,19 @@ import Foundation
             tunnel.setKeyFilePath(info.sshKeyLocation)
         }
 
+        // The connection's own choice, else the default from Preferences.
+        // With neither set this is off and the tunnel is left exactly as it
+        // was before SSH agent support existed.
+        let defaults = UserDefaults.standard
+        let agentSource = SASSHAgentSource.effective(
+            connectionSource: info.sshAgentSource,
+            connectionCustomPath: info.sshAgentSocketPath,
+            defaultSource: defaults.string(forKey: SASSHAgentSource.DefaultsKey.defaultSource) ?? "",
+            defaultCustomPath: defaults.string(forKey: SASSHAgentSource.DefaultsKey.customSocketPath) ?? "")
+        if agentSource.kind != .off {
+            tunnel.setAgentSource(agentSource.storedValue, customSocketPath: agentSource.customPath)
+        }
+
         tunnel.setConnectionStateChange(#selector(sshTunnelStateChanged(_:)),
                                        delegate: self)
 

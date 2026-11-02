@@ -230,6 +230,8 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize sshKeyLocation;
 @synthesize sshPort;
 @synthesize sshRemoteSocketPath;
+@synthesize sshAgentSource;
+@synthesize sshAgentSocketPath;
 @synthesize vaultHost;
 @synthesize vaultPort;
 @synthesize vaultOIDCMount;
@@ -439,10 +441,21 @@ sslCertificateFileLocation:sslCertificateFileLocation
 sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValueOff)
   sslCACertFileLocation:sslCACertFileLocation];
 
+    // A public key chosen while an SSH agent was in use is no identity once the agent is off.
+    if (!failure) {
+        failure = [SAConnectionDetailsValidator publicKeyFailureWithType:(SAConnectionType)[self type]
+                                                   sshKeyLocationEnabled:(sshKeyLocationEnabled != NSControlStateValueOff)
+                                                          sshKeyLocation:sshKeyLocation
+                                                           agentInEffect:[SASSHAgentRelay isAgentInEffectForConnectionSource:[self sshAgentSource] ?: @""]];
+    }
+
     if (failure) {
         switch (failure.kind) {
             case SAConnectionValidationFailureKindSshKeyFileMissing:
                 [self setSshKeyLocationEnabled:NSControlStateValueOff];
+                break;
+            // The key stays selected: the fix may be to choose an agent, not another file.
+            case SAConnectionValidationFailureKindSshKeyIsPublicKey:
                 break;
             case SAConnectionValidationFailureKindSslKeyFileMissing:
                 [self setSslKeyFileLocationEnabled:NSControlStateValueOff];
@@ -1117,7 +1130,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 // quick check to stop users selecting .pub files
 - (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url{
     if([url.pathExtension isEqualToString:@"pub"]){
-        return NO;
+        // A public key is a valid identity only when an SSH agent holds the
+        // private half, and only for the SSH key: this panel also picks SSL files.
+        BOOL choosingSSHKey = [sender isKindOfClass:[NSSavePanel class]] && [(NSSavePanel *)sender accessoryView] == sshKeyLocationHelp;
+        return choosingSSHKey && [SASSHAgentRelay isAgentInEffectForConnectionSource:[self sshAgentSource] ?: @""];
     }
     return YES;
 }
@@ -1759,6 +1775,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [self setSshKeyLocation:[details sshKeyLocation]];
     [self setSshPort:[details sshPort]];
     [self setSshRemoteSocketPath:[details sshRemoteSocketPath]];
+    [self setSshAgentSource:[details sshAgentSource]];
+    [self setSshAgentSocketPath:[details sshAgentSocketPath]];
 
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
@@ -2364,6 +2382,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         if ([details objectForKey:@"ssh_keyLocation"]) [favorite setObject:[details objectForKey:@"ssh_keyLocation"] forKey:SPFavoriteSSHKeyLocationKey];
         id detailSSHRemoteSocketPath = [details objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: [details objectForKey:@"ssh_remote_socket_path"];
         if (detailSSHRemoteSocketPath) [favorite setObject:detailSSHRemoteSocketPath forKey:SPFavoriteSSHRemoteSocketPathKey];
+        if ([details objectForKey:SPFavoriteSSHAgentSourceKey]) [favorite setObject:[details objectForKey:SPFavoriteSSHAgentSourceKey] forKey:SPFavoriteSSHAgentSourceKey];
     }
     else if (typeTag == SPAWSIAMConnection) {
         if ([details objectForKey:@"aws_region"]) [favorite setObject:[details objectForKey:@"aws_region"] forKey:@"awsRegion"];
@@ -2925,6 +2944,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationEnabledKey];
         [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationKey];
         [theFavorite removeObjectForKey:SPFavoriteSSHRemoteSocketPathKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHAgentSourceKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHAgentSocketPathKey];
     } else {
         _setOrRemoveKey(SPFavoriteSSHHostKey, [self sshHost]);
         _setOrRemoveKey(SPFavoriteSSHUserKey, [self sshUser]);
@@ -2932,6 +2953,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
         _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
         _setOrRemoveKey(SPFavoriteSSHRemoteSocketPathKey, [self sshRemoteSocketPath]);
+        _setOrRemoveKey(SPFavoriteSSHAgentSourceKey, [self sshAgentSource]);
+        _setOrRemoveKey(SPFavoriteSSHAgentSocketPathKey, [self sshAgentSocketPath]);
     }
 
 
@@ -3475,6 +3498,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * If editing is not already active, mark editing as starting, triggering UI updates
  * to match.
  */
+/**
+ * Shows a line of text in the connection status area, where "Connecting…" appears.
+ * It is hidden again as soon as the user edits the connection.
+ */
+- (void)showStatusMessage:(NSString *)message
+{
+    [progressIndicatorText setStringValue:message ?: @""];
+    [progressIndicatorText setHidden:NO];
+}
+
 - (void)_startEditingConnection
 {
     // If not connecting, hide the connection status text to reflect changes
@@ -3666,6 +3699,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     info.sshKeyLocation = self.sshKeyLocation ?: @"";
     info.sshPort = self.sshPort ?: @"";
     info.sshRemoteSocketPath = self.sshRemoteSocketPath ?: @"";
+    info.sshAgentSource = self.sshAgentSource ?: @"";
+    info.sshAgentSocketPath = self.sshAgentSocketPath ?: @"";
     info.connectionKeychainID = connectionKeychainID ?: @"";
     info.connectionKeychainItemName = connectionKeychainItemName ?: @"";
     info.connectionKeychainItemAccount = connectionKeychainItemAccount ?: @"";
@@ -4738,6 +4773,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         allowSplitViewResizing = NO;
 
         [self loadNib];
+
+        // The SSH tab's XIB has no SSH agent controls; the row is added here (SASSHAgentConnectionRow).
+        if (sshConnectionFormContainer && sshTimeZoneField) {
+            __weak SPConnectionController *weakSelf = self;
+            sshAgentRow = [SASSHAgentConnectionRow installInContainer:sshConnectionFormContainer
+                                                            aboveView:sshTimeZoneField
+                                                        siblingsBelow:(sshConnectionSSLDetailsContainer ? @[sshConnectionSSLDetailsContainer] : @[])
+                                                           controller:self
+                                                             onChange:^{ [weakSelf _startEditingConnection]; }];
+        }
 
         NSArray *colorList = SPFavoriteColorSupport.sharedInstance.userColorList;
         [sshColorField setColorList:colorList];

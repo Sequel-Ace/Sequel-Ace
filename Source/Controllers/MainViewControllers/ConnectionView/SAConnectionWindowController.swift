@@ -650,6 +650,8 @@ extension SAConnectionInfoObjC {
         controller.sshKeyLocation = info.sshKeyLocation
         controller.sshPort = info.sshPort
         controller.sshRemoteSocketPath = info.sshRemoteSocketPath
+        controller.sshAgentSource = info.sshAgentSource
+        controller.sshAgentSocketPath = info.sshAgentSocketPath
 
         controller.connectionKeychainID = info.connectionKeychainID
         controller.connectionKeychainItemName = info.connectionKeychainItemName

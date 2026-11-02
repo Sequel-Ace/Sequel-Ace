@@ -681,6 +681,17 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertTrue(rejection?.alertTitle.contains("id_ed25519.pub") ?? false)
     }
 
+    /// With an SSH agent a public key is a usable identity: it tells ssh
+    /// which of the agent's keys to offer. The chooser must let it through.
+    func testPublicKeysAreAcceptedForTheSSHKeyRowWhenAnAgentIsInUse() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("sa-\(UUID().uuidString)-id_ed25519.pub")
+        try "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample jon@example".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertNil(SAConnectionFileValidator.rejection(forFileAt: url, kind: .sshKey, allowingPublicKey: true))
+        XCTAssertNotNil(SAConnectionFileValidator.rejection(forFileAt: url, kind: .sshKey, allowingPublicKey: false))
+    }
+
     func testPublicKeyRejectionIsCaseInsensitive() {
         XCTAssertNotNil(SAConnectionFileValidator.rejection(
             forFileAt: URL(fileURLWithPath: "/tmp/id_rsa.PUB"), kind: .sshKey))
