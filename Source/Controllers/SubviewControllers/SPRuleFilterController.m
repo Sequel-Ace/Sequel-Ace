@@ -242,6 +242,7 @@ const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 @property (readwrite, assign, nonatomic) CGFloat preferredHeight;
 /** The seeded starter row while it waits, unchecked, for its first edit; see -addStarterFilterExpression. */
 @property (strong, nonatomic) SARuleFilterPendingStarter *pendingStarter;
+@property (strong, nonatomic) SAFieldPickerSelection *fieldPickerSelection;
 
 /** Checks the unchecked starter row when `row` is that row, and updates the preview: editing it means filtering by it. */
 - (void)_enablePendingStarterInRow:(NSInteger)row;
@@ -295,6 +296,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 {
 	if((self = [super init])) {
 		columns = [[NSMutableArray alloc] init];
+		_fieldPickerSelection = [[SAFieldPickerSelection alloc] init];
 		_modelContainer = [[ModelContainer alloc] init];
 		preferredHeight = 0.0;
 		target = nil;
@@ -485,9 +487,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			return 1; // enable checkbox
 		}
 		RuleNodeType type = [(RuleNode *)criterion type];
-		// the children of the enable checkbox are the columns
+		// The Swift field control owns all column choices. A single display
+		// value embeds it directly; multiple children create a native menu.
 		if(type == RuleNodeTypeEnable) {
-			return [columns count];
+			return [columns count] ? 1 : 0;
 		}
 		// the children of the columns are their operators
 		else if(type == RuleNodeTypeColumn) {
@@ -549,7 +552,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		RuleNodeType type = [(RuleNode *) criterion type];
 		// this is the column field
 		if (type == RuleNodeTypeEnable) {
-			return [columns objectAtIndex:index];
+			return [self.fieldPickerSelection selectedColumnInEditor:editor criterion:criterion columns:columns fallbackIndex:index];
 		}
 		// the children of the columns are their operators
 		if (type == RuleNodeTypeColumn) {
@@ -635,14 +638,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			return check;
 		}
 		case RuleNodeTypeColumn: {
-			/*
-			 * We could also return a string here, but we want a hook into the selection process so we can preserve
-			 * the other values in a row when a user changes the column (also see the comment below)
-			 */
-			NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[(ColumnNode *)criterion name] action:NULL keyEquivalent:@""];
-			[item setRepresentedObject:@{
-				@"node": criterion,
-			}];
+			SAFieldPickerButton *item = [[SAFieldPickerButton alloc] initWithNames:[columns valueForKey:@"name"]
+			                                                              nodes:columns
+			                                                       selectedName:[(ColumnNode *)criterion name]];
 			[item setTarget:self];
 			[item setAction:@selector(_menuItemInRuleEditorClicked:)];
 			return item;
@@ -1001,7 +999,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		return;
 	}
 
-	RuleNode *criterion = [[(NSMenuItem *)sender representedObject] objectForKey:@"node"];
+	RuleNode *criterion = [[sender representedObject] objectForKey:@"node"];
 
 	if([criterion type] == RuleNodeTypeOperator) {
 		OpNode *node = (OpNode *)criterion;
@@ -2429,12 +2427,15 @@ BOOL SerIsGroup(NSDictionary *dict)
 }
 
 - (NSUInteger)hash {
-	return (([super hash] << 2) | (initialState << 1) | allowsMixedState);
+	return (([super hash] << 1) | allowsMixedState);
 }
 
 - (BOOL)isEqual:(id)other {
+	// Like ArgNode.initialValue, the initial checkbox value is not a
+	// different criterion. Including it discards restored disabled rows
+	// when reloadCriteria compares them with a fresh enabled checkbox.
 	if (other == self) return YES;
-	if (other && [[other class] isEqual:[self class]] && [self initialState] == [(EnableNode *)other initialState] && [self allowsMixedState] == [(EnableNode *)other allowsMixedState]) return YES;
+	if (other && [[other class] isEqual:[self class]] && [self allowsMixedState] == [(EnableNode *)other allowsMixedState]) return YES;
 
 	return NO;
 }
