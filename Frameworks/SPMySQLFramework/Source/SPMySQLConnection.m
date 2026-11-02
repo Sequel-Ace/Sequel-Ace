@@ -1158,8 +1158,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLConnected;
 	// A new session is in step with the record it was connected with, and nothing is on its way to it.
 	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
-	// And whatever lost the session before is answered for.
+	// And whatever lost the session before is answered for; so is a proxy a replacement left
+	// alone, now that a session is up through it.
 	sessionLostAfterFailedCheck = NO;
+	proxyUntouchedBySessionReplacement = NO;
 	// What the new session reports is recorded for the escaper, which escapes from this rather
 	// than from the connection's own handle.
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
@@ -1739,9 +1741,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		// A proxy that only had the MySQL session over it replaced, and still reports a
 		// connection, is used as it stands: nothing was asked of it, so there is nothing to wait
-		// for, and the wait for it to go idle would otherwise run the attempt's budget out.
+		// for, and the wait for it to go idle would otherwise run the attempt's budget out. That
+		// holds for the retry after a handshake that failed as well - nothing has asked the proxy
+		// to go in between either - so the record stays until a disconnect does ask it, or a
+		// session comes up through it.
 		BOOL reconnectsThroughTheProxyAsItStands = proxy && [_proxyReconnectCoordinator reconnectsThroughProxyInState:[proxy state] untouchedBySessionReplacement:proxyUntouchedBySessionReplacement];
-		proxyUntouchedBySessionReplacement = NO;
 		if (reconnectsThroughTheProxyAsItStands) {
 			port = [proxy localPort];
 			previousProxyState = [proxy state];
@@ -2032,6 +2036,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// SSH attempt queued behind cleanup. Internal reconnect teardown keeps
 		// the existing inactive-state behavior and preserves that queued attempt.
 		if (!preserveProxyReconnect && proxy) {
+			proxyUntouchedBySessionReplacement = NO;
 			[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
 		}
 		return;
