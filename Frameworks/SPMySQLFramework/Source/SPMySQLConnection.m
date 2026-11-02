@@ -28,6 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import "Server Info.h"
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLKeepAliveTimer.h"
 #include <arpa/inet.h>
@@ -690,26 +691,50 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 /**
  * Returns true if the connected server runs MariaDB > 10.2, false Otherwise
+ *
+ * Answered from the version string recorded at handshake time: the raw handle can be
+ * closed - and mySQLConnection set to NULL - by a disconnect on another thread while UI
+ * code is still asking (see -isMariaDB).
  */
 - (BOOL)isNotMariadb103
 {
-    serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
-    NSLog(@"%@", [serverVariableVersion lowercaseString]);
+    NSString *versionString = [[self serverVersionString] lowercaseString];
+
+    if (!versionString) {
+        return true;
+    }
+
     NSString *someRegexp = @"(.*)10(\\.[3-9]+[0-9]*(\\.[0-9]*))*-(mariadb)(.*)";
     NSPredicate *myTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", someRegexp];
-    
-    if ([myTest evaluateWithObject: [serverVariableVersion lowercaseString]]){
+
+    if ([myTest evaluateWithObject: versionString]){
         return false;
     }
     return true;
 }
 
+/**
+ * Returns true if the connected server is MariaDB, false otherwise.
+ *
+ * Answered from the version string recorded at handshake time rather than from the raw
+ * MYSQL handle: a disconnect frees that handle and sets mySQLConnection to NULL, and this
+ * is reached from UI code that can still be drawing while a tab's connection is torn down
+ * (closing a tab detaches a background disconnect thread, #2413).
+ */
 - (BOOL) isMariaDB
 {
-  serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
-  // See more: https://regex101.com/r/0QRlsG/1
-  NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-[mariadb].*"];
-  if ([predicate evaluateWithObject: [serverVariableVersion lowercaseString]]){
+  NSString *versionString = [[self serverVersionString] lowercaseString];
+
+  // No connection has been made, so nothing is known about the server yet
+  if (!versionString) {
+    return false;
+  }
+
+  // The vendor suffix follows the version number: "10.11.8-MariaDB", "5.5.5-10.11.8-MariaDB-ubu2204".
+  // Match it as a whole name — written as a character class, "-[mariadb]" also matches MySQL
+  // builds such as "8.0.33-debug", which then incorrectly skip MySQL 8.4 restrictions.
+  NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-mariadb.*"];
+  if ([predicate evaluateWithObject: versionString]){
     return true;
   }
   
