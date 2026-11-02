@@ -28,6 +28,7 @@
 //
 
 import AppKit
+import SPMySQL
 import OSLog
 
 /// Dialog for prompting the user for their AWS MFA token code

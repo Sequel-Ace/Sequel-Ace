@@ -55,22 +55,21 @@ public final class SAProxyReconnectCoordinator: NSObject {
     /// Routes proxy teardown through the main thread. Internal reconnect cleanup
     /// preserves a request queued behind the current proxy lifecycle when the
     /// proxy supports that distinction; explicit teardown always cancels it.
+    ///
+    /// Through the main run loop, not the main queue: a reconnect runs on the connection's own
+    /// thread while the main thread waits for it, and that wait can be inside a block on the main
+    /// queue - from which `DispatchQueue.main.sync` would never return, since the queue runs one
+    /// block at a time and that block is waiting for this reconnect.
     @objc(disconnectProxy:preservingReconnect:)
     public func disconnect(
         proxy: SPMySQLConnectionProxy,
         preservingReconnect: Bool
     ) {
-        let disconnect = {
+        SAMainRunLoop.runAndWait {
             if preservingReconnect, proxy.disconnectForReconnect?() != nil {
                 return
             }
             proxy.disconnect()
-        }
-
-        if Thread.isMainThread {
-            disconnect()
-        } else {
-            DispatchQueue.main.sync(execute: disconnect)
         }
     }
 }

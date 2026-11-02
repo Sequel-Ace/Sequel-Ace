@@ -1,8 +1,10 @@
 //
 //  SAMainRunLoop.swift
-//  Sequel Ace
+//  SPMySQLFramework
 //
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
+//
+//  More info at <https://github.com/Sequel-Ace/Sequel-Ace>
 //
 
 import Foundation
@@ -15,12 +17,13 @@ import Foundation
 /// thread would then wait for a wait that is waiting for it.
 ///
 /// The main run loop keeps turning during that wait, and a run loop block does not depend on the
-/// main queue being free. Anything a connection needs from the main thread goes this way.
-enum SAMainRunLoop {
+/// main queue being free. Anything connection work needs from the main thread - a tunnel told to
+/// go, a dialog the application shows for it - goes this way.
+public enum SAMainRunLoop {
 
     /// Runs a block on the main thread and returns once it has finished.
     /// - Parameter block: The work to do on the main thread.
-    static func runAndWait(_ block: @escaping () -> Void) {
+    public static func runAndWait(_ block: @escaping () -> Void) {
         if Thread.isMainThread {
             block()
             return

@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import SPMySQL
 import XCTest
 
 /// How the connection wait sheet ends its waits, alone and nested, and what nested waits show.

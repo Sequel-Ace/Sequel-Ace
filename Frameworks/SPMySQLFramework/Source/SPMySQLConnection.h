@@ -283,6 +283,7 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 - (BOOL)isConnectedViaSSL;
 - (BOOL)checkConnection;
 - (BOOL)checkConnectionIfNecessary;
+/** Ends the delegate's wait for connection work and stops that work: the thread it runs on, and the query it may have waiting on the server. */
 - (void)cancelConnectionCheck;
 - (double)timeConnected;
 - (BOOL)userTriggeredDisconnect;
