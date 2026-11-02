@@ -79,6 +79,28 @@ private final class SAReportCaptureHoldingConnection: SPMySQLConnection {
     }
 }
 
+/// A connection on which the user's stop lands the moment a statement has been carried out - after
+/// the server answered, before the connection has settled the statement's report.
+private final class SAStoppedOnceCarriedOutConnection: SPMySQLConnection {
+    /// Whether the next statement carried out has its thread given up on there and then.
+    var stopsOnceTheNextStatementIsCarriedOut = false
+
+    @objc(_noteStatementCarriedOut:) func noteStatementCarriedOutAndStop(_ statement: String) {
+        // The connection's own note first; its method is private, so it is reached by way of the
+        // runtime rather than `super`.
+        let selector = NSSelectorFromString("_noteStatementCarriedOut:")
+        if let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector) {
+            typealias Note = @convention(c) (AnyObject, Selector, NSString) -> Void
+            unsafeBitCast(implementation, to: Note.self)(self, selector, statement as NSString)
+        }
+        if stopsOnceTheNextStatementIsCarriedOut {
+            stopsOnceTheNextStatementIsCarriedOut = false
+            // The user stops waiting: the thread the statement runs on is given up on.
+            Thread.current.cancel()
+        }
+    }
+}
+
 /// A connection that records which thread its connection check ran on.
 private final class SACheckWatchingConnection: SPMySQLConnection {
     private(set) var checkThread: Thread?
@@ -332,6 +354,41 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertTrue(mainFails.mainErrored, "the main caller reads its failure")
         XCTAssertEqual(mainFails.mainErrorID, 1242, "subquery returns more than 1 row")
         XCTAssertEqual(mainFails.backgroundErrored, false, "the background caller reads its success")
+    }
+
+    /// A stop that lands once the statement has been carried out - the server answered, the stop
+    /// came before the connection settled the report - does not report the statement cancelled:
+    /// it undid nothing, and a caller told "cancelled" would try the write again.
+    func testAStopThatLandsOnceTheStatementWasCarriedOutDoesNotReportItCancelled() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAStoppedOnceCarriedOutConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_carried_out (i INT NOT NULL)")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+
+        let returned = expectation(description: "the statement returned")
+        var wasCancelled = true
+        var errored = true
+        var errorID: UInt = 0
+        var affectedRows: UInt64 = 0
+        Thread.detachNewThread {
+            connection.stopsOnceTheNextStatementIsCarriedOut = true
+            _ = connection.queryString("INSERT INTO mysql.sa_carried_out (i) VALUES (1)")
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            affectedRows = connection.rowsAffectedByLastQuery()
+            returned.fulfill()
+        }
+        wait(for: [returned], timeout: 10)
+
+        XCTAssertFalse(connection.stopsOnceTheNextStatementIsCarriedOut, "the stop landed")
+        XCTAssertFalse(wasCancelled, "a statement carried out is not cancelled")
+        XCTAssertFalse(errored)
+        XCTAssertEqual(errorID, 0)
+        XCTAssertEqual(affectedRows, 1)
+        XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT COUNT(*) FROM mysql.sa_carried_out") as? NSString)?.integerValue, 1,
+                       "the write stands")
     }
 
     // MARK: - What a statement reports after its report was taken

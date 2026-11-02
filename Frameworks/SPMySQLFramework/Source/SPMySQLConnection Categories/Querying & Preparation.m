@@ -360,19 +360,12 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
-    // A query waits for a server, and on a route that has gone away it waits for a timeout. The
-    // main thread must not be the one waiting: asked for there, the query runs on the connection's
-    // worker thread and the interface keeps drawing while it does; asked for anywhere else, it
-    // runs where it was asked for. Either way the result passes the refusal check below - the
-    // hand-off can be refused too, and a statement turned away there has to report itself like
-    // one the lease turned away.
-    // The statement takes its report - error, rows affected, cancelled or not - back with its
-    // result: while the main thread waits for it, an event can run a statement of its own on this
-    // connection, whose report would otherwise stand here when this one returns to its caller.
-    // The report is taken while the session is still held: the lease lets go of it as the lease
-    // call returns, and a statement another thread has waiting takes it from there.
-    [SAStatementReport forgetReportHandedBackToThisThreadFor:self];
-    SAStatementRun *theRun = [self _runWorkKeepingInterfaceAlive:^id{
+    // The call is the Swift side's (`SAStatementCall`): the statement runs through the hand-off -
+    // on the connection's worker when asked for on the main thread, where it was asked for
+    // otherwise - takes its report with its result while the session is still held, and the
+    // report goes to the calling thread, as does a refusal. This is the legacy query under the
+    // lease, and nothing more.
+    return [SAStatementCall run:^SAStatementRun *{
         return [self.sessionAccess performQuery:^id {
             id theWorkResult = [self _queryString:theQueryString
                                    usingEncoding:theEncoding
@@ -383,33 +376,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
         } recover:^BOOL {
             return [self _reconnectAllowingRetries:YES];
         }];
-    }];
-    // No run means the statement was refused or given up on, and the connection records that itself.
-    id theResult = nil;
-    if (theRun) {
-        [SAStatementReport handBack:theRun.report for:self];
-        theResult = theRun.result;
-    }
-
-    // A statement that was refused the session never reached the server. Saying so is what
-    // keeps it apart from one that ran and changed nothing: callers read the row count and the
-    // error together, and both would still describe the statement before this one - which is
-    // how an edit that was never written comes to be treated as saved.
-    BOOL theRefusalWasForEarlierWork = self.sessionAccess.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork;
-    BOOL theSessionWasRefused = [self.sessionAccess takeTheRefusalOfThisThreadsLastCall];
-    if (!theResult && theSessionWasRefused) {
-        // The statement never reached `_queryString:`, which is where each query clears what the
-        // one before it left. A stop recorded against an earlier query would otherwise still
-        // stand here, and callers that read it alongside the error - the content view among
-        // them - take a cancelled query to be one the user already knows about and say nothing.
-        // The refusal is this caller's to read: it is handed back to the thread, as a statement's
-        // report is, rather than written over whatever statement is running.
-        NSString *theReason = theRefusalWasForEarlierWork
-            ? NSLocalizedString(@"The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.", @"Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection")
-            : NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open");
-        [SAStatementReport handBack:[[SAStatementReport alloc] initWithErrorMessage:theReason errorID:2013 sqlState:@"HY000" affectedRows:0 insertID:lastQueryInsertID wasCancelled:NO] for:self];
-    }
-    return theResult;
+    } on:[self _statementCallHost]];
 }
 
 - (id)_queryString:(NSString *)theQueryString
@@ -492,6 +459,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger queryAttemptsAllowed = 1;
 	if (retryQueriesOnConnectionFailure) queryAttemptsAllowed++;
 	int queryStatus;
+	// Whether the statement reached the server and was carried out, which a stop that lands
+	// afterwards does not undo.
+	BOOL theStatementWasCarriedOut = NO;
 
 	// The bytes of the attempt under way, held while they are sent.
 	NSData *queryData = nil;
@@ -573,7 +543,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
-			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
+			theStatementWasCarriedOut = YES;
+			[self _noteStatementCarriedOut:theQueryString];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
 			//  -1 indicates that the query returned an error or that, for a SELECT query, mysql_affected_rows() was called prior to calling mysql_store_result()."
@@ -689,8 +660,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastQueryInsertID = mySQLConnection->insert_id;
 	}
 
-	// If the query was cancelled, override the error state
-	lastQueryWasCancelled = self.sessionAccess.currentQueryWasCancelled;
+	// If the query was cancelled, override the error state - unless the statement had been carried
+	// out by the time the stop landed: it undoes nothing then, and a statement reported cancelled
+	// would be tried again, a write applied twice.
+	lastQueryWasCancelled = !theStatementWasCarriedOut && self.sessionAccess.currentQueryWasCancelled;
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -893,17 +866,21 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 }
 
 /**
- * The report this thread reads the last statement from: one handed back to it, about a statement
- * the connection has since moved on from - or nil, for the connection's own fields. Those fields
- * describe the statement handed back until a later one starts, and carry what that statement
- * reported after its report was taken: the error or stop of a streaming download, a failed
- * connection check. A report about no statement that ran is read whatever the fields say.
+ * The report this thread reads the last statement from: one handed back to it about a statement
+ * the connection has since moved on from, or nil for the connection's own fields.
  */
 - (SAStatementReport *)_reportThisThreadReads
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
-	if (handedBack && handedBack.statementNumber != statementNumber) return handedBack;
-	return nil;
+	return [SAStatementReport reportThisThreadReadsFor:self statementNumber:statementNumber];
+}
+
+/**
+ * Notes that a statement reached the server and was carried out: the database assertion learns
+ * of it, so that the session's database is known from here on.
+ */
+- (void)_noteStatementCarriedOut:(NSString *)theQueryString
+{
+	[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
 }
 
 /**

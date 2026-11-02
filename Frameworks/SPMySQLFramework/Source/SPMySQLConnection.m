@@ -40,7 +40,7 @@
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
-@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost, SAConnectionWorkHost>
+@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost, SAConnectionWorkHost, SAStatementCallHost>
 @end
 
 @interface SPMySQLConnection ()
@@ -393,18 +393,35 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (void)recordWorkAsCancelled
 {
-	// Handed back to the caller's thread rather than written over the connection's report, which
-	// a statement another thread is running may be writing. Nothing was affected, as far as anybody
-	// can say: callers work out success from the count - the content view's row deletion compares
-	// it with how many rows it meant to delete and, on a match, takes them off the screen without
-	// asking the error - and a stopped DELETE must not look like one that worked.
-	[SAStatementReport handBack:[[SAStatementReport alloc] initWithErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")
-	                                                                    errorID:1317
-	                                                                   sqlState:@"70100"
-	                                                               affectedRows:0
-	                                                                   insertID:lastQueryInsertID
-	                                                               wasCancelled:YES]
-	                        for:self];
+	[SAStatementCall recordWorkAsCancelledOn:self];
+}
+
+#pragma mark -
+#pragma mark What the statement call asks of the connection
+
+/**
+ * The connection as the statement call sees it; the conformance is declared here, where the
+ * categories cannot see it.
+ */
+- (id<SAStatementCallHost>)_statementCallHost
+{
+	return self;
+}
+
+/**
+ * The insert ID the connection carries, as the last statement left it.
+ */
+- (unsigned long long)insertIDCarried
+{
+	return lastQueryInsertID;
+}
+
+/**
+ * Runs the work through the hand-off that keeps the interface alive.
+ */
+- (id)runWorkKeepingInterfaceAlive:(id (^)(void))work
+{
+	return [self _runWorkKeepingInterfaceAlive:work];
 }
 
 /**

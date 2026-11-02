@@ -38,6 +38,7 @@
 #import "Conversion.h"
 
 @class SAConnectionSessionAccess, SAConnectionSetupDeadline, SAStatementReport;
+@protocol SAStatementCallHost;
 
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
@@ -65,6 +66,8 @@
 - (void)_closeSessionMarkedForReplacement;
 /** Runs connection work off the main thread while the delegate shows the wait; nil if it was refused or the wait ended first. */
 - (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
+/** The connection as the statement call sees it; the conformance is declared with the connection, where the categories cannot see it. */
+- (id<SAStatementCallHost>)_statementCallHost;
 /** Runs yes-or-no connection work the same way; NO if the user stopped waiting. */
 - (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
 /** Whether the current thread is the one reconnecting, and so sets up the new session. */
@@ -147,6 +150,8 @@
 - (SAStatementReport *)_reportOfLastStatement;
 /** The report this thread reads the last statement from: one handed back to it about a statement the connection has since moved on from, or nil for the connection's own fields. */
 - (SAStatementReport *)_reportThisThreadReads;
+/** Notes that a statement reached the server and was carried out, for the database assertion. */
+- (void)_noteStatementCarriedOut:(NSString *)theQueryString;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding

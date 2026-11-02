@@ -82,10 +82,28 @@ public final class SAStatementReport: NSObject {
 
     /// The report handed back to the current thread about this connection, if one stands.
     /// - Parameter connection: The connection.
-    /// - Returns: The report, or nil when the thread reads the connection's own.
+    /// - Returns: The report, or nil when nothing is handed back.
     @objc(reportHandedBackToThisThreadFor:)
     public static func reportHandedBackToThisThread(for connection: AnyObject) -> SAStatementReport? {
         handedBackToThisThread.object(forKey: connection)
+    }
+
+    /// The report the current thread reads the last statement from: one handed back to it about a
+    /// statement the connection has since moved on from - or nil, for the connection's own fields.
+    /// Those fields describe the statement handed back until a later one starts, and carry what
+    /// that statement reported after its report was taken: the error or stop of a streaming
+    /// download, a failed connection check. A report about no statement that ran is read whatever
+    /// the fields say.
+    /// - Parameters:
+    ///   - connection: The connection.
+    ///   - statementNumber: The number of the statement the connection's fields describe now.
+    /// - Returns: The report to read, or nil for the connection's own fields.
+    @objc(reportThisThreadReadsFor:statementNumber:)
+    public static func reportThisThreadReads(for connection: AnyObject, statementNumber: UInt64) -> SAStatementReport? {
+        guard let handedBack = reportHandedBackToThisThread(for: connection), handedBack.statementNumber != statementNumber else {
+            return nil
+        }
+        return handedBack
     }
 
     /// The error message, or nil when the statement did not fail.
