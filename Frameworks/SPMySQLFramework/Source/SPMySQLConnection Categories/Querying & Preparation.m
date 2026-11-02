@@ -371,6 +371,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     // connection, whose report would otherwise stand here when this one returns to its caller.
     // The report is taken while the session is still held: the lease lets go of it as the lease
     // call returns, and a statement another thread has waiting takes it from there.
+    [SAStatementReport forgetReportHandedBackToThisThreadFor:self];
     SAStatementRun *theRun = [self _runWorkKeepingInterfaceAlive:^id{
         return [self.sessionAccess performQuery:^id {
             id theWorkResult = [self _queryString:theQueryString
@@ -386,7 +387,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     // No run means the statement was refused or given up on, and the connection records that itself.
     id theResult = nil;
     if (theRun) {
-        [self _restoreReportOfLastStatement:theRun.report];
+        [SAStatementReport handBack:theRun.report for:self];
         theResult = theRun.result;
     }
 
@@ -394,17 +395,19 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     // keeps it apart from one that ran and changed nothing: callers read the row count and the
     // error together, and both would still describe the statement before this one - which is
     // how an edit that was never written comes to be treated as saved.
+    BOOL theRefusalWasForEarlierWork = self.sessionAccess.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork;
     BOOL theSessionWasRefused = [self.sessionAccess takeTheRefusalOfThisThreadsLastCall];
     if (!theResult && theSessionWasRefused) {
         // The statement never reached `_queryString:`, which is where each query clears what the
         // one before it left. A stop recorded against an earlier query would otherwise still
         // stand here, and callers that read it alongside the error - the content view among
         // them - take a cancelled query to be one the user already knows about and say nothing.
-        lastQueryWasCancelled = NO;
-        lastQueryAffectedRowCount = 0;
-        [self _updateLastErrorMessage:NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open")];
-        [self _updateLastErrorID:2013];
-        [self _updateLastSqlstate:@"HY000"];
+        // The refusal is this caller's to read: it is handed back to the thread, as a statement's
+        // report is, rather than written over whatever statement is running.
+        NSString *theReason = theRefusalWasForEarlierWork
+            ? NSLocalizedString(@"The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.", @"Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection")
+            : NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open");
+        [SAStatementReport handBack:[[SAStatementReport alloc] initWithErrorMessage:theReason errorID:2013 sqlState:@"HY000" affectedRows:0 insertID:lastQueryInsertID wasCancelled:NO] for:self];
     }
     return theResult;
 }
@@ -754,6 +757,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (unsigned long long)rowsAffectedByLastQuery
 {
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack) return handedBack.affectedRows;
 	return lastQueryAffectedRowCount;
 }
 
@@ -763,6 +768,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (unsigned long long)lastInsertID
 {
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack) return handedBack.insertID;
 	return lastQueryInsertID;
 }
 
@@ -774,6 +781,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (BOOL)queryErrored
 {
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack) return handedBack.errorMessage != nil;
 	return (queryErrorMessage)?YES:NO;
 }
 
@@ -783,12 +792,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (NSString *)lastErrorMessage
 {
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack) return handedBack.errorMessage;
 	if (!queryErrorMessage) return nil;
 	return [NSString stringWithString:queryErrorMessage];
 }
 
 - (NSString *)lastSqlstate
 {
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack) return handedBack.sqlState;
 	if(!querySqlstate) return nil;
 	return [NSString stringWithString:querySqlstate];
 }
@@ -799,6 +812,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (NSUInteger)lastErrorID
 {
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack) return handedBack.errorID;
 	return queryErrorID;
 }
 
@@ -871,19 +886,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	                                          affectedRows:lastQueryAffectedRowCount
 	                                              insertID:lastQueryInsertID
 	                                          wasCancelled:lastQueryWasCancelled];
-}
-
-/**
- * Puts a statement's report back on the connection, for the caller of that statement to read.
- */
-- (void)_restoreReportOfLastStatement:(SAStatementReport *)report
-{
-	queryErrorMessage = report.errorMessage;
-	queryErrorID = report.errorID;
-	querySqlstate = report.sqlState;
-	lastQueryAffectedRowCount = report.affectedRows;
-	lastQueryInsertID = report.insertID;
-	lastQueryWasCancelled = report.wasCancelled;
 }
 
 /**

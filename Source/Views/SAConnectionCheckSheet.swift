@@ -115,6 +115,15 @@ final class SAConnectionCheckSheet: NSObject {
     /// How long the loop sleeps between rounds of events, in microseconds.
     private static let eventLoopPause: useconds_t = 3_000
 
+    /// Spells a wait out in seconds - "1 second", "14 seconds" - in the user's language.
+    private static let durationFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .full
+        formatter.allowedUnits = [.second]
+        formatter.zeroFormattingBehavior = .pad
+        return formatter
+    }()
+
     /// The waits going on, innermost last. Only the main thread touches this.
     private static var activeWaits: [SAConnectionCheckSheet] = []
 
@@ -160,7 +169,13 @@ final class SAConnectionCheckSheet: NSObject {
 
         Self.refreshActiveWaits()
         while !hasEnded {
-            Self.deliverPendingEvents()
+            deliverPendingEvents()
+            // Over, the wait returns at once: an event delivered from here would reach the window
+            // while the operation that waited is still on the stack - another Apply in User
+            // Manager inside the save that was being waited for - so none is.
+            if hasEnded {
+                break
+            }
             Self.refreshActiveWaits()
             usleep(Self.eventLoopPause)
         }
@@ -331,14 +346,16 @@ final class SAConnectionCheckSheet: NSObject {
         )
     }
 
-    /// Takes the events that have arrived out of the queue and delivers them, without waiting for more.
+    /// Takes the events that have arrived out of the queue and delivers them, without waiting for
+    /// more - and stops as soon as this wait is over, leaving the rest in the queue for whatever
+    /// runs the loop next, once the operation that waited has returned.
     ///
     /// An event can run a wait of its own and return only once that wait is over. The sheets are
     /// brought up to date after every event, so the next one finds them as they should be.
-    private static func deliverPendingEvents() {
-        while let event = NSApp.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) {
+    private func deliverPendingEvents() {
+        while !hasEnded, let event = NSApp.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) {
             NSApp.sendEvent(event)
-            refreshActiveWaits()
+            Self.refreshActiveWaits()
         }
     }
 
@@ -348,11 +365,13 @@ final class SAConnectionCheckSheet: NSObject {
             return
         }
 
-        // The loop comes by every few milliseconds; the sheet only changes once a second.
-        let seconds = Int(Date().timeIntervalSince(startDate))
+        // The loop comes by every few milliseconds; the sheet only changes once a second. The
+        // system spells the duration out - one second, two seconds - in the user's language.
+        let seconds = Date().timeIntervalSince(startDate).rounded(.down)
+        let duration = Self.durationFormatter.string(from: seconds) ?? String(Int(seconds))
         let detail = String(
-            format: NSLocalizedString("The server has not answered for %ld seconds.", comment: "connection wait sheet elapsed time, %ld is a number of seconds"),
-            seconds
+            format: NSLocalizedString("The server has not answered for %@.", comment: "connection wait sheet elapsed time, %@ is a spelled-out duration such as '14 seconds'"),
+            duration
         )
         if sheetModel.detail != detail {
             sheetModel.detail = detail

@@ -6053,11 +6053,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)showErrorWithTitle:(NSString *)theTitle message:(NSString *)theMessage
 {
-    SPMainQSync(^{
+    // Through the main run loop, not the main queue: the connection can ask this from its own
+    // thread while the main thread waits for that thread's work from inside a main-queue block,
+    // which would never get to a block queued behind it.
+    [SAMainRunLoop runAndWait:^{
         if ([[self.parentWindowController window] isVisible]) {
             [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
         }
-    });
+    }];
 }
 
 /**

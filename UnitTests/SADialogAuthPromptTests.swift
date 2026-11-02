@@ -118,6 +118,50 @@ final class SADialogAuthPromptTests: XCTestCase {
         XCTAssertTrue(warned.localizedCaseInsensitiveContains("not encrypted"))
     }
 
+    // MARK: - Asking from the connection's thread
+
+    /// The question is answered on the main thread while that thread is inside a block on the main
+    /// queue - which it is while it waits for the reconnect that asks. By way of the main queue,
+    /// the question would wait for that block to end, and the block waits for the answer.
+    func testTheQuestionIsAnsweredWhileTheMainQueueIsBusy() {
+        let lock = NSLock()
+        var answer: String?
+        var askedOnMainThread = false
+        var answeredInTime = false
+        let answered = DispatchSemaphore(value: 0)
+        let blockEnded = expectation(description: "the main-queue block has ended")
+
+        DispatchQueue.main.async {
+            // The main thread is busy with this block until the question has been answered, so only
+            // its run loop can serve the question.
+            Thread.detachNewThread {
+                let theAnswer = SADialogAuthPrompt.ask(prompt: "PIN:", secure: true, isEncrypted: true, isServerVerified: true) { _, _, _ in
+                    lock.lock()
+                    askedOnMainThread = Thread.isMainThread
+                    lock.unlock()
+                    return "1234"
+                }
+                lock.lock()
+                answer = theAnswer
+                lock.unlock()
+                answered.signal()
+            }
+            let deadline = Date().addingTimeInterval(3)
+            while answered.wait(timeout: .now()) == .timedOut, Date() < deadline {
+                RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.02))
+            }
+            answeredInTime = Date() < deadline
+            blockEnded.fulfill()
+        }
+
+        wait(for: [blockEnded], timeout: 5)
+        lock.lock()
+        defer { lock.unlock() }
+        XCTAssertTrue(answeredInTime)
+        XCTAssertEqual(answer, "1234")
+        XCTAssertTrue(askedOnMainThread)
+    }
+
     // MARK: - Handing the answer to the plugin
 
     func testAnswerIsCopiedAsANulTerminatedCString() {

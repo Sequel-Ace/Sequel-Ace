@@ -130,9 +130,25 @@ public final class SAConnectionWorkCoordinator: NSObject {
 
     private var workerThread: Thread?
 
-    /// The work being waited for right now. Guarded by `inFlightLock`; more than one when waits are nested.
-    private var inFlight: [SAConnectionWorkOutcome] = []
+    /// The work being waited for right now, with the thread each piece was asked for on. Guarded
+    /// by `inFlightLock`; more than one when waits are nested.
+    private var inFlight: [(outcome: SAConnectionWorkOutcome, askedOn: ObjectIdentifier)] = []
     private let inFlightLock = NSLock()
+
+    /// Whether the current thread is already waiting for work on this coordinator.
+    ///
+    /// An event the wait delivers can ask for more work on the same connection, from the same
+    /// thread. Queued behind the work being waited for, it would be fine for most work - but not
+    /// behind a statement whose result keeps the session until its caller reads it, a streaming
+    /// result: that caller is the thread waiting here, suspended beneath the new wait, and the new
+    /// work waits in the lease for a session that waits for that caller. Neither side moves until
+    /// the user stops. Such work is refused instead.
+    @objc public var currentThreadIsWaitingForWork: Bool {
+        let thread = ObjectIdentifier(Thread.current)
+        inFlightLock.lock()
+        defer { inFlightLock.unlock() }
+        return inFlight.contains { $0.askedOn == thread }
+    }
 
     /// Whether the work running on the current thread is work that nobody is waiting for any more.
     ///
@@ -221,6 +237,13 @@ public final class SAConnectionWorkCoordinator: NSObject {
             return nil
         }
 
+        // Work asked for by an event the wait for earlier work is delivering - from the thread that
+        // is waiting - is refused rather than queued; see `currentThreadIsWaitingForWork`.
+        if currentThreadIsWaitingForWork {
+            lease.noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: true)
+            return nil
+        }
+
         let outcome = run(work, whenSlow: { isFinished in
             host.waitForWork(untilFinished: isFinished)
         })
@@ -249,11 +272,11 @@ public final class SAConnectionWorkCoordinator: NSObject {
         }
 
         inFlightLock.lock()
-        inFlight.append(outcome)
+        inFlight.append((outcome: outcome, askedOn: ObjectIdentifier(Thread.current)))
         inFlightLock.unlock()
         defer {
             inFlightLock.lock()
-            inFlight.removeAll { $0 === outcome }
+            inFlight.removeAll { $0.outcome === outcome }
             inFlightLock.unlock()
         }
 
@@ -310,8 +333,8 @@ public final class SAConnectionWorkCoordinator: NSObject {
         let waitedFor = inFlight
         inFlightLock.unlock()
 
-        for outcome in waitedFor {
-            _ = outcome.abandon()
+        for entry in waitedFor {
+            _ = entry.outcome.abandon()
         }
         cancel()
     }

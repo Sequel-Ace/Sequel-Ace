@@ -43,6 +43,41 @@ private final class SAScriptedWorkHost: NSObject, SAConnectionWorkHost {
     func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any?
 }
 
+/// Reconnects the way the connection does, through its private method.
+@objc private protocol SAReconnectHandOff {
+    @objc(_reconnectAllowingRetries:)
+    func reconnect(allowingRetries: Bool) -> Bool
+}
+
+/// A connection whose thread is given up on while its handshake is under way - which does not
+/// interrupt the handshake: it comes up all the same - and that sets no session up.
+private final class SALateHandshakeConnection: SPMySQLConnection {
+    private(set) var handshakes = 0
+    private(set) var restoresAttempted = 0
+
+    @objc(_connectUsingConnectTimeout:) func handshake(_ connectTimeoutOrZero: UInt) -> Bool {
+        handshakes += 1
+        // The user stops waiting while the handshake is under way.
+        Thread.current.cancel()
+        setValue(SPMySQLConnected.rawValue, forKey: "state")
+        return true
+    }
+
+    @objc(_waitForNetworkConnectionWithTimeout:) func waitForNetwork(_ timeout: Double) -> Bool {
+        true
+    }
+
+    @objc(_disconnectPreservingProxyReconnect:) func closeSession(_ preserveProxy: Bool) {
+        setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+    }
+
+    @objc(_restoreSessionStateAfterReconnectWithDatabase:encoding:encodingUsesLatin1Transport:timeZoneIdentifier:)
+    func restore(_ database: String?, encoding: String?, encodingUsesLatin1Transport: Bool, timeZoneIdentifier: String?) -> Bool {
+        restoresAttempted += 1
+        return true
+    }
+}
+
 /// Where connection work runs, who waits for it, and what a stop makes of it.
 final class SAConnectionWorkCoordinatorTests: XCTestCase {
     private let coordinator = SAConnectionWorkCoordinator()
@@ -338,6 +373,91 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(result as? String, "answered")
         XCTAssertFalse(host.sessionAccess.takeTheRefusalOfThisThreadsLastCall())
+    }
+
+    /// Work asked for during this thread's own wait - by an event the wait delivered - is refused
+    /// rather than queued, and the refusal says so: queued behind a statement whose result keeps
+    /// the session until the waiting caller reads it, it would wait for that caller.
+    func testWorkAskedForDuringThisThreadsOwnWaitIsRefused() {
+        let host = SAScriptedWorkHost()
+        var nestedResult: Any? = "unset"
+        var nestedWasRefusedForEarlierWork: Bool?
+        var nestedWasMarkedRefused: Bool?
+        host.whileWaiting = { [coordinator] isFinished in
+            nestedResult = coordinator.run({ "nested" }, on: host)
+            nestedWasRefusedForEarlierWork = host.sessionAccess.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork
+            nestedWasMarkedRefused = host.sessionAccess.takeTheRefusalOfThisThreadsLastCall()
+            while !isFinished() {
+                usleep(1_000)
+            }
+        }
+
+        let outerResult = coordinator.run({
+            Thread.sleep(forTimeInterval: 0.3)
+            return "outer"
+        }, on: host)
+
+        XCTAssertNil(nestedResult, "the nested work was refused")
+        XCTAssertEqual(nestedWasMarkedRefused, true, "and marked refused for the statement path")
+        XCTAssertEqual(nestedWasRefusedForEarlierWork, true, "with its reason")
+        XCTAssertEqual(outerResult as? String, "outer", "the work being waited for answered")
+        XCTAssertEqual(host.cancelledWorkRecorded, 0)
+    }
+
+    /// Work from another thread during the wait is not nested work, and is handed over as usual.
+    func testWorkFromAnotherThreadDuringTheWaitIsNotRefused() {
+        let host = SAScriptedWorkHost()
+        host.delegateShowsTheWait = false
+        var otherResult: Any?
+        let otherReturned = DispatchSemaphore(value: 0)
+        let watcher = SAScriptedWorkHost()
+        watcher.whileWaiting = { [coordinator] isFinished in
+            Thread.detachNewThread {
+                otherResult = coordinator.run({ "other" }, on: host)
+                otherReturned.signal()
+            }
+            while !isFinished() {
+                usleep(1_000)
+            }
+        }
+
+        _ = coordinator.run({
+            Thread.sleep(forTimeInterval: 0.3)
+            return "outer"
+        }, on: watcher)
+
+        XCTAssertEqual(otherReturned.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(otherResult as? String, "other")
+    }
+
+    /// A session that comes up after its reconnect was given up on is retired, not kept half set
+    /// up: the thread the user stopped waiting for does not set the new session up, and a
+    /// statement would otherwise run on the server's default database and time zone.
+    func testASessionThatComesUpAfterItsReconnectWasGivenUpOnIsRetired() {
+        let connection = SALateHandshakeConnection()
+        connection.useKeepAlive = false
+        connection.setValue(SPMySQLConnectionLostInBackground.rawValue, forKey: "state")
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        let looked = expectation(description: "the given-up thread reconnected")
+        var reconnected: Bool?
+        var stateAfterwards: Int?
+
+        Thread.detachNewThread {
+            // The thread is given up on inside the handshake, which still comes up.
+            reconnected = unsafeBitCast(connection, to: SAReconnectHandOff.self).reconnect(allowingRetries: true)
+            stateAfterwards = connection.value(forKey: "state") as? Int
+            looked.fulfill()
+        }
+
+        wait(for: [looked], timeout: 5)
+        XCTAssertEqual(connection.handshakes, 1, "the handshake came up")
+        XCTAssertEqual(connection.restoresAttempted, 0, "nobody set the session up")
+        XCTAssertEqual(reconnected, false, "so the reconnect did not succeed")
+        XCTAssertEqual(stateAfterwards, Int(SPMySQLConnectionLostInBackground.rawValue),
+                       "and the session is retired, for the next use to reconnect and restore")
     }
 
     /// Work handed over forgets a refusal that was not about it: the mark is read by the statement

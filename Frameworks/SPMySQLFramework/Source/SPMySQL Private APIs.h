@@ -145,8 +145,6 @@
 - (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
 /** What the last statement reported - error, rows affected, cancelled or not - as the connection keeps it. */
 - (SAStatementReport *)_reportOfLastStatement;
-/** Puts a statement's report back on the connection, for that statement's caller to read. */
-- (void)_restoreReportOfLastStatement:(SAStatementReport *)report;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding

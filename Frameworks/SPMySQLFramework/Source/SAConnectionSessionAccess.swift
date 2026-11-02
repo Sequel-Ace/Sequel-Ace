@@ -381,6 +381,7 @@ import Darwin
     /// Forgets a refusal recorded on this thread, so it cannot speak for a later call.
     private func forgetAnyRefusal() {
         Thread.current.threadDictionary[Self.refusalMarker] = false
+        Thread.current.threadDictionary[Self.refusedWhileWaitingMarker] = false
     }
 
     /// Forgets a refusal recorded on this thread, for work that reads none.
@@ -396,7 +397,27 @@ import Darwin
     /// over, so that the statement path reports it as never sent - the way the lease records a
     /// caller it turns away itself.
     @objc public func noteThisThreadsCallWasRefused() {
+        noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: false)
+    }
+
+    /// Marks, for this thread only, that the refusal was for work asked for while the thread was
+    /// already waiting for earlier work on the connection.
+    private static let refusedWhileWaitingMarker = "SAConnectionSessionAccess.refusedWhileWaitingForEarlierWork"
+
+    /// Records a refusal, and why: a question out to the main thread, or earlier work this thread
+    /// is still waiting for. The statement path tells the caller the reason.
+    /// - Parameter whileWaitingForEarlierWork: Whether the call came in during this thread's wait
+    ///   for earlier work on the connection.
+    @objc(noteThisThreadsCallWasRefusedWhileWaitingForEarlierWork:)
+    public func noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: Bool) {
         Thread.current.threadDictionary[Self.refusalMarker] = true
+        Thread.current.threadDictionary[Self.refusedWhileWaitingMarker] = whileWaitingForEarlierWork
+    }
+
+    /// Whether the refusal this thread's last call met was for work asked for during its wait for
+    /// earlier work. Read with ``takeTheRefusalOfThisThreadsLastCall()``, which takes both.
+    @objc public var thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork: Bool {
+        (Thread.current.threadDictionary[Self.refusedWhileWaitingMarker] as? Bool) ?? false
     }
 
     /// Whether a question about this connection is out to the main thread and still unanswered.

@@ -18,11 +18,13 @@ import Foundation
 ///
 /// The main run loop keeps turning during that wait, and a run loop block does not depend on the
 /// main queue being free. Anything connection work needs from the main thread - a tunnel told to
-/// go, a dialog the application shows for it - goes this way.
-public enum SAMainRunLoop {
+/// go, a dialog the application shows for it, an error it shows - goes this way.
+@objc(SAMainRunLoop)
+public final class SAMainRunLoop: NSObject {
 
     /// Runs a block on the main thread and returns once it has finished.
     /// - Parameter block: The work to do on the main thread.
+    @objc(runAndWait:)
     public static func runAndWait(_ block: @escaping () -> Void) {
         if Thread.isMainThread {
             block()

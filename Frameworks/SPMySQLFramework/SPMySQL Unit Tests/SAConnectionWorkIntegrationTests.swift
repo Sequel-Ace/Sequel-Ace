@@ -46,6 +46,35 @@ private final class SAWaitingDelegate: NSObject {
     }
 }
 
+/// A connection whose report capture on a background thread can be held still - between the
+/// statement writing its report on the connection and taking it for its caller - while the main
+/// thread's caller returns and reads.
+private final class SAReportCaptureHoldingConnection: SPMySQLConnection {
+    let backgroundStatementWroteItsReport = DispatchSemaphore(value: 0)
+    let letTheBackgroundStatementCapture = DispatchSemaphore(value: 0)
+    var holdsTheNextBackgroundCapture = false
+
+    @objc(_reportOfLastStatement) func reportOfLastStatementHeld() -> SAStatementReport {
+        if !Thread.isMainThread, holdsTheNextBackgroundCapture {
+            holdsTheNextBackgroundCapture = false
+            backgroundStatementWroteItsReport.signal()
+            _ = letTheBackgroundStatementCapture.wait(timeout: .now() + 5)
+        }
+        return SAStatementReport(errorMessage: lastErrorMessageOnTheConnection(), errorID: lastErrorIDOnTheConnection(),
+                                 sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
+    }
+
+    /// The connection's own error message, not one handed back to this thread.
+    private func lastErrorMessageOnTheConnection() -> String? {
+        value(forKey: "queryErrorMessage") as? String
+    }
+
+    /// The connection's own error number.
+    private func lastErrorIDOnTheConnection() -> UInt {
+        (value(forKey: "queryErrorID") as? UInt) ?? 0
+    }
+}
+
 /// A connection that records which thread its connection check ran on.
 private final class SACheckWatchingConnection: SPMySQLConnection {
     private(set) var checkThread: Thread?
@@ -90,6 +119,9 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
         defer { connection.disconnect() }
         XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
+        // Quick is measured against the coordinator's quiet wait, given room here: on a loaded
+        // machine starting the worker thread alone can take longer than the default.
+        connection.setValue(5, forKeyPath: "connectionWorkCoordinator.quietWait")
 
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 'answered'") as? String, "answered")
 
@@ -197,76 +229,94 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(otherWasCancelled, false, "and not reported as stopped")
     }
 
-    /// A statement that comes in during the wait leaves the waited-for statement's report alone:
-    /// each statement's caller reads what that statement reported, not what the other did.
-    func testWorkThatComesInDuringTheWaitLeavesTheOuterStatementsReportAlone() throws {
+    /// Work that comes in during the wait - an event that queries the same connection from the
+    /// thread that is waiting - is refused rather than queued: queued behind a statement whose
+    /// result keeps the session until its caller reads it, it would wait for a caller that is
+    /// waiting for it. The caller is told so, and the work being waited for still answers.
+    func testWorkThatComesInDuringTheWaitIsRefusedAndTheWaitedForWorkStillAnswers() throws {
         let delegate = SAWaitingDelegate()
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
         defer { connection.disconnect() }
 
-        var innerFailed: Bool?
+        var innerAnswer: Any?
+        var innerErrorID: UInt?
+        var innerError: String?
+        var innerWasCancelled: Bool?
+        var innerStatementsSent = 0
         delegate.onceWhileWaiting = { _ in
-            _ = connection.queryString("SELECT * FROM no_such_table_for_the_wait")
-            innerFailed = connection.queryErrored()
+            let before = delegate.statementThreads.count
+            innerAnswer = connection.queryString("SELECT 'inner'")
+            innerErrorID = connection.lastErrorID()
+            innerError = connection.lastErrorMessage()
+            innerWasCancelled = connection.lastQueryWasCancelled
+            innerStatementsSent = delegate.statementThreads.count - before
         }
 
         let outerAnswer = connection.getFirstField(fromQuery: "SELECT SLEEP(0.6) + 0, 'outer'") as? String
 
-        XCTAssertEqual(innerFailed, true, "the statement that came in during the wait failed, and said so to its caller")
-        XCTAssertEqual(outerAnswer, "0", "the waited-for statement answered")
-        XCTAssertFalse(connection.queryErrored(), "and its caller reads its own report, not the failed one's")
-        XCTAssertNil(connection.lastErrorMessage())
-        XCTAssertFalse(connection.lastQueryWasCancelled)
+        XCTAssertNil(innerAnswer, "the work that came in during the wait was refused")
+        XCTAssertEqual(innerErrorID, 2013)
+        XCTAssertEqual(innerError?.contains("still waiting for an earlier statement"), true, "and told why")
+        XCTAssertEqual(innerWasCancelled, false, "a refusal is not a stop")
+        XCTAssertEqual(innerStatementsSent, 0, "nothing of it was sent")
+        XCTAssertEqual(outerAnswer, "0", "the work being waited for answered")
+        XCTAssertFalse(connection.queryErrored(), "and its caller reads its own report, not the refusal")
+        XCTAssertEqual(delegate.timesAskedToWait, 1)
     }
 
-    /// The other way round as well: a waited-for statement that fails keeps its failure for its
-    /// caller through a statement that succeeded during the wait - which is the case the content
-    /// view's row deletion reads, from `queryErrored` alone.
-    func testAFailedStatementKeepsItsReportThroughASuccessfulNestedOne() throws {
+    /// Each caller reads its own statement's report, however the statements of two threads
+    /// overlap: a background statement that has written its report on the connection and not yet
+    /// taken it for its caller is not written over by the main thread's caller returning from a
+    /// statement of its own - a failed write would otherwise read as a success, or a success as
+    /// a failure. The background statement is held between the two steps while the main caller
+    /// returns and reads.
+    func testEachCallerReadsItsOwnReportHoweverTwoThreadsStatementsOverlap() throws {
         let delegate = SAWaitingDelegate()
-        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        let connection = try connected(SAReportCaptureHoldingConnection(), delegate: delegate)
         defer { connection.disconnect() }
 
-        var innerAnswer: String?
-        delegate.onceWhileWaiting = { _ in
-            innerAnswer = connection.getFirstField(fromQuery: "SELECT 'inner'") as? String
+        /// Runs the main thread's statement over a background statement held between writing and
+        /// taking its report, and reports what each caller read.
+        func readings(mainStatement: String, backgroundStatement: String) -> (mainErrored: Bool, mainErrorID: UInt, backgroundErrored: Bool?, backgroundErrorID: UInt?) {
+            connection.holdsTheNextBackgroundCapture = true
+            let backgroundReturned = expectation(description: "the background statement's caller read its report")
+            var backgroundErrored: Bool?
+            var backgroundErrorID: UInt?
+            // The background statement starts once the main statement's work is done and the
+            // session free, and is held before it takes its report.
+            delegate.onceWhileWaiting = { mainWorkIsFinished in
+                Thread.detachNewThread {
+                    while !mainWorkIsFinished() {
+                        usleep(1_000)
+                    }
+                    _ = connection.queryString(backgroundStatement)
+                    backgroundErrored = connection.queryErrored()
+                    backgroundErrorID = connection.lastErrorID()
+                    backgroundReturned.fulfill()
+                }
+                // The main caller returns only once the background statement stands held.
+                XCTAssertEqual(connection.backgroundStatementWroteItsReport.wait(timeout: .now() + 5), .success,
+                               "the background statement wrote its report and is held")
+            }
+
+            _ = connection.queryString(mainStatement)
+            let mainErrored = connection.queryErrored()
+            let mainErrorID = connection.lastErrorID()
+
+            connection.letTheBackgroundStatementCapture.signal()
+            wait(for: [backgroundReturned], timeout: 5)
+            return (mainErrored, mainErrorID, backgroundErrored, backgroundErrorID)
         }
 
-        // Slow, then failing: the sleep comes first in the select list, the subquery that returns
-        // two rows after it.
-        let outerResult = connection.queryString("SELECT SLEEP(0.6), (SELECT 1 UNION SELECT 2)")
+        let mainSucceeds = readings(mainStatement: "SELECT SLEEP(0.4), 'main'", backgroundStatement: "SELECT * FROM no_such_table_for_the_overlap")
+        XCTAssertFalse(mainSucceeds.mainErrored, "the main caller reads its success")
+        XCTAssertEqual(mainSucceeds.backgroundErrored, true, "the background caller reads its failure")
+        XCTAssertNotEqual(mainSucceeds.backgroundErrorID ?? 0, 0, "the background statement's own failure: no such table, or no database selected")
 
-        XCTAssertGreaterThanOrEqual(delegate.timesAskedToWait, 1, "the failing statement was waited for")
-        XCTAssertEqual(innerAnswer, "inner", "the statement that came in during the wait answered")
-        XCTAssertNil(outerResult)
-        XCTAssertTrue(connection.queryErrored(), "the waited-for statement's caller reads its own failure")
-        XCTAssertEqual(connection.lastErrorID(), 1242, "subquery returns more than 1 row")
-    }
-
-    /// Work that comes in during the wait - an event that queries the same connection on the main
-    /// thread - runs after the work being waited for, and both answer.
-    func testWorkThatComesInDuringTheWaitRunsAfterTheWorkBeingWaitedFor() throws {
-        let delegate = SAWaitingDelegate()
-        let connection = try connected(SPMySQLConnection(), delegate: delegate)
-        defer { connection.disconnect() }
-
-        var innerAnswer: String?
-        var outerHadFinishedWhenTheInnerAnswered: Bool?
-        delegate.onceWhileWaiting = { outerIsFinished in
-            innerAnswer = connection.getFirstField(fromQuery: "SELECT 'inner'") as? String
-            outerHadFinishedWhenTheInnerAnswered = outerIsFinished()
-        }
-
-        let outerAnswer = connection.getFirstField(fromQuery: "SELECT SLEEP(0.6) + 0, 'outer'") as? String
-
-        XCTAssertEqual(innerAnswer, "inner", "the work that came in during the wait answered")
-        XCTAssertEqual(outerHadFinishedWhenTheInnerAnswered, true, "after the work being waited for")
-        XCTAssertEqual(outerAnswer, "0", "which answered too")
-        XCTAssertEqual(delegate.timesAskedToWait, 2, "each wait was shown")
-        // The statements the connection sent to set its session up came first, on this thread.
-        let theTwo = delegate.statementThreads.suffix(2)
-        XCTAssertEqual(theTwo.count, 2)
-        XCTAssertTrue(theTwo.allSatisfy { !$0.isMainThread }, "both ran on the worker")
+        let mainFails = readings(mainStatement: "SELECT SLEEP(0.4), (SELECT 1 UNION SELECT 2)", backgroundStatement: "SELECT 'background'")
+        XCTAssertTrue(mainFails.mainErrored, "the main caller reads its failure")
+        XCTAssertEqual(mainFails.mainErrorID, 1242, "subquery returns more than 1 row")
+        XCTAssertEqual(mainFails.backgroundErrored, false, "the background caller reads its success")
     }
 
     // MARK: - The local server

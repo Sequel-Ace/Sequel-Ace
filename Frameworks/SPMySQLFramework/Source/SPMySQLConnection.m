@@ -115,6 +115,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 - (BOOL)lastQueryWasCancelled
 {
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack) return handedBack.wasCancelled;
 	@synchronized (self) {
 		return lastQueryWasCancelled;
 	}
@@ -391,15 +393,18 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (void)recordWorkAsCancelled
 {
-	lastQueryWasCancelled = YES;
-	// And nothing was affected, as far as anybody can say. The count still describes the statement
-	// before this one, and callers work out success from it: the content view's row deletion
-	// compares it with how many rows it meant to delete and, on a match, takes them off the screen
-	// without asking the error. A stopped DELETE would look like one that worked.
-	lastQueryAffectedRowCount = 0;
-	[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
-	[self _updateLastErrorID:1317];
-	[self _updateLastSqlstate:@"70100"];
+	// Handed back to the caller's thread rather than written over the connection's report, which
+	// a statement another thread is running may be writing. Nothing was affected, as far as anybody
+	// can say: callers work out success from the count - the content view's row deletion compares
+	// it with how many rows it meant to delete and, on a match, takes them off the screen without
+	// asking the error - and a stopped DELETE must not look like one that worked.
+	[SAStatementReport handBack:[[SAStatementReport alloc] initWithErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")
+	                                                                    errorID:1317
+	                                                                   sqlState:@"70100"
+	                                                               affectedRows:0
+	                                                                   insertID:lastQueryInsertID
+	                                                               wasCancelled:YES]
+	                        for:self];
 }
 
 /**
@@ -1989,6 +1994,17 @@ asm(".desc ___crashreporter_info__, 0x10");
             databaseToRestore = nil;
             encodingToRestore = nil;
             encodingUsesLatin1TransportToRestore = NO;
+		}
+		// A session that came up after this thread was given up on - the user stopped waiting
+		// while the handshake was under way, which a cancelled thread does not interrupt - has
+		// nobody to set it up: left as it is, the next statement would run on the server's
+		// default database and time zone. It is retired like a session whose restore failed, and
+		// the next use reconnects and restores, with the saved state still there to restore from.
+		else if (state == SPMySQLConnected) {
+			[self _disconnectPreservingProxyReconnect:YES];
+			state = SPMySQLConnectionLostInBackground;
+			reconnectingThread = NULL;
+			return NO;
 		}
 			// If the connection failed and the connection is permitted to retry,
 			// then retry the reconnection.

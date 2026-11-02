@@ -122,6 +122,34 @@ final class SAConnectionCheckSheetTests: XCTestCase {
         XCTAssertTrue(waitEndedInTime)
     }
 
+    /// An event still in the queue when the work finishes is left there. Delivered from the wait,
+    /// it would reach the window while the operation that waited is still on the stack.
+    func testAnEventQueuedWhenTheWorkFinishesIsLeftInTheQueue() throws {
+        /// The number of the application-defined event at the head of the queue, left where it is.
+        func queuedMarker() -> Int? {
+            return NSApp.nextEvent(matching: .applicationDefined, until: Date(), inMode: .default, dequeue: false)?.data1
+        }
+        defer {
+            // Leaves nothing behind for the next test.
+            while NSApp.nextEvent(matching: .applicationDefined, until: Date(), inMode: .default, dequeue: true) != nil {}
+        }
+        for number in 1...2 {
+            let marker = try XCTUnwrap(NSEvent.otherEvent(with: .applicationDefined, location: .zero, modifierFlags: [],
+                                                          timestamp: 0, windowNumber: 0, context: nil,
+                                                          subtype: 0, data1: number, data2: 0))
+            NSApp.postEvent(marker, atStart: false)
+        }
+        XCTAssertEqual(queuedMarker(), 1)
+
+        let sheet = SAConnectionCheckSheet()
+        sheet.wait(in: nil, untilFinished: {
+            // The work finishes while the first event is being delivered: once it has left the queue.
+            return queuedMarker() != 1
+        }, whenCancelled: nil)
+
+        XCTAssertEqual(queuedMarker(), 2, "the second event is still in the queue")
+    }
+
     /// The time a wait shows is counted from the start of that wait, whether or not a sheet is up yet.
     func testEachWaitCountsItsTimeFromItsOwnStart() {
         let sheet = SAConnectionCheckSheet()
