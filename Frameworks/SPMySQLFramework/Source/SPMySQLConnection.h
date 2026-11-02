@@ -194,6 +194,10 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	// Query cancellation details
 	BOOL lastQueryWasCancelled;
 
+	// The number of statements that have started on the connection. The last statement's report
+	// carries it, and a thread reads the connection's own fields for a report of that number.
+	unsigned long long statementNumber;
+
 	// Timing details
 	uint64_t lastConnectionUsedTime;
 	double lastQueryExecutionTime;
@@ -279,7 +283,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 #pragma mark -
 #pragma mark Connection state
 
+/** Whether the connection is in the connected state. */
 - (BOOL)isConnected;
+/** Whether the connection is in the connected state and its session is encrypted. */
 - (BOOL)isConnectedViaSSL;
 - (BOOL)checkConnection;
 - (BOOL)checkConnectionIfNecessary;

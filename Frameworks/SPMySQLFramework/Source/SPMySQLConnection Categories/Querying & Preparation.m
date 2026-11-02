@@ -424,6 +424,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
+	// A statement of its own, as far as reports go: from here on the connection's fields describe
+	// this statement, and a report handed back about an earlier one stays its caller's.
+	statementNumber++;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -757,7 +760,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (unsigned long long)rowsAffectedByLastQuery
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	if (handedBack) return handedBack.affectedRows;
 	return lastQueryAffectedRowCount;
 }
@@ -768,7 +771,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (unsigned long long)lastInsertID
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	if (handedBack) return handedBack.insertID;
 	return lastQueryInsertID;
 }
@@ -781,7 +784,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (BOOL)queryErrored
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	if (handedBack) return handedBack.errorMessage != nil;
 	return (queryErrorMessage)?YES:NO;
 }
@@ -792,7 +795,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (NSString *)lastErrorMessage
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	if (handedBack) return handedBack.errorMessage;
 	if (!queryErrorMessage) return nil;
 	return [NSString stringWithString:queryErrorMessage];
@@ -800,7 +803,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 - (NSString *)lastSqlstate
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	if (handedBack) return handedBack.sqlState;
 	if(!querySqlstate) return nil;
 	return [NSString stringWithString:querySqlstate];
@@ -812,7 +815,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (NSUInteger)lastErrorID
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	if (handedBack) return handedBack.errorID;
 	return queryErrorID;
 }
@@ -885,7 +888,22 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	                                              sqlState:querySqlstate
 	                                          affectedRows:lastQueryAffectedRowCount
 	                                              insertID:lastQueryInsertID
-	                                          wasCancelled:lastQueryWasCancelled];
+	                                          wasCancelled:lastQueryWasCancelled
+	                                       statementNumber:statementNumber];
+}
+
+/**
+ * The report this thread reads the last statement from: one handed back to it, about a statement
+ * the connection has since moved on from - or nil, for the connection's own fields. Those fields
+ * describe the statement handed back until a later one starts, and carry what that statement
+ * reported after its report was taken: the error or stop of a streaming download, a failed
+ * connection check. A report about no statement that ran is read whatever the fields say.
+ */
+- (SAStatementReport *)_reportThisThreadReads
+{
+	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	if (handedBack && handedBack.statementNumber != statementNumber) return handedBack;
+	return nil;
 }
 
 /**

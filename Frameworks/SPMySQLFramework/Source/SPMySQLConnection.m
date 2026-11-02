@@ -115,7 +115,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 - (BOOL)lastQueryWasCancelled
 {
-	SAStatementReport *handedBack = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	if (handedBack) return handedBack.wasCancelled;
 	@synchronized (self) {
 		return lastQueryWasCancelled;

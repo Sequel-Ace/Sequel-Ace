@@ -94,6 +94,9 @@ enum SADialogAuthPrompt {
     /// connection's own thread while the main thread waits for that reconnect from inside a
     /// block on the main queue - which runs one block at a time, so `DispatchQueue.main.sync`
     /// would never return. The main run loop keeps turning during such a wait.
+    ///
+    /// Work the user stopped waiting for asks nothing: its thread was cancelled, and the session
+    /// its handshake still brings up is retired unused, so a question from it would be stale.
     /// - Parameters:
     ///   - prompt: The server's question.
     ///   - secure: Whether the answer is a password.
@@ -106,9 +109,18 @@ enum SADialogAuthPrompt {
                     presenter: (_ message: String, _ secure: Bool, _ warning: Bool) -> String? = present) -> String? {
         let message = message(for: prompt, secure: secure, isEncrypted: isEncrypted, isServerVerified: isServerVerified)
         let warning = !isEncrypted || !isServerVerified
+        // The asking thread, which the block below does not run on; the stop can land while the
+        // question is on its way to the main thread, so it is checked again there.
+        let asker = Thread.current
+        guard !asker.isCancelled else {
+            return nil
+        }
         var answer: String?
         withoutActuallyEscaping(presenter) { presenter in
             SAMainRunLoop.runAndWait {
+                guard !asker.isCancelled else {
+                    return
+                }
                 answer = presenter(message, secure, warning)
             }
         }

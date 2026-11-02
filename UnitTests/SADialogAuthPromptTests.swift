@@ -162,6 +162,35 @@ final class SADialogAuthPromptTests: XCTestCase {
         XCTAssertTrue(askedOnMainThread)
     }
 
+    /// Work the user stopped waiting for asks nothing: its thread was cancelled, and the session
+    /// its handshake still brings up is retired unused.
+    func testAQuestionFromAThreadGivenUpOnIsNotAsked() {
+        let lock = NSLock()
+        var presented = false
+        var answer: String? = "not yet answered"
+        let returned = expectation(description: "the cancelled thread returned")
+
+        Thread.detachNewThread {
+            Thread.current.cancel()
+            let theAnswer = SADialogAuthPrompt.ask(prompt: "PIN:", secure: true, isEncrypted: true, isServerVerified: true) { _, _, _ in
+                lock.lock()
+                presented = true
+                lock.unlock()
+                return "1234"
+            }
+            lock.lock()
+            answer = theAnswer
+            lock.unlock()
+            returned.fulfill()
+        }
+
+        wait(for: [returned], timeout: 5)
+        lock.lock()
+        defer { lock.unlock() }
+        XCTAssertFalse(presented)
+        XCTAssertNil(answer)
+    }
+
     // MARK: - Handing the answer to the plugin
 
     func testAnswerIsCopiedAsANulTerminatedCString() {

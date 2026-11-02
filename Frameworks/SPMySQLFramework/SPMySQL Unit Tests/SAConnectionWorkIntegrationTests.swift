@@ -46,19 +46,23 @@ private final class SAWaitingDelegate: NSObject {
     }
 }
 
-/// A connection whose report capture on a background thread can be held still - between the
+/// A connection whose report capture on one named thread can be held still - between the
 /// statement writing its report on the connection and taking it for its caller - while the main
-/// thread's caller returns and reads.
+/// thread's caller returns and reads. Only that thread is held: the main caller's statement runs
+/// on the connection's worker, which is not the main thread either, and passes through.
 private final class SAReportCaptureHoldingConnection: SPMySQLConnection {
     let backgroundStatementWroteItsReport = DispatchSemaphore(value: 0)
     let letTheBackgroundStatementCapture = DispatchSemaphore(value: 0)
-    var holdsTheNextBackgroundCapture = false
+    /// The thread whose next report capture is held.
+    var heldThread: Thread?
+    /// How the hold ended: let go by the main caller, or timed out.
+    var holdEnded: DispatchTimeoutResult?
 
     @objc(_reportOfLastStatement) func reportOfLastStatementHeld() -> SAStatementReport {
-        if !Thread.isMainThread, holdsTheNextBackgroundCapture {
-            holdsTheNextBackgroundCapture = false
+        if let heldThread, Thread.current === heldThread {
+            self.heldThread = nil
             backgroundStatementWroteItsReport.signal()
-            _ = letTheBackgroundStatementCapture.wait(timeout: .now() + 5)
+            holdEnded = letTheBackgroundStatementCapture.wait(timeout: .now() + 5)
         }
         return SAStatementReport(errorMessage: lastErrorMessageOnTheConnection(), errorID: lastErrorIDOnTheConnection(),
                                  sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
@@ -278,17 +282,18 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         /// Runs the main thread's statement over a background statement held between writing and
         /// taking its report, and reports what each caller read.
         func readings(mainStatement: String, backgroundStatement: String) -> (mainErrored: Bool, mainErrorID: UInt, backgroundErrored: Bool?, backgroundErrorID: UInt?) {
-            connection.holdsTheNextBackgroundCapture = true
+            connection.holdEnded = nil
             let backgroundReturned = expectation(description: "the background statement's caller read its report")
             var backgroundErrored: Bool?
             var backgroundErrorID: UInt?
             // The background statement starts once the main statement's work is done and the
-            // session free, and is held before it takes its report.
+            // session free, and is held before it takes its report: its own thread is the one held.
             delegate.onceWhileWaiting = { mainWorkIsFinished in
                 Thread.detachNewThread {
                     while !mainWorkIsFinished() {
                         usleep(1_000)
                     }
+                    connection.heldThread = Thread.current
                     _ = connection.queryString(backgroundStatement)
                     backgroundErrored = connection.queryErrored()
                     backgroundErrorID = connection.lastErrorID()
@@ -305,6 +310,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
 
             connection.letTheBackgroundStatementCapture.signal()
             wait(for: [backgroundReturned], timeout: 5)
+            XCTAssertEqual(connection.holdEnded, .success, "the background statement was held until the main caller had read")
             return (mainErrored, mainErrorID, backgroundErrored, backgroundErrorID)
         }
 
@@ -317,6 +323,115 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertTrue(mainFails.mainErrored, "the main caller reads its failure")
         XCTAssertEqual(mainFails.mainErrorID, 1242, "subquery returns more than 1 row")
         XCTAssertEqual(mainFails.backgroundErrored, false, "the background caller reads its success")
+    }
+
+    // MARK: - What a statement reports after its report was taken
+
+    /// Gives the connection a table of 900 rows that a streaming statement reads slowly - one row
+    /// every 10 ms, each wider than the server's network buffer so that it is sent as soon as it is
+    /// produced rather than with the rest at the end - so that something can land while the rows
+    /// are still being read. Temporary, so it goes with the session.
+    private func prepareSlowRows(on connection: SPMySQLConnection) throws {
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_slow_rows (i INT NOT NULL)")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        _ = connection.queryString("INSERT INTO mysql.sa_slow_rows WITH RECURSIVE r AS (SELECT 1 AS i UNION ALL SELECT i + 1 FROM r WHERE i < 900) SELECT i FROM r")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 900)
+    }
+
+    /// The streaming statement over those rows.
+    private let slowRowsStatement = "SELECT i, REPEAT('x', 20000) AS padding, SLEEP(0.01) FROM mysql.sa_slow_rows"
+
+    /// A streaming statement's report is taken when the statement returns its result, before its
+    /// rows are read. A stop during the download is written on the connection afterwards - and the
+    /// caller, reading on its own thread with the statement's report handed back to it, reads the
+    /// stop: the connection has not moved on to another statement, so its own fields are the
+    /// caller's. The caller is a task thread here, like the exporters, which runs its statement
+    /// where it asks for it.
+    func testAStopDuringAStreamingDownloadIsReadByTheStatementsCaller() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        try prepareSlowRows(on: connection)
+
+        let tenRowsRead = DispatchSemaphore(value: 0)
+        let finished = expectation(description: "the rows were read to the end")
+        var rows = 0
+        var wasCancelled = false
+        var errored = false
+        var errorID: UInt = 0
+        Thread.detachNewThread {
+            if let result = connection.streamingQueryString(self.slowRowsStatement, useLowMemoryBlockingStreaming: true) as? SPMySQLStreamingResult {
+                while result.getRowAsArray() != nil {
+                    rows += 1
+                    if rows == 10 {
+                        tenRowsRead.signal()
+                    }
+                }
+            } else {
+                tenRowsRead.signal()
+            }
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            finished.fulfill()
+        }
+        XCTAssertEqual(tenRowsRead.wait(timeout: .now() + 10), .success, "rows are being read")
+        connection.cancelCurrentQuery()
+        wait(for: [finished], timeout: 20)
+
+        XCTAssertGreaterThanOrEqual(rows, 10)
+        XCTAssertLessThan(rows, 900, "the download was stopped")
+        XCTAssertTrue(wasCancelled, "the caller reads the stop")
+        XCTAssertTrue(errored)
+        XCTAssertEqual(errorID, 1317, "query execution was interrupted")
+    }
+
+    /// A connection lost during a streaming download - the SQL export's case - is read by the
+    /// statement's caller the same way, as an error that is not a stop.
+    func testALostConnectionDuringAStreamingDownloadIsReadByTheStatementsCaller() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        let serverThread = connection.mysqlConnectionThreadId
+        try prepareSlowRows(on: connection)
+
+        let tenRowsRead = DispatchSemaphore(value: 0)
+        let finished = expectation(description: "the rows were read to the end")
+        var rows = 0
+        var wasCancelled = false
+        var errored = false
+        var errorID: UInt = 0
+        Thread.detachNewThread {
+            if let result = connection.streamingQueryString(self.slowRowsStatement, useLowMemoryBlockingStreaming: true) as? SPMySQLStreamingResult {
+                while result.getRowAsArray() != nil {
+                    rows += 1
+                    if rows == 10 {
+                        tenRowsRead.signal()
+                    }
+                }
+            } else {
+                tenRowsRead.signal()
+            }
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            finished.fulfill()
+        }
+        XCTAssertEqual(tenRowsRead.wait(timeout: .now() + 10), .success, "rows are being read")
+        _ = observer.queryString("KILL \(serverThread)")
+        XCTAssertFalse(observer.queryErrored(), "the connection was killed: \(observer.lastErrorMessage() ?? "")")
+        wait(for: [finished], timeout: 20)
+
+        XCTAssertGreaterThanOrEqual(rows, 10)
+        XCTAssertLessThan(rows, 900, "the download ended early")
+        XCTAssertTrue(errored, "the caller reads the lost connection")
+        XCTAssertEqual(errorID, 2013, "lost connection during query")
+        XCTAssertFalse(wasCancelled, "a lost connection is not a stop")
     }
 
     // MARK: - The local server

@@ -18,30 +18,30 @@ import Foundation
 /// handed back to it instead: by the time it reads, another statement can have run on the
 /// connection and written its own report there, from an event the wait delivered or from another
 /// thread. A report handed back belongs to the thread it was handed to, and to the connection it
-/// was about; it stands until that thread's next statement on the connection, or the next turn
-/// of its run loop, whichever comes first - the caller reads it straight after the call that
-/// handed it back - and nothing of it is ever written over the report of a statement running.
-/// A thread reads the connection's own report - the last statement's, whichever thread ran it -
-/// only when nothing is handed back to it: a thread that ran a statement of its own on the
-/// connection earlier in the same turn reads that statement's report, not another thread's.
+/// was about; it stands until that thread's next statement on the connection or, on the main
+/// thread, the next turn of its run loop, whichever comes first - the caller reads it straight
+/// after the call that handed it back - and nothing of it is ever written over the report of a
+/// statement running. A thread reads the connection's own report - the last statement's,
+/// whichever thread ran it - when nothing is handed back to it, and also while those fields still
+/// describe the statement handed back, that is until a later statement starts on the connection
+/// (``statementNumber``): what a statement reports after its report was taken - the error or stop
+/// of a streaming download, a failed connection check - reaches its caller that way.
 @objc(SAStatementReport)
 public final class SAStatementReport: NSObject {
-
-    /// The reports handed back to one thread, by the connection they are about.
-    private final class SAHandedBackReports {
-        var byConnection: [ObjectIdentifier: SAStatementReport] = [:]
-    }
 
     /// The key under which a thread keeps the reports handed back to it.
     private static let handedBackKey = "SAStatementReport.handedBack"
 
-    /// The reports handed back to the current thread.
-    private static var handedBackToThisThread: SAHandedBackReports {
+    /// The reports handed back to the current thread, by the connection they are about - held by
+    /// the connection itself, weakly, not by its address: a report about a connection that is
+    /// gone is not read for another that comes to be where it was.
+    private static var handedBackToThisThread: NSMapTable<AnyObject, SAStatementReport> {
         let dictionary = Thread.current.threadDictionary
-        if let reports = dictionary[handedBackKey] as? SAHandedBackReports {
+        if let reports = dictionary[handedBackKey] as? NSMapTable<AnyObject, SAStatementReport> {
             return reports
         }
-        let reports = SAHandedBackReports()
+        let reports = NSMapTable<AnyObject, SAStatementReport>(keyOptions: [.weakMemory, .objectPointerPersonality],
+                                                                valueOptions: [.strongMemory, .objectPersonality])
         dictionary[handedBackKey] = reports
         return reports
     }
@@ -54,15 +54,20 @@ public final class SAStatementReport: NSObject {
     @objc(handBack:for:)
     public static func handBack(_ report: SAStatementReport, for connection: AnyObject) {
         let reports = handedBackToThisThread
-        let key = ObjectIdentifier(connection)
-        reports.byConnection[key] = report
+        reports.setObject(report, forKey: connection)
         // Read straight after the call that handed it back, within the same turn of the run loop;
-        // what this thread reads in a later turn - about a statement another thread ran - is the
-        // connection's own report again. In the common modes, so that a turn spent in a modal
-        // session or an event-tracking loop ends it too.
-        RunLoop.current.perform(inModes: [.common]) {
-            if reports.byConnection[key] === report {
-                reports.byConnection[key] = nil
+        // what the main thread reads in a later turn - about a statement another thread ran - is
+        // the connection's own report again. In the common modes, so that a turn spent in a modal
+        // session or an event-tracking loop ends it too. On the main thread only, whose run loop
+        // always turns: queued on a thread that never turns its own - a task thread, a dispatch
+        // worker - the block would stay, and keep the report, for every statement the thread
+        // runs. Such a thread keeps the report until its next statement on the connection.
+        guard Thread.isMainThread else {
+            return
+        }
+        RunLoop.current.perform(inModes: [.common]) { [weak connection] in
+            if let connection, reports.object(forKey: connection) === report {
+                reports.removeObject(forKey: connection)
             }
         }
     }
@@ -72,7 +77,7 @@ public final class SAStatementReport: NSObject {
     /// - Parameter connection: The connection.
     @objc(forgetReportHandedBackToThisThreadFor:)
     public static func forgetReportHandedBackToThisThread(for connection: AnyObject) {
-        handedBackToThisThread.byConnection[ObjectIdentifier(connection)] = nil
+        handedBackToThisThread.removeObject(forKey: connection)
     }
 
     /// The report handed back to the current thread about this connection, if one stands.
@@ -80,7 +85,7 @@ public final class SAStatementReport: NSObject {
     /// - Returns: The report, or nil when the thread reads the connection's own.
     @objc(reportHandedBackToThisThreadFor:)
     public static func reportHandedBackToThisThread(for connection: AnyObject) -> SAStatementReport? {
-        handedBackToThisThread.byConnection[ObjectIdentifier(connection)]
+        handedBackToThisThread.object(forKey: connection)
     }
 
     /// The error message, or nil when the statement did not fail.
@@ -101,7 +106,38 @@ public final class SAStatementReport: NSObject {
     /// Whether the statement was cancelled.
     @objc public let wasCancelled: Bool
 
-    /// Keeps what the connection reports now.
+    /// The number of the statement the report is about, as the connection counts the statements
+    /// that start on it; ``noStatement`` for a report about no statement that ran - a refusal, a
+    /// stop before the send. While the connection's own fields are of this number they describe
+    /// the same statement, and the thread reads them rather than the report.
+    @objc public let statementNumber: UInt64
+
+    /// The statement number of a report about no statement that ran.
+    public static let noStatement: UInt64 = .max
+
+    /// Keeps what the connection reports now about the statement of a number.
+    /// - Parameters:
+    ///   - errorMessage: The error message, or nil.
+    ///   - errorID: The error number.
+    ///   - sqlState: The SQL state, or nil.
+    ///   - affectedRows: The rows affected.
+    ///   - insertID: The insert ID carried.
+    ///   - wasCancelled: Whether the statement was cancelled.
+    ///   - statementNumber: The statement's number on the connection.
+    @objc(initWithErrorMessage:errorID:sqlState:affectedRows:insertID:wasCancelled:statementNumber:)
+    public init(errorMessage: String?, errorID: UInt, sqlState: String?, affectedRows: UInt64, insertID: UInt64, wasCancelled: Bool,
+                statementNumber: UInt64) {
+        self.errorMessage = errorMessage
+        self.errorID = errorID
+        self.sqlState = sqlState
+        self.affectedRows = affectedRows
+        self.insertID = insertID
+        self.wasCancelled = wasCancelled
+        self.statementNumber = statementNumber
+        super.init()
+    }
+
+    /// Keeps what is reported about no statement that ran: a refusal, or a stop before the send.
     /// - Parameters:
     ///   - errorMessage: The error message, or nil.
     ///   - errorID: The error number.
@@ -110,14 +146,9 @@ public final class SAStatementReport: NSObject {
     ///   - insertID: The insert ID carried.
     ///   - wasCancelled: Whether the statement was cancelled.
     @objc(initWithErrorMessage:errorID:sqlState:affectedRows:insertID:wasCancelled:)
-    public init(errorMessage: String?, errorID: UInt, sqlState: String?, affectedRows: UInt64, insertID: UInt64, wasCancelled: Bool) {
-        self.errorMessage = errorMessage
-        self.errorID = errorID
-        self.sqlState = sqlState
-        self.affectedRows = affectedRows
-        self.insertID = insertID
-        self.wasCancelled = wasCancelled
-        super.init()
+    public convenience init(errorMessage: String?, errorID: UInt, sqlState: String?, affectedRows: UInt64, insertID: UInt64, wasCancelled: Bool) {
+        self.init(errorMessage: errorMessage, errorID: errorID, sqlState: sqlState, affectedRows: affectedRows, insertID: insertID,
+                  wasCancelled: wasCancelled, statementNumber: Self.noStatement)
     }
 }
 
