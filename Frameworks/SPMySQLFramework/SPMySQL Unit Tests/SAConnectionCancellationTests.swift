@@ -353,15 +353,20 @@ final class SAConnectionCancellationTests: XCTestCase {
         var theWorkerWasLetGoWhenMarked: Bool?
         var theWorkerWasLetGoWhenTheStopReturned: Bool?
         var theStopReturnedBeforeTheKillWasAnswered: Bool?
+        let theWorkerBeganItsQuery = DispatchSemaphore(value: 0)
 
         let outcome = coordinator.run({ [host] in
             // The work stands for a statement whose native query the worker is running on the session.
             host.sessionAccess.beginNativeQuery()
+            theWorkerBeganItsQuery.signal()
             while !Thread.current.isCancelled {
                 usleep(1_000)
             }
             return nil
         }, whenSlow: { _ in
+            // The stop comes once the query is running, as the user's does: a sheet is only up for
+            // work that has been going on for a while.
+            XCTAssertEqual(theWorkerBeganItsQuery.wait(timeout: .now() + 2), .success)
             theWorkerWasStillThereBeforeTheStop = coordinator.currentWorkerThread != nil
             host.whenMarked = { theWorkerWasLetGoWhenMarked = coordinator.currentWorkerThread == nil }
             let stopStarted = Date()

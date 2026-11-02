@@ -369,17 +369,19 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     // The statement takes its report - error, rows affected, cancelled or not - back with its
     // result: while the main thread waits for it, an event can run a statement of its own on this
     // connection, whose report would otherwise stand here when this one returns to its caller.
+    // The report is taken while the session is still held: the lease lets go of it as the lease
+    // call returns, and a statement another thread has waiting takes it from there.
     SAStatementRun *theRun = [self _runWorkKeepingInterfaceAlive:^id{
-        id theWorkResult = [self.sessionAccess performQuery:^id {
-            return [self _queryString:theQueryString
-                       usingEncoding:theEncoding
-                      withResultType:theReturnType
-                   assertingDatabase:databaseName
-           databaseContextIsRequired:databaseContextIsRequired];
+        return [self.sessionAccess performQuery:^id {
+            id theWorkResult = [self _queryString:theQueryString
+                                   usingEncoding:theEncoding
+                                  withResultType:theReturnType
+                               assertingDatabase:databaseName
+                       databaseContextIsRequired:databaseContextIsRequired];
+            return [[SAStatementRun alloc] initWithResult:theWorkResult report:[self _reportOfLastStatement]];
         } recover:^BOOL {
             return [self _reconnectAllowingRetries:YES];
         }];
-        return [[SAStatementRun alloc] initWithResult:theWorkResult report:[self _reportOfLastStatement]];
     }];
     // No run means the statement was refused or given up on, and the connection records that itself.
     id theResult = nil;

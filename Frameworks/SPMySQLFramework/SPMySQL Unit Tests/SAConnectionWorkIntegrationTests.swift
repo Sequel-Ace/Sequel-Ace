@@ -219,6 +219,30 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertFalse(connection.lastQueryWasCancelled)
     }
 
+    /// The other way round as well: a waited-for statement that fails keeps its failure for its
+    /// caller through a statement that succeeded during the wait - which is the case the content
+    /// view's row deletion reads, from `queryErrored` alone.
+    func testAFailedStatementKeepsItsReportThroughASuccessfulNestedOne() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+
+        var innerAnswer: String?
+        delegate.onceWhileWaiting = { _ in
+            innerAnswer = connection.getFirstField(fromQuery: "SELECT 'inner'") as? String
+        }
+
+        // Slow, then failing: the sleep comes first in the select list, the subquery that returns
+        // two rows after it.
+        let outerResult = connection.queryString("SELECT SLEEP(0.6), (SELECT 1 UNION SELECT 2)")
+
+        XCTAssertGreaterThanOrEqual(delegate.timesAskedToWait, 1, "the failing statement was waited for")
+        XCTAssertEqual(innerAnswer, "inner", "the statement that came in during the wait answered")
+        XCTAssertNil(outerResult)
+        XCTAssertTrue(connection.queryErrored(), "the waited-for statement's caller reads its own failure")
+        XCTAssertEqual(connection.lastErrorID(), 1242, "subquery returns more than 1 row")
+    }
+
     /// Work that comes in during the wait - an event that queries the same connection on the main
     /// thread - runs after the work being waited for, and both answer.
     func testWorkThatComesInDuringTheWaitRunsAfterTheWorkBeingWaitedFor() throws {
