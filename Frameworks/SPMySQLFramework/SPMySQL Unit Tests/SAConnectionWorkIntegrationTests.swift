@@ -71,10 +71,10 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
     }
 
     /// Whether a statement with this text is running on the server, as a second connection sees it.
-    private func serverRunsAStatementContaining(_ text: String, seenFrom observer: SPMySQLConnection) -> Bool {
-        guard let processes = observer.queryString("SHOW FULL PROCESSLIST") else {
-            return false
-        }
+    /// A process list that cannot be read is a failed observation, not an absent statement.
+    private func serverRunsAStatementContaining(_ text: String, seenFrom observer: SPMySQLConnection) throws -> Bool {
+        let processes = try XCTUnwrap(observer.queryString("SHOW FULL PROCESSLIST"),
+                                      "the process list could not be read: \(observer.lastErrorMessage() ?? "no error")")
         for case let row as [Any] in processes.getAllRows() {
             for case let column as String in row where column.contains(text) {
                 return true
@@ -148,13 +148,75 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
 
         // The statement itself is stopped on the server, by the request that went out behind the caller.
         let giveUp = Date(timeIntervalSinceNow: 5)
-        while serverRunsAStatementContaining("'stopped'", seenFrom: observer) && Date() < giveUp {
+        while try serverRunsAStatementContaining("'stopped'", seenFrom: observer) && Date() < giveUp {
             RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
         }
-        XCTAssertFalse(serverRunsAStatementContaining("'stopped'", seenFrom: observer), "the SLEEP was killed")
+        XCTAssertFalse(try serverRunsAStatementContaining("'stopped'", seenFrom: observer), "the SLEEP was killed")
 
         // And the connection answers the next statement, on this session or a replacement.
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 'again'") as? String, "again")
+    }
+
+    /// Stopping the wait for work that was queued behind another thread's statement stops that
+    /// work alone: the other thread's statement runs to its end and answers, unkilled, and the
+    /// operations the stop was not about keep their turn.
+    func testStoppingTheWaitLeavesAnotherThreadsStatementAlone() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+
+        // A statement of another thread's holds the session - a table load, say.
+        let otherStarted = DispatchSemaphore(value: 0)
+        let otherAnswered = expectation(description: "the other thread's statement answered")
+        var otherAnswer: String?
+        var otherErrored: Bool?
+        var otherWasCancelled: Bool?
+        Thread.detachNewThread {
+            otherStarted.signal()
+            otherAnswer = connection.getFirstField(fromQuery: "SELECT SLEEP(1.5) + 0, 'other'") as? String
+            otherErrored = connection.queryErrored()
+            otherWasCancelled = connection.lastQueryWasCancelled
+            otherAnswered.fulfill()
+        }
+        XCTAssertEqual(otherStarted.wait(timeout: .now() + 2), .success)
+        Thread.sleep(forTimeInterval: 0.2)
+
+        // The main thread's statement queues behind it; the user stops waiting for it at once.
+        delegate.onceWhileWaiting = { _ in connection.cancelCheck() }
+        let started = Date()
+        let mine = connection.queryString("SELECT 'mine'")
+        let elapsed = Date().timeIntervalSince(started)
+
+        XCTAssertNil(mine, "the stopped statement answers nothing")
+        XCTAssertLessThan(elapsed, 1.2, "and the caller was told at once, not after the other statement")
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+
+        wait(for: [otherAnswered], timeout: 5)
+        XCTAssertEqual(otherAnswer, "0", "the other thread's statement ran to its end")
+        XCTAssertEqual(otherErrored, false, "unkilled")
+        XCTAssertEqual(otherWasCancelled, false, "and not reported as stopped")
+    }
+
+    /// A statement that comes in during the wait leaves the waited-for statement's report alone:
+    /// each statement's caller reads what that statement reported, not what the other did.
+    func testWorkThatComesInDuringTheWaitLeavesTheOuterStatementsReportAlone() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+
+        var innerFailed: Bool?
+        delegate.onceWhileWaiting = { _ in
+            _ = connection.queryString("SELECT * FROM no_such_table_for_the_wait")
+            innerFailed = connection.queryErrored()
+        }
+
+        let outerAnswer = connection.getFirstField(fromQuery: "SELECT SLEEP(0.6) + 0, 'outer'") as? String
+
+        XCTAssertEqual(innerFailed, true, "the statement that came in during the wait failed, and said so to its caller")
+        XCTAssertEqual(outerAnswer, "0", "the waited-for statement answered")
+        XCTAssertFalse(connection.queryErrored(), "and its caller reads its own report, not the failed one's")
+        XCTAssertNil(connection.lastErrorMessage())
+        XCTAssertFalse(connection.lastQueryWasCancelled)
     }
 
     /// Work that comes in during the wait - an event that queries the same connection on the main

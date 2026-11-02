@@ -67,8 +67,11 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
     // MARK: - The worker and the wait
 
-    /// Quick work is never handed to the interface.
+    /// Quick work is never handed to the interface. Quick is measured against the coordinator's
+    /// quiet wait, which is given room here: on a loaded machine starting the worker thread alone
+    /// can take longer than the default, and the test is about the rule, not the machine.
     func testQuickWorkIsNeverHandedToTheInterface() {
+        coordinator.quietWait = 5
         var interfaceWasAsked = false
         let outcome = run({ "done" }, whenSlow: { _ in interfaceWasAsked = true })
 

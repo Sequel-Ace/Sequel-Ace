@@ -115,8 +115,12 @@ private final class SAConnectionWorkItem: NSObject {
 @objc(SAConnectionWorkCoordinator)
 public final class SAConnectionWorkCoordinator: NSObject {
 
-    /// How long work may take before the interface is told about it, in seconds.
-    public static let quietWait: TimeInterval = 0.15
+    /// How long work may take before the interface is told about it, in seconds, unless a
+    /// coordinator is given another quiet wait.
+    public static let defaultQuietWait: TimeInterval = 0.15
+
+    /// How long this coordinator's work may take before the interface is told about it, in seconds.
+    @objc public var quietWait: TimeInterval = SAConnectionWorkCoordinator.defaultQuietWait
 
     /// How long the worker's run loop waits for the next piece of work before looking around, in seconds.
     private static let workerIdleInterval: TimeInterval = 1
@@ -255,7 +259,7 @@ public final class SAConnectionWorkCoordinator: NSObject {
 
         perform(#selector(runWorkItem(_:)), on: startedWorkerThread(), with: item, waitUntilDone: false)
 
-        if workFinished.wait(timeout: .now() + Self.quietWait) == .success {
+        if workFinished.wait(timeout: .now() + quietWait) == .success {
             outcome.finished = true
             return outcome
         }

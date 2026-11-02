@@ -37,7 +37,7 @@
 #import "Locking.h"
 #import "Conversion.h"
 
-@class SAConnectionSessionAccess, SAConnectionSetupDeadline;
+@class SAConnectionSessionAccess, SAConnectionSetupDeadline, SAStatementReport;
 
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
@@ -143,6 +143,10 @@
 
 /** Asks the server over a second connection to kill the query in this server session; whether it accepted. */
 - (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
+/** What the last statement reported - error, rows affected, cancelled or not - as the connection keeps it. */
+- (SAStatementReport *)_reportOfLastStatement;
+/** Puts a statement's report back on the connection, for that statement's caller to read. */
+- (void)_restoreReportOfLastStatement:(SAStatementReport *)report;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding

@@ -366,8 +366,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     // runs where it was asked for. Either way the result passes the refusal check below - the
     // hand-off can be refused too, and a statement turned away there has to report itself like
     // one the lease turned away.
-    id theResult = [self _runWorkKeepingInterfaceAlive:^id{
-        return [self.sessionAccess performQuery:^id {
+    // The statement takes its report - error, rows affected, cancelled or not - back with its
+    // result: while the main thread waits for it, an event can run a statement of its own on this
+    // connection, whose report would otherwise stand here when this one returns to its caller.
+    SAStatementRun *theRun = [self _runWorkKeepingInterfaceAlive:^id{
+        id theWorkResult = [self.sessionAccess performQuery:^id {
             return [self _queryString:theQueryString
                        usingEncoding:theEncoding
                       withResultType:theReturnType
@@ -376,7 +379,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
         } recover:^BOOL {
             return [self _reconnectAllowingRetries:YES];
         }];
+        return [[SAStatementRun alloc] initWithResult:theWorkResult report:[self _reportOfLastStatement]];
     }];
+    // No run means the statement was refused or given up on, and the connection records that itself.
+    id theResult = nil;
+    if (theRun) {
+        [self _restoreReportOfLastStatement:theRun.report];
+        theResult = theRun.result;
+    }
 
     // A statement that was refused the session never reached the server. Saying so is what
     // keeps it apart from one that ran and changed nothing: callers read the row count and the
@@ -847,6 +857,32 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 #pragma mark Private API
 
 @implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+/**
+ * What the last statement reported, as the connection keeps it for its caller.
+ */
+- (SAStatementReport *)_reportOfLastStatement
+{
+	return [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
+	                                               errorID:queryErrorID
+	                                              sqlState:querySqlstate
+	                                          affectedRows:lastQueryAffectedRowCount
+	                                              insertID:lastQueryInsertID
+	                                          wasCancelled:lastQueryWasCancelled];
+}
+
+/**
+ * Puts a statement's report back on the connection, for the caller of that statement to read.
+ */
+- (void)_restoreReportOfLastStatement:(SAStatementReport *)report
+{
+	queryErrorMessage = report.errorMessage;
+	queryErrorID = report.errorID;
+	querySqlstate = report.sqlState;
+	lastQueryAffectedRowCount = report.affectedRows;
+	lastQueryInsertID = report.insertID;
+	lastQueryWasCancelled = report.wasCancelled;
+}
 
 /**
  * Asks the server over a second connection to kill the query in this server session.

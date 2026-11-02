@@ -37,6 +37,7 @@
 		2395DA45BC7E8989834DB1DA /* SASessionLeaseQuestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */; };
 		4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */; };
 		F045A0DC21B8DB44EDBFEFD1 /* SASessionReplacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = B705C569B40B1DF509014AC9 /* SASessionReplacement.swift */; };
+		C31D6A96E684A76CC849D973 /* SAStatementReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C92006EFD73A64ABE0F5ABD /* SAStatementReport.swift */; };
 		949FCE65A752FCD2A8DBFBA7 /* SAMainRunLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD3B72F0015C11EDE8A7030 /* SAMainRunLoop.swift */; };
 		DDE4C5E6203505380012F369 /* SAConnectionWorkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A312ECF8A26084EA59A01A6 /* SAConnectionWorkCoordinator.swift */; };
 		444079C96AC4FD43045605F3 /* SAByteStringDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */; };
@@ -191,6 +192,7 @@
 /* Begin PBXFileReference section */
 		008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAProxyReconnectCoordinator.swift; path = Source/SAProxyReconnectCoordinator.swift; sourceTree = "<group>"; };
 		B705C569B40B1DF509014AC9 /* SASessionReplacement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SASessionReplacement.swift; path = Source/SASessionReplacement.swift; sourceTree = "<group>"; };
+		3C92006EFD73A64ABE0F5ABD /* SAStatementReport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAStatementReport.swift; path = Source/SAStatementReport.swift; sourceTree = "<group>"; };
 		FAD3B72F0015C11EDE8A7030 /* SAMainRunLoop.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAMainRunLoop.swift; path = Source/SAMainRunLoop.swift; sourceTree = "<group>"; };
 		8A312ECF8A26084EA59A01A6 /* SAConnectionWorkCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionWorkCoordinator.swift; path = Source/SAConnectionWorkCoordinator.swift; sourceTree = "<group>"; };
 		0867D69BFE84028FC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
@@ -454,6 +456,7 @@
 				1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */,
 				008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */,
 				B705C569B40B1DF509014AC9 /* SASessionReplacement.swift */,
+				3C92006EFD73A64ABE0F5ABD /* SAStatementReport.swift */,
 				FAD3B72F0015C11EDE8A7030 /* SAMainRunLoop.swift */,
 				8A312ECF8A26084EA59A01A6 /* SAConnectionWorkCoordinator.swift */,
 				2A77D3202D7F41A00095F55A /* SADialogAuthTransport.swift */,
@@ -960,6 +963,7 @@
 				D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */,
 				4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */,
 				F045A0DC21B8DB44EDBFEFD1 /* SASessionReplacement.swift in Sources */,
+				C31D6A96E684A76CC849D973 /* SAStatementReport.swift in Sources */,
 				949FCE65A752FCD2A8DBFBA7 /* SAMainRunLoop.swift in Sources */,
 				DDE4C5E6203505380012F369 /* SAConnectionWorkCoordinator.swift in Sources */,
 				2A77D3212D7F41A00095F55A /* SADialogAuthTransport.swift in Sources */,
