@@ -121,6 +121,17 @@ typedef struct {
 			goto end_cleanup;
 		}
 
+		// A session that is replaced before its next use is not kept alive either: a ping would
+		// only hold the connection, on a route that may have gone. A marked session that is kept,
+		// though, stays in normal use - the mark does not mean it goes, and one with a transaction
+		// open in it is deliberately kept rather than closed. Leaving that one unpinged is how the
+		// server's interactive_timeout, or a NAT's idle timeout, takes the uncommitted work that
+		// keeping it was for.
+		if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+		                                                 openTransaction:[self sessionHasOpenTransaction]]) {
+			goto end_cleanup;
+		}
+
 		// Otherwise, perform a background ping.
 		BOOL pingResult = [self _pingConnectionUsingLoopDelay:10000];
 		if (pingResult) {
@@ -180,6 +191,17 @@ end_cleanup:
 	//we might find ourselves at the losing end of a contest with -[self _disconnect]
 	if(!mySQLConnection) {
         SPLog(@"!mySQLConnection, calling _unlockConnection, return NO");
+		[self _unlockConnection];
+		return NO;
+	}
+
+	// Asked again with the connection held: a ping that waited behind another, which was cut
+	// off and marked the session, must not speak on it - the answer to that other ping may still
+	// be on its way. The session goes here, under the lock, and this ping reports it as gone; the
+	// next use restores it.
+	if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+	                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
+		[self _closeSessionMarkedForReplacement];
 		[self _unlockConnection];
 		return NO;
 	}
@@ -244,6 +266,17 @@ end_cleanup:
 	// Clean up
 	keepAlivePingThread_t = NULL;
 	pthread_attr_destroy(&attr);
+
+	// A ping cut off before its answer came may still get that answer, and the next statement
+	// would read it as its own. The session is replaced before it is used again; a transaction
+	// lost with it is reported like any other.
+	if ([SAConnectionCancellation replacesSessionAfterPingCutOff:(threadCancelled || keepAliveLastPingBlocked)
+	                                               pingSucceeded:keepAliveLastPingSuccess]) {
+		// Not merely better not reused: the answer to that ping may still arrive, so this session
+		// cannot be spoken on at all and goes even if a transaction is open in it. One word, so no
+		// reader sees the session marked and the reason not yet.
+		[self markSessionReplacement:SASessionReplacementMarkRegardless];
+	}
 
 	// Unlock the connection
 	[self _unlockConnection];
