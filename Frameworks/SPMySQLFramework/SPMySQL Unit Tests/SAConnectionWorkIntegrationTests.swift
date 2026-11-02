@@ -122,6 +122,9 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         let delegate = SAWaitingDelegate()
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
         defer { connection.disconnect() }
+        // The session is set up through the coordinator too; a setup statement that outlasts the quiet
+        // wait on a loaded machine asks the delegate to wait before the test's own statement runs.
+        let waitsDuringConnect = delegate.timesAskedToWait
         XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
         // Quick is measured against the coordinator's quiet wait, given room here: on a loaded
         // machine starting the worker thread alone can take longer than the default.
@@ -129,7 +132,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
 
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 'answered'") as? String, "answered")
 
-        XCTAssertEqual(delegate.timesAskedToWait, 0, "quick work is never handed to the interface")
+        XCTAssertEqual(delegate.timesAskedToWait - waitsDuringConnect, 0, "quick work is never handed to the interface")
         let sentOn = try XCTUnwrap(delegate.statementThreads.last, "the statement was sent")
         XCTAssertFalse(sentOn.isMainThread, "on the connection's own thread")
     }
@@ -139,10 +142,13 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         let delegate = SAWaitingDelegate()
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
         defer { connection.disconnect() }
+        // The session is set up through the coordinator too; a setup statement that outlasts the quiet
+        // wait on a loaded machine asks the delegate to wait before the test's own statement runs.
+        let waitsDuringConnect = delegate.timesAskedToWait
 
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT SLEEP(0.5) + 6") as? String, "6")
 
-        XCTAssertEqual(delegate.timesAskedToWait, 1, "the interface waited for it")
+        XCTAssertEqual(delegate.timesAskedToWait - waitsDuringConnect, 1, "the interface waited for it")
     }
 
     /// A connection check asked for on the main thread runs on the worker too.
@@ -241,6 +247,9 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         let delegate = SAWaitingDelegate()
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
         defer { connection.disconnect() }
+        // The session is set up through the coordinator too; a setup statement that outlasts the quiet
+        // wait on a loaded machine asks the delegate to wait before the test's own statement runs.
+        let waitsDuringConnect = delegate.timesAskedToWait
 
         var innerAnswer: Any?
         var innerErrorID: UInt?
@@ -265,7 +274,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(innerStatementsSent, 0, "nothing of it was sent")
         XCTAssertEqual(outerAnswer, "0", "the work being waited for answered")
         XCTAssertFalse(connection.queryErrored(), "and its caller reads its own report, not the refusal")
-        XCTAssertEqual(delegate.timesAskedToWait, 1)
+        XCTAssertEqual(delegate.timesAskedToWait - waitsDuringConnect, 1)
     }
 
     /// Each caller reads its own statement's report, however the statements of two threads

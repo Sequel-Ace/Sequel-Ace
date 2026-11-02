@@ -103,10 +103,11 @@ enum SADialogAuthPrompt {
     ///   - isEncrypted: Whether the connection is encrypted.
     ///   - isServerVerified: Whether the server's identity was verified.
     ///   - presenter: What shows the question on the main thread; the alert, unless a test
-    ///     stands something in for it.
+    ///     stands something in for it. Escaping: the main run loop can still hold the block that
+    ///     holds it when the asking thread returns.
     /// - Returns: The answer, or nil when the user cancelled.
     static func ask(prompt: String?, secure: Bool, isEncrypted: Bool, isServerVerified: Bool = false,
-                    presenter: (_ message: String, _ secure: Bool, _ warning: Bool) -> String? = present) -> String? {
+                    presenter: @escaping (_ message: String, _ secure: Bool, _ warning: Bool) -> String? = present) -> String? {
         let message = message(for: prompt, secure: secure, isEncrypted: isEncrypted, isServerVerified: isServerVerified)
         let warning = !isEncrypted || !isServerVerified
         // The asking thread, which the block below does not run on; the stop can land while the
@@ -116,13 +117,11 @@ enum SADialogAuthPrompt {
             return nil
         }
         var answer: String?
-        withoutActuallyEscaping(presenter) { presenter in
-            SAMainRunLoop.runAndWait {
-                guard !asker.isCancelled else {
-                    return
-                }
-                answer = presenter(message, secure, warning)
+        SAMainRunLoop.runAndWait {
+            guard !asker.isCancelled else {
+                return
             }
+            answer = presenter(message, secure, warning)
         }
         return answer
     }
