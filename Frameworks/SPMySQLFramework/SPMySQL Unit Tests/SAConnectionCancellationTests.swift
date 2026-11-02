@@ -355,4 +355,13 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.closedSessionHandleIsClosed(readingOrWriting: false, hasTransport: false, hasBuffer: true), "transport gone")
         XCTAssertFalse(SAConnectionCancellation.closedSessionHandleIsClosed(readingOrWriting: false, hasTransport: true, hasBuffer: false), "buffer gone")
     }
+
+    /// Replacing a session marked to go regardless follows a failed check - the ping that was cut
+    /// off - so the reconnect runs on the check's limits. A session marked to go once nothing is
+    /// open in it was not lost to a check, and is replaced on the configured timeout.
+    func testOnlyASessionTheProtocolCannotBeTrustedOnIsReplacedAfterAFailedCheck() {
+        XCTAssertTrue(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .regardless))
+        XCTAssertFalse(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .whenNothingIsOpen))
+        XCTAssertFalse(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .notMarked))
+    }
 }

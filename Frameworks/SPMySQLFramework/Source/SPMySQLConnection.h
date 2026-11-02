@@ -138,6 +138,11 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	// -sessionReplacementMark and -markSessionReplacement:, which read and write it atomically:
 	// the keepalive writes it from its own thread, and escaping reads it without the connection lock.
 	NSInteger sessionReplacement;
+	// Set when the session was lost to a failed check - a keepalive ping cut off before its answer
+	// came - and closed for replacement: whoever restores it reconnects on the check's limits, not
+	// on the configured timeout; a reconnect the user asks for takes the plain form, which does not
+	// read it. Cleared by the next session.
+	BOOL sessionLostAfterFailedCheck;
 
 	// Timeout and keep-alive
 	NSUInteger timeout;

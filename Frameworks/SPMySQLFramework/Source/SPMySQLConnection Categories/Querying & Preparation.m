@@ -841,41 +841,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 @implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
 
 /**
- * Closes a session marked to be replaced, while the connection is held so nothing can use it in
- * between. The next use reconnects and restores the connection's record on the new session.
- */
-- (void)_closeSessionMarkedForReplacement
-{
-	// The lease's own handle goes before the handle it belongs to is released - the contract every
-	// other disconnect here follows. Left behind, it would still name a server session that no
-	// longer exists, and whose number the server is free to give to another client.
-	[self.sessionAccess clearSocket];
-	// A handle a cut-off ping left in the middle of a read is not closed but left behind, as the
-	// connection's disconnect does: closing it has crashed before. The session is gone either way.
-	if (mySQLConnection && [SAConnectionCancellation closedSessionHandleIsClosedWhenReadingOrWriting:(mySQLConnection->net.reading_or_writing != 0)
-	                                                                                      hasTransport:(mySQLConnection->net.vio != NULL)
-	                                                                                         hasBuffer:(mySQLConnection->net.buff != NULL)]) {
-		mysql_close(mySQLConnection);
-	}
-	mySQLConnection = NULL;
-	state = SPMySQLConnectionLostInBackground;
-	// Only the MySQL session goes; a tunnel under it stays as it is, and the reconnect that
-	// follows connects through it rather than waiting for it to go idle, which a connected
-	// tunnel never does on its own.
-	proxyUntouchedBySessionReplacement = (proxy != nil);
-	// What the session reported about its server goes with it, as a connect starts without it:
-	// the version readings answer "no connection" until the next session reports its own,
-	// instead of the closed session's version for a connection that may never come back.
-	serverVariableVersion = nil;
-	serverVersionNumber = 0;
-	// The mark was about this session, which is gone.
-	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
-
-	// Until the next session connects, values follow the record, which its handshake uses.
-	[valueEscaper forgetSession];
-}
-
-/**
  * Asks the server over a second connection to kill the query in this server session.
  * The query cancellation cannot occur on the connection actively running a query, so a
  * connection of its own runs the KILL command. Nothing is marked here: the cancellation logic

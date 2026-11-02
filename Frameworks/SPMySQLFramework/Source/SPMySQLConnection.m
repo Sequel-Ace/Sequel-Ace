@@ -40,7 +40,7 @@
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
-@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost>
+@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost>
 @end
 
 @interface SPMySQLConnection ()
@@ -243,6 +243,119 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (BOOL)sessionReportsOpenTransaction
 {
 	return mySQLConnection != NULL && (mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0;
+}
+
+#pragma mark -
+#pragma mark Session replacement host
+
+/**
+ * Closes a session marked to be replaced, while the connection is held so nothing can use it in
+ * between: SASessionReplacement takes the steps, this connection being its host. The next use
+ * reconnects and restores the connection's record on the new session.
+ */
+- (void)_closeSessionMarkedForReplacement
+{
+	[SASessionReplacement closeMarkedSessionOnHost:self];
+}
+
+/**
+ * Whether a tunnel, or another proxy, carries the connection.
+ */
+- (BOOL)hasProxy
+{
+	return proxy != nil;
+}
+
+/**
+ * Whether the native handle's net layer reports a read or write in progress; NO with no handle.
+ */
+- (BOOL)nativeHandleIsReadingOrWriting
+{
+	return mySQLConnection != NULL && mySQLConnection->net.reading_or_writing != 0;
+}
+
+/**
+ * Whether the native handle still has its transport; NO with no handle.
+ */
+- (BOOL)nativeHandleHasTransport
+{
+	return mySQLConnection != NULL && mySQLConnection->net.vio != NULL;
+}
+
+/**
+ * Whether the native handle still has its net buffer; NO with no handle.
+ */
+- (BOOL)nativeHandleHasBuffer
+{
+	return mySQLConnection != NULL && mySQLConnection->net.buff != NULL;
+}
+
+/**
+ * Retires the lease's own handle on the session's socket.
+ */
+- (void)retireSessionLease
+{
+	[self.sessionAccess clearSocket];
+}
+
+/**
+ * Closes the native handle and forgets it.
+ */
+- (void)closeNativeHandle
+{
+	if (mySQLConnection) mysql_close(mySQLConnection);
+	mySQLConnection = NULL;
+}
+
+/**
+ * Forgets the native handle without closing it - a small leak, as the connection's own disconnect
+ * has always accepted for a handle it must not close.
+ */
+- (void)leaveNativeHandleBehind
+{
+	mySQLConnection = NULL;
+}
+
+/**
+ * Records the session as lost in the background, and whether a failed check lost it.
+ */
+- (void)recordSessionLostAfterFailedCheck:(BOOL)afterFailedCheck
+{
+	state = SPMySQLConnectionLostInBackground;
+	sessionLostAfterFailedCheck = afterFailedCheck;
+}
+
+/**
+ * Records whether the proxy was left as it stands by the replacement.
+ */
+- (void)recordProxyUntouchedBySessionReplacement:(BOOL)untouched
+{
+	proxyUntouchedBySessionReplacement = untouched;
+}
+
+/**
+ * Forgets what the session reported about its server.
+ */
+- (void)forgetServerVersion
+{
+	serverVariableVersion = nil;
+	serverVersionNumber = 0;
+}
+
+/**
+ * Clears the mark.
+ */
+- (void)clearSessionReplacementMark
+{
+	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
+}
+
+/**
+ * Lets values follow the record again, until the next session reports its own character set.
+ */
+- (void)forgetEscapedSession
+{
+	[valueEscaper forgetSession];
 }
 
 - (void)addClientFlags:(SPMySQLClientFlags)opts
@@ -626,6 +739,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 {
     SPLog(@"reconnect");
 	userTriggeredDisconnect = NO;
+	// The user asked for this one, so it is theirs to wait for: the plain form runs on the
+	// configured timeout, whatever lost the session before.
 	return [self _reconnectAllowingRetries:YES];
 }
 
@@ -652,7 +767,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// If the connection has been allowed to drop in the background, restore it if posslbe
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, reconnecting");
-		[self _reconnectAllowingRetries:YES];
+		[self _reconnectAfterSessionLossAllowingRetries:YES];
 	}
 
 	return (state == SPMySQLConnected || state == SPMySQLDisconnecting);
@@ -783,7 +898,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
 			[self _closeSessionMarkedForReplacement];
 			[self _unlockConnection];
-			return [self _reconnectAllowingRetries:YES];
+			return [self _reconnectAfterSessionLossAllowingRetries:YES];
 		}
 		[self _unlockConnection];
 	}
@@ -792,7 +907,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
-		return [self _reconnectAllowingRetries:YES];
+		return [self _reconnectAfterSessionLossAllowingRetries:YES];
 	}
 	
 	// If the connection was recently used, return success - unless its socket
@@ -1043,6 +1158,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 	state = SPMySQLConnected;
 	// A new session is in step with the record it was connected with, and nothing is on its way to it.
 	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
+	// And whatever lost the session before is answered for.
+	sessionLostAfterFailedCheck = NO;
 	// What the new session reports is recorded for the escaper, which escapes from this rather
 	// than from the connection's own handle.
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
@@ -1529,6 +1646,20 @@ asm(".desc ___crashreporter_info__, 0x10");
 }
 
 /**
+ * Reconnects after the session was lost - in the background, or closed for replacement - on the
+ * limits of the check that lost it, when one did. A session lost to a keepalive ping that was cut
+ * off is restored on the failed check's budget, as the check itself restores a session whose ping
+ * failed: whoever uses the connection next is waiting for the interface, and must not wait out
+ * the configured timeout - or, with none configured, wait with no limit at all - before the
+ * question about the lost connection can reach them. A session let go for any other reason is
+ * restored on the configured timeout, as it always was.
+ */
+- (BOOL)_reconnectAfterSessionLossAllowingRetries:(BOOL)canRetry
+{
+	return [self _reconnectAllowingRetries:canRetry afterFailedCheck:sessionLostAfterFailedCheck];
+}
+
+/**
  * Re-establish the connection, on the time budget the attempt is entitled to, under the
  * session's reconnect lease.
  * An attempt that follows a failed connection check runs on the check's limits instead of the
@@ -1818,7 +1949,7 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAfterBackgroundConnectionLoss
 {
-	if (![self _reconnectAllowingRetries:NO]) {
+	if (![self _reconnectAfterSessionLossAllowingRetries:NO]) {
 		state = SPMySQLConnectionLostInBackground;
 	}
 

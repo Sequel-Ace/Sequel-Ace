@@ -61,6 +61,8 @@
 - (SAEscapingSession)sessionForEscaping;
 - (SASessionReplacementMark)sessionReplacementMark;
 - (void)markSessionReplacement:(SASessionReplacementMark)mark;
+/** Closes a session marked to be replaced - SASessionReplacement takes the steps; the connection must be held. The next use reconnects. */
+- (void)_closeSessionMarkedForReplacement;
 
 @end
 
@@ -74,6 +76,8 @@
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
 - (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
+/** Reconnects after the session was lost or closed for replacement, on the limits of the check that lost it when one did. */
+- (BOOL)_reconnectAfterSessionLossAllowingRetries:(BOOL)canRetry;
 - (BOOL)_connectUsingConnectTimeout:(NSUInteger)connectTimeoutOrZero;
 /** Sets the session up once the handshake is through, on a finite budget; whether the session is still up afterwards. */
 - (BOOL)_runSessionSetup;
@@ -133,9 +137,6 @@
 
 /** Asks the server over a second connection to kill the query in this server session; whether it accepted. */
 - (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
-/** Takes the connection for a statement, replacing a session marked to be replaced first; NO if no usable session results. */
-/** Closes a session marked to be replaced; the connection must be held. The next use reconnects. */
-- (void)_closeSessionMarkedForReplacement;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding

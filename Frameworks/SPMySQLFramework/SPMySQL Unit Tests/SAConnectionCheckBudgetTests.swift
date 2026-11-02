@@ -15,6 +15,8 @@ import XCTest
 private final class SAFailedCheckRetryConnection: SPMySQLConnection {
     /// The connect timeout each attempt ran on, in the order the attempts were made.
     var connectTimeouts: [UInt] = []
+    /// How long each attempt was prepared to wait for a route, in the same order.
+    var networkWaits: [Double] = []
 
     @objc(_pingConnectionUsingLoopDelay:timeout:) func failingPing(_ loopDelay: UInt, timeout: UInt) -> Bool {
         false
@@ -31,7 +33,8 @@ private final class SAFailedCheckRetryConnection: SPMySQLConnection {
     }
 
     @objc(_waitForNetworkConnectionWithTimeout:) func waitForNetwork(_ timeout: Double) -> Bool {
-        true
+        networkWaits.append(timeout)
+        return true
     }
 }
 
@@ -55,6 +58,13 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
         XCTAssertEqual(SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: 0), 5)
         XCTAssertEqual(SAConnectionCheckBudget.networkWait(forConfiguredTimeout: 0), 3)
         XCTAssertEqual(SAConnectionCheckBudget.connectTimeout(forConfiguredTimeout: 0), 10)
+    }
+
+    /// A longer configured timeout is capped at the check limits too.
+    func testALongerConfiguredTimeoutIsCappedAtTheCheckLimits() {
+        XCTAssertEqual(SAConnectionCheckBudget.pingTimeout(forConfiguredTimeout: 60), 5)
+        XCTAssertEqual(SAConnectionCheckBudget.networkWait(forConfiguredTimeout: 60), 3)
+        XCTAssertEqual(SAConnectionCheckBudget.connectTimeout(forConfiguredTimeout: 60), 10)
     }
 
     /// An attempt nobody waits for is kept to a second.
@@ -201,6 +211,81 @@ final class SAConnectionCheckBudgetTests: XCTestCase {
             XCTAssertNotEqual(granted, 0, "an attempt of a failed check cannot run without a limit")
             XCTAssertLessThanOrEqual(granted, SAConnectionCheckBudget.connectLimit)
         }
+    }
+
+    /// A session marked to go regardless - a keepalive ping was cut off before its answer came -
+    /// is replaced on the failed check's limits, by the check and by a statement that takes the
+    /// session alike: the user is waiting for the interface, and on a connection with no timeout
+    /// configured the attempt would otherwise have no limit at all. Every retry keeps the limits.
+    func testASessionLostToACutOffPingIsReplacedOnTheChecksLimits() {
+        let uses: [(String, (SPMySQLConnection) -> Void)] = [
+            ("the check", { XCTAssertFalse($0.checkIfNecessary()) }),
+            ("a statement", { XCTAssertNil($0.queryString("SELECT 1")) }),
+        ]
+        for configuredTimeout in [0, 60] as [UInt] {
+            for (path, use) in uses {
+                let connection = SAFailedCheckRetryConnection()
+                connection.useKeepAlive = false
+                connection.timeout = configuredTimeout
+                connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+                connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+                defer {
+                    connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+                    connection.disconnect()
+                }
+
+                use(connection)
+
+                let scenario = "\(path), timeout \(configuredTimeout)"
+                XCTAssertEqual(connection.connectTimeouts.count, 6, "\(scenario): the attempt, and the five the connection decides on")
+                XCTAssertEqual(connection.connectTimeouts, Array(repeating: SAConnectionCheckBudget.connectLimit, count: 6), scenario)
+                XCTAssertEqual(connection.networkWaits, Array(repeating: SAConnectionCheckBudget.networkWaitLimit, count: 6), scenario)
+            }
+        }
+    }
+
+    /// A session marked to go once nothing is open in it was not lost to a check: it is replaced
+    /// on the connection's configured timeout, as any ordinary attempt is.
+    func testASessionLetGoForAnotherReasonIsReplacedOnTheConfiguredTimeout() {
+        for configuredTimeout in [0, 60] as [UInt] {
+            let connection = SAFailedCheckRetryConnection()
+            connection.useKeepAlive = false
+            connection.timeout = configuredTimeout
+            connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+            connection.setValue(SASessionReplacementMark.whenNothingIsOpen.rawValue, forKey: "sessionReplacement")
+            defer {
+                connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+                connection.disconnect()
+            }
+
+            XCTAssertFalse(connection.checkIfNecessary())
+
+            XCTAssertEqual(connection.connectTimeouts.first, 0, "timeout \(configuredTimeout): the configured timeout, which zero stands for")
+            XCTAssertEqual(connection.networkWaits.first, SAConnectionCheckBudget.ordinaryNetworkWait, "timeout \(configuredTimeout)")
+        }
+    }
+
+    /// A reconnect the user asks for is theirs to wait for, and keeps the configured timeout even
+    /// after the session was lost to a failed check: a connection that legitimately needs longer
+    /// could otherwise never come back through that dialog.
+    func testAReconnectTheUserAsksForKeepsTheConfiguredTimeoutAfterASessionWasLost() {
+        let connection = SAFailedCheckRetryConnection()
+        connection.useKeepAlive = false
+        connection.timeout = 60
+        connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+        connection.setValue(SASessionReplacementMark.regardless.rawValue, forKey: "sessionReplacement")
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        XCTAssertFalse(connection.checkIfNecessary())
+        XCTAssertEqual(connection.connectTimeouts.last, SAConnectionCheckBudget.connectLimit, "the check's attempts ran on its limits")
+
+        XCTAssertFalse(connection.reconnect())
+
+        XCTAssertEqual(connection.connectTimeouts.count, 7, "one attempt more, the user's")
+        XCTAssertEqual(connection.connectTimeouts.last, 0, "on the configured timeout, which zero stands for")
+        XCTAssertEqual(connection.networkWaits.last, SAConnectionCheckBudget.ordinaryNetworkWait)
     }
 
     /// Setup has a budget of its own: never shorter than the check's connect limit, a longer

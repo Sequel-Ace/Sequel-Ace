@@ -187,6 +187,21 @@ public final class SAConnectionCancellation: NSObject {
         return pingWasCutOff && !pingSucceeded
     }
 
+    /// Whether replacing a session carrying this mark follows a failed connection check.
+    ///
+    /// A session marked to go regardless of what is open in it went because a keepalive ping was
+    /// cut off before its answer came: a check that failed, on a route that may have gone. The
+    /// reconnect that replaces it is that check's, and runs on the check's limits - the user is
+    /// waiting for the interface, and with no timeout configured the attempt would otherwise have
+    /// no limit at all. A session marked to go once nothing is open in it was not lost to a check,
+    /// and is replaced on the connection's configured timeout, as any ordinary attempt is.
+    /// - Parameter mark: The session's mark, read before it is cleared.
+    /// - Returns: Whether the reconnect that follows runs on the failed check's limits.
+    @objc(replacementFollowsFailedCheckForMark:)
+    public static func replacementFollowsFailedCheck(mark: SASessionReplacementMark) -> Bool {
+        return mark == .regardless
+    }
+
     /// Whether the handle of a session being closed is closed with it, or left behind.
     ///
     /// Closing a handle sends the server a goodbye over it and frees its transport. A handle a
