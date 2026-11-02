@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SAConnectionWorkCoordinator, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
 
 /**
  * How a session is to be replaced before its next use. One word, so that a reader sees the whole
@@ -63,6 +63,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
     __weak NSObject <SPMySQLConnectionDelegate> *delegate;
 	BOOL delegateSupportsWillQueryString;
 	BOOL delegateSupportsConnectionLost;
+	// Whether the delegate shows a wait for connection work and lets the user end it - which is
+	// what makes the connection hand a main thread's work to its worker at all.
+	BOOL delegateSupportsConnectionCheckProgress;
 	BOOL delegateQueryLogging; // Defaults to YES if protocol implemented
 
 	// Basic connection details
@@ -133,6 +136,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	// How a query is stopped: recorded first, the server asked, the socket shut down after a
 	// grace period. The lease keeps the books; this holds the policy.
 	SAConnectionCancellation *connectionCancellation;
+	// Where a main thread's connection work runs, so that the window keeps answering while the
+	// work waits for a server, and the delegate can show the wait and let the user end it.
+	SAConnectionWorkCoordinator *connectionWorkCoordinator;
 	// How the session is to be replaced before its next use - a SASessionReplacementMark: not at
 	// all; once nothing is open in it; or regardless, because a ping cut off before its answer
 	// came may still get that answer, which the next statement would read as its own result. One
@@ -277,6 +283,7 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 - (BOOL)isConnectedViaSSL;
 - (BOOL)checkConnection;
 - (BOOL)checkConnectionIfNecessary;
+- (void)cancelConnectionCheck;
 - (double)timeConnected;
 - (BOOL)userTriggeredDisconnect;
 - (BOOL)isNotMariadb103;

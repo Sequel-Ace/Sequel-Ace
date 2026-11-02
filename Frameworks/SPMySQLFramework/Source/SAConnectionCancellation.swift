@@ -59,6 +59,23 @@ public final class SAConnectionCancellation: NSObject {
         super.init()
     }
 
+    /// Ends the interface's wait for connection work, because the user asked for that, and stops
+    /// the work: the query it may have waiting on the server, or the operation still waiting to
+    /// run one.
+    ///
+    /// The work is given up on first, so the caller that waits for it is told at once and the
+    /// worker's thread is let go; then the server is asked, without waiting for it - the main
+    /// thread is what asks, and reaching the server can take as long as the query itself. A stop
+    /// on work that sent nothing is recorded against the operation that was waiting, so its
+    /// statement is never sent; work that stopped being waited for runs on until the server or a
+    /// timeout answers it, on a thread nothing else waits behind.
+    /// - Parameter coordinator: The coordinator whose work the user stopped waiting for.
+    @objc(userStoppedWaitingForWorkOf:)
+    public func userStoppedWaiting(forWorkOf coordinator: SAConnectionWorkCoordinator) {
+        coordinator.abandonWorkForUserStop()
+        requestCancellation(synchronously: false)
+    }
+
     /// Stops the query the connection is running, or the operation still waiting to run one.
     /// - Parameter synchronously: Whether the request to the server is made before this returns.
     ///   Callers that rely on the request having gone out ask for that; the main thread never

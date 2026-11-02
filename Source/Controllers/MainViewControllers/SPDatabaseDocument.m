@@ -5984,12 +5984,32 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
+ * Invoked when connection work has to wait for a server long enough to be noticed. The work runs
+ * on the connection's own thread; the window waits for it here, in an event loop that keeps it
+ * answering, and offers to stop waiting.
+ */
+- (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished
+{
+    SAConnectionCheckSheet *sheet = [[SAConnectionCheckSheet alloc] init];
+
+    __weak id weakConnection = connection;
+    [sheet waitInWindow:[self parentWindowControllerWindow] untilFinished:isFinished whenCancelled:^{
+        // The user has said they will not wait. That ends this piece of work and stops it.
+        [weakConnection cancelConnectionCheck];
+    }];
+}
+
+/**
  * Invoked when the connection fails and the framework needs to know how to proceed.
  */
 - (SPMySQLConnectionLostDecision)connectionLost:(id)connection
 {
 
     SPLog(@"connectionLost");
+
+    // A window holds one sheet at a time, and this question outranks a note about waiting.
+    NSWindow *questionWindow = [self parentWindowControllerWindow];
+    [SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
 
     SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
 
@@ -6020,6 +6040,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self performSelectorOnMainThread:@selector(closeAndDisconnect) withObject:nil waitUntilDone:YES];
         }
     }
+
+    // Whatever was chosen, the connection carries on working on it, and the wait for that
+    // work can have the window back.
+    [SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
 
     return connectionErrorCode;
 }

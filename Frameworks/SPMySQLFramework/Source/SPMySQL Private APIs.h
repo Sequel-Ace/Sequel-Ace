@@ -63,6 +63,12 @@
 - (void)markSessionReplacement:(SASessionReplacementMark)mark;
 /** Closes a session marked to be replaced - SASessionReplacement takes the steps; the connection must be held. The next use reconnects. */
 - (void)_closeSessionMarkedForReplacement;
+/** Runs connection work off the main thread while the delegate shows the wait; nil if it was refused or the wait ended first. */
+- (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
+/** Runs yes-or-no connection work the same way; NO if the user stopped waiting. */
+- (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
+/** Whether the current thread is the one reconnecting, and so sets up the new session. */
+- (BOOL)_currentThreadIsReconnecting;
 
 @end
 

@@ -63,8 +63,12 @@ private final class SACancellationHost: NSObject, SAConnectionCancellationHost {
         }
     }
 
+    /// What the test wants to look at the moment the query is marked.
+    var whenMarked: (() -> Void)?
+
     func markRunningQueryCancelled() {
         note("marked")
+        whenMarked?()
     }
 }
 
@@ -336,6 +340,43 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .whenNothingIsOpen, sessionHasOpenTransaction: true))
         XCTAssertTrue(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .regardless, sessionHasOpenTransaction: true))
         XCTAssertTrue(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .regardless, sessionHasOpenTransaction: false))
+    }
+
+    /// The user's stop gives the work up before the server is asked: the caller waiting for the
+    /// work is told at once - the worker's thread let go, so the next piece of work gets one of its
+    /// own - and the request to the server does not hold the main thread up.
+    func testTheUsersStopGivesTheWorkUpBeforeAskingTheServer() {
+        let coordinator = SAConnectionWorkCoordinator()
+        // The work stands for a statement whose native query is running on the session.
+        host.sessionAccess.beginNativeQuery()
+        host.killAnswer = .blockedThenAccepted
+        defer { host.letTheKillReturn.signal() }
+        var theWorkerWasStillThereBeforeTheStop: Bool?
+        var theWorkerWasLetGoWhenMarked: Bool?
+        var theWorkerWasLetGoWhenTheStopReturned: Bool?
+        var theStopReturnedBeforeTheKillWasAnswered: Bool?
+
+        let outcome = coordinator.run({
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            return nil
+        }, whenSlow: { _ in
+            theWorkerWasStillThereBeforeTheStop = coordinator.currentWorkerThread != nil
+            host.whenMarked = { theWorkerWasLetGoWhenMarked = coordinator.currentWorkerThread == nil }
+            let stopStarted = Date()
+            cancellation.userStoppedWaiting(forWorkOf: coordinator)
+            theWorkerWasLetGoWhenTheStopReturned = coordinator.currentWorkerThread == nil
+            theStopReturnedBeforeTheKillWasAnswered = Date().timeIntervalSince(stopStarted) < 1
+        })
+
+        XCTAssertEqual(theWorkerWasStillThereBeforeTheStop, true)
+        XCTAssertTrue(outcome.wasAbandoned, "the work was given up on")
+        XCTAssertEqual(theWorkerWasLetGoWhenTheStopReturned, true, "and its thread let go by the time the stop returned")
+        XCTAssertEqual(theStopReturnedBeforeTheKillWasAnswered, true, "without waiting for the server")
+        XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success, "which was asked all the same")
+        XCTAssertEqual(theWorkerWasLetGoWhenMarked, true, "after the work had been given up on")
+        XCTAssertTrue(host.recordedCalls().contains("marked"))
     }
 
     /// A session whose ping was cut off before its answer came is replaced; any other is kept.

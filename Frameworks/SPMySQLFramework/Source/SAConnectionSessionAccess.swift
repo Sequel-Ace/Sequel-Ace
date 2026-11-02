@@ -333,6 +333,31 @@ import Darwin
         Thread.current.threadDictionary[Self.refusalMarker] = false
     }
 
+    /// Forgets a refusal recorded on this thread, for work that reads none.
+    ///
+    /// The connection's other work - a check, a session replacement - passes the same gate as a
+    /// statement and reads no refusal; a mark one of those found standing would otherwise be read
+    /// by the next statement on the thread and reported as that statement's own.
+    @objc public func forgetAnyRefusalOfThisThread() {
+        forgetAnyRefusal()
+    }
+
+    /// Records that the call this thread is making was refused the session before it was handed
+    /// over, so that the statement path reports it as never sent - the way the lease records a
+    /// caller it turns away itself.
+    @objc public func noteThisThreadsCallWasRefused() {
+        Thread.current.threadDictionary[Self.refusalMarker] = true
+    }
+
+    /// Whether a question about this connection is out to the main thread and still unanswered.
+    ///
+    /// The lease turns a main-thread caller away while that is so; work handed to a worker on the
+    /// main thread's behalf has to be turned away before it is handed over, where the caller still
+    /// looks like the main thread.
+    @objc public var aQuestionAwaitsTheMainThread: Bool {
+        socketLock.withLock { questionsAwaitingTheMainThread > 0 }
+    }
+
     /// Records that a question about this connection has gone to the main thread.
     ///
     /// The session stays held while it is asked - what is being asked about is this session -

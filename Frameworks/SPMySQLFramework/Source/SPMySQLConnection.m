@@ -40,7 +40,7 @@
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
-@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost>
+@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost, SAConnectionWorkHost>
 @end
 
 @interface SPMySQLConnection ()
@@ -358,6 +358,87 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	[valueEscaper forgetSession];
 }
 
+#pragma mark -
+#pragma mark Connection work host
+
+/**
+ * Whether the delegate shows a wait for connection work and lets the user end it.
+ */
+- (BOOL)delegateShowsTheWait
+{
+	return delegateSupportsConnectionCheckProgress;
+}
+
+/**
+ * Whether the current thread is the one reconnecting, which sets the new session up itself.
+ */
+- (BOOL)currentThreadIsSettingUpTheSession
+{
+	return [self _currentThreadIsReconnecting];
+}
+
+/**
+ * Asks the delegate to wait for connection work in a way that keeps the interface answering.
+ */
+- (void)waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished
+{
+	[delegate connection:self waitForConnectionWorkUntilFinished:isFinished];
+}
+
+/**
+ * Records that work on this connection was given up on, in the same way a cancelled query is
+ * recorded, so that everything which asks the connection what happened gets the same answer.
+ */
+- (void)recordWorkAsCancelled
+{
+	lastQueryWasCancelled = YES;
+	// And nothing was affected, as far as anybody can say. The count still describes the statement
+	// before this one, and callers work out success from it: the content view's row deletion
+	// compares it with how many rows it meant to delete and, on a match, takes them off the screen
+	// without asking the error. A stopped DELETE would look like one that worked.
+	lastQueryAffectedRowCount = 0;
+	[self _updateLastErrorMessage:NSLocalizedString(@"Query cancelled.", @"Query cancelled error")];
+	[self _updateLastErrorID:1317];
+	[self _updateLastSqlstate:@"70100"];
+}
+
+/**
+ * Whether the current thread is the one reconnecting. The statements it sends set up the new
+ * session - its character set, its database - on the connection's own behalf.
+ */
+- (BOOL)_currentThreadIsReconnecting
+{
+	pthread_t thread = reconnectingThread;
+	return thread && pthread_equal(thread, pthread_self());
+}
+
+/**
+ * Runs connection work that may have to wait for a server, without freezing the interface:
+ * SAConnectionWorkCoordinator decides where it runs and who waits, this connection being its host.
+ *
+ * @param work The work to run. It must not expect to be on the thread that asked for it.
+ * @return What the work returned, or nil if it was refused or the waiting ended before it finished.
+ */
+- (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work
+{
+	return [connectionWorkCoordinator runWork:work onHost:self];
+}
+
+/**
+ * Runs connection work whose answer is a plain yes or no. See -_runWorkKeepingInterfaceAlive:.
+ *
+ * @param work The work to run.
+ * @return What the work returned, or NO if the user stopped waiting before it finished.
+ */
+- (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work
+{
+	NSNumber *result = [self _runWorkKeepingInterfaceAlive:^id{
+		return @(work());
+	}];
+
+	return [result boolValue];
+}
+
 - (void)addClientFlags:(SPMySQLClientFlags)opts
 {
 	[self setClientFlags:([self clientFlags] | opts)];
@@ -596,6 +677,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		proxyStateChangeNotificationsIgnored = NO;
 		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
 		_sessionAccess = [[SAConnectionSessionAccess alloc] init];
+		connectionWorkCoordinator = [[SAConnectionWorkCoordinator alloc] init];
 
 		// Start with no selected database
 		database = nil;
@@ -690,6 +772,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 	// If a keepalive thread is active, cancel it
 	[self _cancelKeepAlives];
+
+	// Work still running on the connection's own thread is given up on with it
+	[connectionWorkCoordinator cancel];
 
 	// Disconnect if appropriate (which should also disconnect any proxy)
 	[self _disconnect];
@@ -898,7 +983,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
 			[self _closeSessionMarkedForReplacement];
 			[self _unlockConnection];
-			return [self _reconnectAfterSessionLossAllowingRetries:YES];
+			return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+				return [self _reconnectAfterSessionLossAllowingRetries:YES];
+			}];
 		}
 		[self _unlockConnection];
 	}
@@ -907,7 +994,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
-		return [self _reconnectAfterSessionLossAllowingRetries:YES];
+		return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+			return [self _reconnectAfterSessionLossAllowingRetries:YES];
+		}];
 	}
 	
 	// If the connection was recently used, return success - unless its socket
@@ -919,7 +1008,18 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	}
 	
 	// Otherwise check the connection
-	return [self checkConnection];
+	return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+		return [self checkConnection];
+	}];
+}
+
+/**
+ * Ends the interface's wait for connection work, and stops that work: the thread it runs on, and
+ * the query it may have waiting on the server. SAConnectionCancellation holds the sequence.
+ */
+- (void)cancelConnectionCheck
+{
+	[connectionCancellation userStoppedWaitingForWorkOf:connectionWorkCoordinator];
 }
 
 /**

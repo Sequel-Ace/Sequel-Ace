@@ -360,14 +360,22 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
-    id theResult = [self.sessionAccess performQuery:^id {
-        return [self _queryString:theQueryString
-                   usingEncoding:theEncoding
-                  withResultType:theReturnType
-               assertingDatabase:databaseName
-       databaseContextIsRequired:databaseContextIsRequired];
-    } recover:^BOOL {
-        return [self _reconnectAllowingRetries:YES];
+    // A query waits for a server, and on a route that has gone away it waits for a timeout. The
+    // main thread must not be the one waiting: asked for there, the query runs on the connection's
+    // worker thread and the interface keeps drawing while it does; asked for anywhere else, it
+    // runs where it was asked for. Either way the result passes the refusal check below - the
+    // hand-off can be refused too, and a statement turned away there has to report itself like
+    // one the lease turned away.
+    id theResult = [self _runWorkKeepingInterfaceAlive:^id{
+        return [self.sessionAccess performQuery:^id {
+            return [self _queryString:theQueryString
+                       usingEncoding:theEncoding
+                      withResultType:theReturnType
+                   assertingDatabase:databaseName
+           databaseContextIsRequired:databaseContextIsRequired];
+        } recover:^BOOL {
+            return [self _reconnectAllowingRetries:YES];
+        }];
     }];
 
     // A statement that was refused the session never reached the server. Saying so is what
