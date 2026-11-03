@@ -455,6 +455,22 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 }
 
 /**
+ * Runs yes-or-no connection work through the same hand-off.
+ */
+- (BOOL)runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work
+{
+	return [self _runConnectionWorkKeepingInterfaceAlive:work];
+}
+
+/**
+ * A report of what the connection's fields say now.
+ */
+- (SAStatementReport *)reportFromTheConnectionsFields
+{
+	return [self _reportFromTheConnectionsFields];
+}
+
+/**
  * Whether the current thread is the one reconnecting. The statements it sends set up the new
  * session - its character set, its database - on the connection's own behalf.
  */
@@ -930,11 +946,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)checkConnection
 {
-	BOOL theConnectionIsUsable = [self _checkConnectionNow];
-	// A failed check's error is this caller's to read, handed to its thread like a statement's
-	// report: a report handed back earlier would otherwise stand in front of it.
-	if (!theConnectionIsUsable) [SAStatementReport handBack:[self _reportFromTheConnectionsFields] for:self];
-	return theConnectionIsUsable;
+	return [SAStatementCall runCheck:^BOOL{ return [self _checkConnectionNow]; } handedOver:NO on:[self _statementCallHost]];
 }
 
 /**
@@ -1072,21 +1084,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		SPLog(@"connection socket reports the peer is gone; checking despite recent use");
 	}
 	
-	// Otherwise check the connection. The check runs on the worker when asked for on the main
-	// thread: a failed check's error is handed to this thread here, where it is read - unless
-	// the user stopped waiting, and the stop was handed back already.
-	SAStatementReport *theReportBeforeTheCheck = [SAStatementReport reportHandedBackToThisThreadFor:self];
-	BOOL theConnectionIsUsable = [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
-		return [self _checkConnectionNow];
-	}];
-	// Stopped is this check only when the stop's report arrived during it; a report of a
-	// statement stopped earlier does not stand in front of the check's error.
-	SAStatementReport *theReportAfterTheCheck = [SAStatementReport reportHandedBackToThisThreadFor:self];
-	BOOL thisCheckWasStopped = theReportAfterTheCheck != theReportBeforeTheCheck && theReportAfterTheCheck.wasCancelled;
-	if (!theConnectionIsUsable && !thisCheckWasStopped) {
-		[SAStatementReport handBack:[self _reportFromTheConnectionsFields] for:self];
-	}
-	return theConnectionIsUsable;
+	// Otherwise check the connection - on the worker when asked for on the main thread, a failed
+	// check's error handed to this thread (SAStatementCall).
+	return [SAStatementCall runCheck:^BOOL{ return [self _checkConnectionNow]; } handedOver:YES on:[self _statementCallHost]];
 }
 
 /**

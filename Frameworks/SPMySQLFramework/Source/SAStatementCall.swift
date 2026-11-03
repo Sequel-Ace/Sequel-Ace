@@ -22,6 +22,15 @@ public protocol SAStatementCallHost: AnyObject {
     /// for, and the stop was of the work before it.
     @objc func forgetAnExplicitStop()
 
+    /// A report of what the connection's fields say now: the last statement's error, rows and stop.
+    @objc var reportFromTheConnectionsFields: SAStatementReport { get }
+
+    /// Runs yes-or-no connection work the way statements are run: on the worker when asked for on
+    /// the main thread, waiting with the interface alive.
+    /// - Parameter work: The work.
+    /// - Returns: What the work answered, or false when the user stopped waiting for it.
+    @objc func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool
+
     /// Runs the work on the connection's worker when asked for on the main thread, waiting with
     /// the interface alive, and where it was asked for otherwise.
     /// - Parameter work: The statement, run under the lease.
@@ -79,6 +88,31 @@ public final class SAStatementCall: NSObject {
                                                          insertID: host.insertIDCarried, wasCancelled: false), for: host)
         }
         return result
+    }
+
+    /// Runs a connection check and hands a failed check's report to the calling thread.
+    ///
+    /// A failed check's error is the calling thread's to read, like a statement's report: a report
+    /// handed back earlier would otherwise stand in front of it. Not when the user stopped waiting
+    /// for this very check, whose stop was handed back during it - told from a report of some
+    /// statement stopped earlier, which does not stand in front of the check's error, by the
+    /// report's identity before and after the check.
+    /// - Parameters:
+    ///   - check: The check itself, which writes its error on the connection.
+    ///   - handedOver: Whether the check runs through the hand-off - on the worker for the main
+    ///     thread - or where it was asked for.
+    ///   - host: The connection.
+    /// - Returns: Whether the connection is usable.
+    @objc(runCheck:handedOver:on:)
+    public static func runCheck(_ check: @escaping () -> Bool, handedOver: Bool, on host: SAStatementCallHost) -> Bool {
+        let reportBefore = SAStatementReport.reportHandedBackToThisThread(for: host)
+        let usable = handedOver ? host.runConnectionWorkKeepingInterfaceAlive(check) : check()
+        let reportAfter = SAStatementReport.reportHandedBackToThisThread(for: host)
+        let thisCheckWasStopped = reportAfter !== reportBefore && reportAfter?.wasCancelled == true
+        if !usable, !thisCheckWasStopped {
+            SAStatementReport.handBack(host.reportFromTheConnectionsFields, for: host)
+        }
+        return usable
     }
 
     /// Records work the user stopped waiting for as cancelled, for the thread that asked for it.

@@ -91,8 +91,39 @@ final class SAStatementReportTests: XCTestCase {
         let sessionAccess = SAConnectionSessionAccess()
         var insertIDCarried: UInt64 = 0
         var explicitStopsForgotten = 0
+        /// What the connection's fields say.
+        var fields = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
+        var reportFromTheConnectionsFields: SAStatementReport { fields }
         func forgetAnExplicitStop() { explicitStopsForgotten += 1 }
         func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? { work() }
+        func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool { work() }
+    }
+
+    /// A failed check hands the connection's fields to the calling thread - past a report handed
+    /// back earlier, a stopped statement's included; not past the stop of this very check, which
+    /// arrives during it. A check that passes hands nothing back.
+    func testAFailedCheckHandsItsErrorBackUnlessThisCheckWasStopped() {
+        let host = SAScriptedCallHost()
+        defer { SAStatementReport.forgetReportHandedBackToThisThread(for: host) }
+        host.fields = SAStatementReport(errorMessage: "The check failed", errorID: 2006, sqlState: "HY000",
+                                        affectedRows: 0, insertID: 0, wasCancelled: false)
+        let earlierStop = SAStatementReport(errorMessage: "Query cancelled.", errorID: 1317, sqlState: "70100",
+                                            affectedRows: 0, insertID: 0, wasCancelled: true)
+
+        SAStatementReport.handBack(earlierStop, for: host)
+        XCTAssertTrue(SAStatementCall.runCheck({ true }, handedOver: true, on: host))
+        XCTAssertTrue(SAStatementReport.reportHandedBackToThisThread(for: host) === earlierStop, "a check that passes hands nothing back")
+
+        XCTAssertFalse(SAStatementCall.runCheck({ false }, handedOver: true, on: host))
+        XCTAssertEqual(SAStatementReport.reportHandedBackToThisThread(for: host)?.errorID, 2006, "the check's error, past the earlier stop")
+
+        let stopOfThisCheck = SAStatementReport(errorMessage: "Query cancelled.", errorID: 1317, sqlState: "70100",
+                                                affectedRows: 0, insertID: 0, wasCancelled: true)
+        XCTAssertFalse(SAStatementCall.runCheck({
+            SAStatementReport.handBack(stopOfThisCheck, for: host)
+            return false
+        }, handedOver: false, on: host))
+        XCTAssertTrue(SAStatementReport.reportHandedBackToThisThread(for: host) === stopOfThisCheck, "the stop of this check stands")
     }
 
     /// A statement that ran and failed keeps its own report, whatever refusal marker may stand on

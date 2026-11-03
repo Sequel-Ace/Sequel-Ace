@@ -6029,7 +6029,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                                                                    isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)
                                                                                            awsProfile:[connectionController awsProfile]];
 
-        connectionErrorCode = [SAConnectionLostAlert runModalForWindow:[self.parentWindowController window] copy:sheetCopy]
+        // On the sheet that is already up, if one is: a sheet queued behind an attached one stays
+        // hidden, and the question would wait for an answer nobody can give.
+        connectionErrorCode = [SAConnectionLostAlert runModalForWindow:([SAConnectionCheckSheet hostForWaitNoteOnWindow:questionWindow] ?: questionWindow) copy:sheetCopy]
             ? SPMySQLConnectionLostReconnect
             : SPMySQLConnectionLostDisconnect;
 
