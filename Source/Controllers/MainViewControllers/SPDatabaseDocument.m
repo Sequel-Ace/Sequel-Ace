@@ -5980,7 +5980,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)noConnectionAvailable:(id)connection
 {
-    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No connection available", @"no connection available message") message:NSLocalizedString(@"An error has occurred and there doesn't seem to be a connection available.", @"no connection available informatie message") callback:nil];
+    // Through the main run loop: the connection asks this from its worker for a statement started on
+    // the main thread, and the alert is AppKit's to show there.
+    [SAMainRunLoop runAndWait:^{
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No connection available", @"no connection available message") message:NSLocalizedString(@"An error has occurred and there doesn't seem to be a connection available.", @"no connection available informatie message") callback:nil];
+    }];
 }
 
 /**
