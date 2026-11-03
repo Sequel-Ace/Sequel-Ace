@@ -18,6 +18,10 @@ public protocol SAStatementCallHost: AnyObject {
     /// The insert ID the connection carries, as the last statement left it.
     @objc var insertIDCarried: UInt64 { get }
 
+    /// Ends the reach of an explicit stop recorded on the connection: a statement is being asked
+    /// for, and the stop was of the work before it.
+    @objc func forgetAnExplicitStop()
+
     /// Runs the work on the connection's worker when asked for on the main thread, waiting with
     /// the interface alive, and where it was asked for otherwise.
     /// - Parameter work: The statement, run under the lease.
@@ -48,6 +52,9 @@ public final class SAStatementCall: NSObject {
     @objc(run:on:)
     public static func run(_ work: @escaping () -> SAStatementRun?, on host: SAStatementCallHost) -> Any? {
         SAStatementReport.forgetReportHandedBackToThisThread(for: host)
+        // An explicit stop reaches every caller until the next statement is asked for - this one,
+        // refused or not: a refused statement is not one the user stopped.
+        host.forgetAnExplicitStop()
         let run = host.runWorkKeepingInterfaceAlive { work() } as? SAStatementRun
         var result: Any?
         if let run {

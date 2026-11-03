@@ -491,6 +491,49 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertFalse(connection.checkIfNecessary())
         XCTAssertTrue(connection.queryErrored(), "the check's error is read where the check was asked for")
         XCTAssertEqual(connection.lastErrorMessage(), "The check failed")
+
+        // A statement stopped earlier in the same turn does not stand in front of the check's error.
+        SAStatementReport.handBack(SAStatementReport(errorMessage: "Query cancelled.", errorID: 1317, sqlState: "70100",
+                                                     affectedRows: 0, insertID: 0, wasCancelled: true), for: connection)
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+        XCTAssertFalse(connection.checkIfNecessary())
+        XCTAssertEqual(connection.lastErrorMessage(), "The check failed", "the check's own error, not the earlier stop")
+        XCTAssertFalse(connection.lastQueryWasCancelled)
+    }
+
+    /// Work the main thread asks for while a streaming result of its own still keeps the session -
+    /// its rows not downloaded yet - waits for that session on the worker thread that ran the
+    /// streaming statement. Stopping the wait for the later work leaves the earlier statement's
+    /// query alone: it is the result's, still being read, and only shares the thread.
+    func testStoppingTheWaitForWorkQueuedBehindThisThreadsOwnStreamingResultLeavesThatResultAlone() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        try prepareSlowRows(on: connection)
+        XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
+
+        let store = try XCTUnwrap(connection.resultStore(fromQueryString: slowRowsStatement))
+        let storeReport = try XCTUnwrap(SAStatementReport.reportHandedBackToThisThread(for: connection))
+        XCTAssertFalse(storeReport.wasCancelled)
+
+        // Later work waits for the session the store keeps; the user stops waiting for it.
+        delegate.onceWhileWaiting = { _ in
+            connection.cancelCheck()
+        }
+        let later = connection.queryString("SELECT 'later'")
+        XCTAssertNil(later, "the later work was given up on")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "and its caller told")
+
+        // The store's rows arrive whole: its query was nobody's to kill.
+        store.startDownload()
+        let deadline = Date().addingTimeInterval(20)
+        while !store.dataDownloaded, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        XCTAssertTrue(store.dataDownloaded)
+        XCTAssertEqual(store.numberOfRows(), 900, "every row arrived")
+        XCTAssertFalse(storeReport.wasCancelled, "the streaming statement's query was left alone")
+        XCTAssertEqual(storeReport.errorID, 0, storeReport.errorMessage ?? "")
     }
 
     // MARK: - What a statement reports after its report was taken

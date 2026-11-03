@@ -73,12 +73,13 @@ public final class SAConnectionCancellation: NSObject {
     /// - Parameter coordinator: The coordinator whose work the user stopped waiting for.
     @objc(userStoppedWaitingForWorkOf:)
     public func userStoppedWaiting(forWorkOf coordinator: SAConnectionWorkCoordinator) {
+        let tokens = coordinator.tokensOfWorkWaitedFor
         let worker = coordinator.currentWorkerThread
         coordinator.abandonWorkForUserStop()
         guard let worker, let host else {
             return
         }
-        let hold = host.sessionAccess.reserveCancellation(ofWorkOn: worker)
+        let hold = host.sessionAccess.reserveCancellation(ofWork: tokens, on: worker)
         guard hold.holdsTheQuery, hold.query != 0, !hold.killWasAlreadyAccepted else {
             // Nothing of the stopped work is running on the server, or the server is ending it already.
             return

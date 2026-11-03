@@ -24,6 +24,8 @@ import Darwin
     /// The thread that began the active native query, so that a stop meant for one thread's work
     /// can tell whether the query running on the session is that work's.
     private var threadOfActiveNativeQuery: ObjectIdentifier?
+    /// The token of the coordinator's work that began the active native query, if that work did.
+    private var workTokenOfActiveNativeQuery: UInt64?
     private var cancellingQuery: UInt?
     private var cancellingSocketGeneration: UInt = 0
     private var recoveryRequired = false
@@ -140,6 +142,7 @@ import Darwin
             nativeQueryGeneration &+= 1
             activeNativeQuery = nativeQueryGeneration
             threadOfActiveNativeQuery = ObjectIdentifier(thread)
+            workTokenOfActiveNativeQuery = SAConnectionWorkCoordinator.tokenOfWorkOnThisThread
             // A thread that was given up on never sends: the lease turns it away while it waits,
             // and here once more should it already hold the session.
             return !thread.isCancelled && (token.map { $0 == queryCancellationGeneration } ?? true)
@@ -154,6 +157,7 @@ import Darwin
             }
             activeNativeQuery = nil
             threadOfActiveNativeQuery = nil
+            workTokenOfActiveNativeQuery = nil
         }
     }
 
@@ -196,42 +200,57 @@ import Darwin
     ///   to another cancellation already under way for it, whose request may yet be accepted;
     ///   the caller then leaves that query's socket alone.
     @objc public func reserveCancellation() -> SACancellationHold {
-        reserveCancellation(ofWorkOn: nil)
+        reserveCancellation(of: nil)
     }
 
-    /// Reserves a cancellation of the work one thread does on this connection, and of nothing else.
+    /// Reserves a cancellation of the work the user stopped waiting for, and of nothing else.
     ///
-    /// The user stopped waiting for that thread's work - the worker the connection ran it on. A
-    /// native query that thread began is held and killed as any stop's would be; a query another
-    /// thread is running on the session is somebody else's, and is left alone, as are the other
-    /// operations waiting for the session. The stopped thread itself is cancelled by its
+    /// The work is the coordinator's, run on the worker thread. A native query that work began is
+    /// held and killed as any stop's would be; a query that is somebody else's - another thread's,
+    /// or an earlier piece of work's on the same worker, such as a streaming statement whose rows
+    /// are still being read while the stopped work waited behind it - is left alone, as are the
+    /// other operations waiting for the session. The stopped thread itself is cancelled by its
     /// coordinator, and the lease turns a cancelled thread away rather than hand it the session, so
     /// nothing of its is sent after this - which is why no stop is recorded against the pending
     /// operations here.
-    /// - Parameter thread: The thread whose work was stopped.
-    /// - Returns: A hold on that thread's native query, or one that holds nothing.
-    @objc(reserveCancellationOfWorkOnThread:)
-    public func reserveCancellation(ofWorkOn thread: Thread) -> SACancellationHold {
-        reserveCancellation(ofWorkOn: ObjectIdentifier(thread))
+    /// - Parameters:
+    ///   - tokens: The tokens of the work stopped.
+    ///   - thread: The thread that work ran on, which stands in for a query begun outside any
+    ///     coordinator's work.
+    /// - Returns: A hold on the stopped work's native query, or one that holds nothing.
+    public func reserveCancellation(ofWork tokens: [UInt64], on thread: Thread) -> SACancellationHold {
+        reserveCancellation(of: (tokens: tokens, thread: ObjectIdentifier(thread)))
     }
 
-    /// Reserves a cancellation: of whatever runs and waits (`thread` nil), or of one thread's
-    /// work alone.
-    private func reserveCancellation(ofWorkOn thread: ObjectIdentifier?) -> SACancellationHold {
+    /// Reserves a cancellation: of whatever runs and waits (`scope` nil), or of the stopped work alone.
+    private func reserveCancellation(of scope: (tokens: [UInt64], thread: ObjectIdentifier)?) -> SACancellationHold {
         socketLock.withLock {
-            if let thread, activeNativeQuery == nil || threadOfActiveNativeQuery != thread {
-                // Nothing of that thread's is running on the server: nothing to kill, and nothing
-                // of anybody else's to stop.
-                return SACancellationHold(query: 0, session: 0, serverThread: 0,
-                                          holdsTheQuery: false, killWasAlreadyAccepted: false)
+            if let scope {
+                // The query the stopped work began, told from every other - an earlier piece of
+                // work's on the same worker thread included - by its token, and by its thread only
+                // where no coordinator's work began it.
+                let theQueryIsTheStoppedWorks: Bool
+                if activeNativeQuery == nil {
+                    theQueryIsTheStoppedWorks = false
+                } else if let token = workTokenOfActiveNativeQuery {
+                    theQueryIsTheStoppedWorks = scope.tokens.contains(token)
+                } else {
+                    theQueryIsTheStoppedWorks = threadOfActiveNativeQuery == scope.thread
+                }
+                if !theQueryIsTheStoppedWorks {
+                    // Nothing of the stopped work's is running on the server: nothing to kill,
+                    // and nothing of anybody else's to stop.
+                    return SACancellationHold(query: 0, session: 0, serverThread: 0,
+                                              holdsTheQuery: false, killWasAlreadyAccepted: false)
+                }
             }
             guard cancellingQuery == nil else {
                 // A request for the query is already on its way, and no second one is sent. The
                 // stop still reaches whatever is pending: an operation that began waiting for the
                 // session after the first stop, which that stop could not know of, must not send
                 // its statement once the request is answered and the session is free. A stop of
-                // one thread's work reaches nothing else, that thread being cancelled already.
-                if thread == nil {
+                // one piece of work reaches nothing else, its thread being cancelled already.
+                if scope == nil {
                     recordStopAgainstPendingOperations()
                 }
                 return SACancellationHold(query: 0, session: 0, serverThread: 0,
@@ -250,7 +269,7 @@ import Darwin
                 // what sending nothing used to amount to - would have the caller close the
                 // query's socket, ending the session and rolling back a transaction open in it.
                 // The stop still reaches what began waiting while the server ends the query.
-                if thread == nil {
+                if scope == nil {
                     recordStopAgainstPendingOperations()
                 }
                 return SACancellationHold(query: query, session: socketGeneration, serverThread: 0,
@@ -259,8 +278,8 @@ import Darwin
             cancellingQuery = query
             cancellingSocketGeneration = socketGeneration
             // A stop of everything moves the generation past every operation pending; a stop of
-            // one thread's work leaves the others their turn.
-            if thread == nil {
+            // one piece of work leaves the others their turn.
+            if scope == nil {
                 queryCancellationGeneration &+= 1
             }
             return SACancellationHold(query: query, session: socketGeneration, serverThread: serverThreadID,

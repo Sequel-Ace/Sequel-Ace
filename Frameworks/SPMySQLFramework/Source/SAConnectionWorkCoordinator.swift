@@ -91,8 +91,15 @@ public final class SAConnectionWorkOutcome: NSObject {
 private final class SAConnectionWorkItem: NSObject {
     private let work: () -> Void
 
+    /// Tells this piece of work from every other the coordinator runs, on the same thread or not.
+    let token: UInt64
+
     /// Keeps the work until a thread runs it.
-    init(_ work: @escaping () -> Void) {
+    /// - Parameters:
+    ///   - token: The work's token.
+    ///   - work: The work.
+    init(token: UInt64, _ work: @escaping () -> Void) {
+        self.token = token
         self.work = work
     }
 
@@ -130,10 +137,32 @@ public final class SAConnectionWorkCoordinator: NSObject {
 
     private var workerThread: Thread?
 
-    /// The work being waited for right now, with the thread each piece was asked for on. Guarded
-    /// by `inFlightLock`; more than one when waits are nested.
-    private var inFlight: [(outcome: SAConnectionWorkOutcome, askedOn: ObjectIdentifier)] = []
+    /// The work being waited for right now, with the thread each piece was asked for on and its
+    /// token. Guarded by `inFlightLock`; more than one when waits are nested.
+    private var inFlight: [(outcome: SAConnectionWorkOutcome, askedOn: ObjectIdentifier, token: UInt64)] = []
     private let inFlightLock = NSLock()
+
+    /// The token the next piece of work gets. Guarded by `inFlightLock`.
+    private var nextWorkToken: UInt64 = 0
+
+    /// The key under which the worker thread carries the token of the work it is running.
+    private static let workTokenKey = "SAConnectionWorkCoordinator.workToken"
+
+    /// The token of the work the current thread is running for a coordinator, if it runs any.
+    ///
+    /// A worker thread runs one piece of work after another, so the thread alone does not say
+    /// which piece a native query belongs to: the lease records this with the query it begins, and
+    /// a stop of one piece of work reaches that query only if the token is its.
+    static var tokenOfWorkOnThisThread: UInt64? {
+        Thread.current.threadDictionary[workTokenKey] as? UInt64
+    }
+
+    /// The tokens of the work being waited for right now, outermost first.
+    var tokensOfWorkWaitedFor: [UInt64] {
+        inFlightLock.lock()
+        defer { inFlightLock.unlock() }
+        return inFlight.map { $0.token }
+    }
 
     /// Whether the current thread is already waiting for work on this coordinator.
     ///
@@ -266,13 +295,17 @@ public final class SAConnectionWorkCoordinator: NSObject {
                     whenSlow waitForFinish: (_ isFinished: @escaping () -> Bool) -> Void) -> SAConnectionWorkOutcome {
         let outcome = SAConnectionWorkOutcome()
         let workFinished = DispatchSemaphore(value: 0)
-        let item = SAConnectionWorkItem {
+        inFlightLock.lock()
+        nextWorkToken &+= 1
+        let token = nextWorkToken
+        inFlightLock.unlock()
+        let item = SAConnectionWorkItem(token: token) {
             outcome.storeResult(work())
             workFinished.signal()
         }
 
         inFlightLock.lock()
-        inFlight.append((outcome: outcome, askedOn: ObjectIdentifier(Thread.current)))
+        inFlight.append((outcome: outcome, askedOn: ObjectIdentifier(Thread.current), token: token))
         inFlightLock.unlock()
         defer {
             inFlightLock.lock()
@@ -390,6 +423,11 @@ public final class SAConnectionWorkCoordinator: NSObject {
     /// Runs one piece of work on the worker thread.
     /// - Parameter item: The work handed over by ``run(_:whenSlow:)``.
     @objc private func runWorkItem(_ item: SAConnectionWorkItem) {
+        // The thread carries the work's token while it runs it, for the lease to record with the
+        // native query the work begins.
+        let dictionary = Thread.current.threadDictionary
+        dictionary[Self.workTokenKey] = item.token
+        defer { dictionary.removeObject(forKey: Self.workTokenKey) }
         autoreleasepool {
             item.run()
         }

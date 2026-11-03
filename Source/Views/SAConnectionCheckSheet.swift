@@ -169,15 +169,19 @@ final class SAConnectionCheckSheet: NSObject {
 
         Self.refreshActiveWaits()
         while !hasEnded {
-            deliverPendingEvents()
-            // Over, the wait returns at once: an event delivered from here would reach the window
-            // while the operation that waited is still on the stack - another Apply in User
-            // Manager inside the save that was being waited for - so none is.
-            if hasEnded {
-                break
+            // Each round in a pool of its own: the loop goes round hundreds of times a second,
+            // and the temporaries of events and formatted text would otherwise wait for the
+            // enclosing pool, as long as the server keeps the window waiting.
+            autoreleasepool {
+                deliverPendingEvents()
+                // Over, the wait returns at once: an event delivered from here would reach the
+                // window while the operation that waited is still on the stack - another Apply
+                // in User Manager inside the save that was being waited for - so none is.
+                if !hasEnded {
+                    Self.refreshActiveWaits()
+                    usleep(Self.eventLoopPause)
+                }
             }
-            Self.refreshActiveWaits()
-            usleep(Self.eventLoopPause)
         }
 
         dismissSheet()

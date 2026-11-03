@@ -68,6 +68,24 @@ final class SAStatementReportTests: XCTestCase {
         XCTAssertEqual(connection.lastErrorID(), 1317)
     }
 
+    /// An explicit stop of the connection's work - a KILL issued over another connection, marked
+    /// here - reaches the report of a statement that still holds the session, and every caller
+    /// until the next statement starts.
+    func testAnExplicitStopReachesTheHeldReportAndEveryCallerUntilTheNextStatement() {
+        let connection = SPMySQLConnection()
+        let held = report()
+        connection.setValue(held, forKey: "currentStatementReport")
+        let earlier = report()
+        SAStatementReport.handBack(earlier, for: connection)
+        defer { SAStatementReport.forgetReportHandedBackToThisThread(for: connection) }
+        XCTAssertFalse(connection.lastQueryWasCancelled)
+
+        connection.lastQueryWasCancelled = true
+        XCTAssertTrue(held.wasCancelled, "the statement holding the session is stopped")
+        XCTAssertFalse(earlier.wasCancelled, "an earlier statement's report is not rewritten")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "but its caller reads the stop until the next statement")
+    }
+
     /// A report handed back is read whatever the connection's fields say - a refusal, a stop
     /// before the send, a statement another thread has since run.
     func testAHandedBackReportIsReadWhateverTheConnectionsFieldsSay() {

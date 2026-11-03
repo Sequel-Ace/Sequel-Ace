@@ -391,6 +391,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
+	explicitlyCancelled = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {

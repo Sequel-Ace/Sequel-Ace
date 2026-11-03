@@ -116,8 +116,10 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (BOOL)lastQueryWasCancelled
 {
 	SAStatementReport *handedBack = [self _reportThisThreadReads];
-	if (handedBack) return handedBack.wasCancelled;
 	@synchronized (self) {
+		// An explicit stop of the connection's work reaches every caller until the next statement
+		// starts, whichever statement's report the caller holds.
+		if (handedBack) return handedBack.wasCancelled || explicitlyCancelled;
 		return lastQueryWasCancelled;
 	}
 }
@@ -128,7 +130,11 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	@synchronized (self) {
 		if (cancelled) [self.sessionAccess recordQueryCancellation];
 		lastQueryWasCancelled = cancelled;
+		explicitlyCancelled = cancelled;
 	}
+	// And the report of a statement that still holds the session - its rows being read - is
+	// stopped as its caller will read it.
+	if (cancelled) [[self _reportOfStatementHoldingTheSession] recordCancellation];
 }
 
 #pragma mark -
@@ -427,6 +433,17 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (unsigned long long)insertIDCarried
 {
 	return lastQueryInsertID;
+}
+
+/**
+ * Ends the reach of an explicit stop: a statement is being asked for, and the stop was of the
+ * work before it.
+ */
+- (void)forgetAnExplicitStop
+{
+	@synchronized (self) {
+		explicitlyCancelled = NO;
+	}
 }
 
 /**
@@ -1058,10 +1075,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// Otherwise check the connection. The check runs on the worker when asked for on the main
 	// thread: a failed check's error is handed to this thread here, where it is read - unless
 	// the user stopped waiting, and the stop was handed back already.
+	SAStatementReport *theReportBeforeTheCheck = [SAStatementReport reportHandedBackToThisThreadFor:self];
 	BOOL theConnectionIsUsable = [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
 		return [self _checkConnectionNow];
 	}];
-	if (!theConnectionIsUsable && ![SAStatementReport reportHandedBackToThisThreadFor:self].wasCancelled) {
+	// Stopped is this check only when the stop's report arrived during it; a report of a
+	// statement stopped earlier does not stand in front of the check's error.
+	SAStatementReport *theReportAfterTheCheck = [SAStatementReport reportHandedBackToThisThreadFor:self];
+	BOOL thisCheckWasStopped = theReportAfterTheCheck != theReportBeforeTheCheck && theReportAfterTheCheck.wasCancelled;
+	if (!theConnectionIsUsable && !thisCheckWasStopped) {
 		[SAStatementReport handBack:[self _reportFromTheConnectionsFields] for:self];
 	}
 	return theConnectionIsUsable;

@@ -193,6 +193,10 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 
 	// Query cancellation details
 	BOOL lastQueryWasCancelled;
+	// Whether the connection's work was stopped explicitly - a KILL issued over another
+	// connection, marked here - since the last statement was asked for: every caller reads that,
+	// whichever statement's report it holds, until the next statement is asked for.
+	BOOL explicitlyCancelled;
 
 	// The report of the statement that still holds the session - a streaming statement, whose rows
 	// are read after its report was taken - attached before its result exists, which what the
