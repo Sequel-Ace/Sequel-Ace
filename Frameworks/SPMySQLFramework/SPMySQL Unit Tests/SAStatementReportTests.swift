@@ -193,6 +193,42 @@ final class SAStatementReportTests: XCTestCase {
         XCTAssertTrue(hold.reportOfStatement(settledWith: later) === later, "nothing attached: the fields' report")
     }
 
+    /// A delegate that shows the wait, which is what has the connection hand work over from the
+    /// main thread - and turn it away there while a question is out.
+    private final class SAWaitShowingDelegate: NSObject {
+        @objc(connection:waitForConnectionWorkUntilFinished:)
+        func connection(_ connection: Any, waitForConnectionWorkUntilFinished isFinished: @escaping () -> Bool) {
+            while !isFinished() {
+                RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+            }
+        }
+    }
+
+    /// A reconnect the check hands over while a question is out to the main thread is turned away
+    /// like a statement, and reported as refused with the reason; the marker is taken.
+    func testARefusedReconnectIsReportedAsRefused() throws {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        let delegate = SAWaitShowingDelegate()
+        connection.perform(NSSelectorFromString("setDelegate:"), with: delegate)
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+            SAStatementReport.forgetReportHandedBackToThisThread(for: connection)
+        }
+        let lease = try XCTUnwrap(connection.value(forKey: "sessionAccess") as? SAConnectionSessionAccess)
+        connection.setValue(SPMySQLConnectionLostInBackground.rawValue, forKey: "state")
+        lease.noteAQuestionWentToTheMainThread()
+        defer { lease.noteTheQuestionWasAnswered() }
+
+        XCTAssertFalse(connection.checkIfNecessary())
+
+        XCTAssertTrue(connection.queryErrored(), "the refusal is an error of its own")
+        XCTAssertEqual(connection.lastErrorID(), 2013)
+        XCTAssertEqual(connection.lastErrorMessage()?.contains("being asked what to do"), true, "and told why")
+        XCTAssertFalse(lease.takeTheRefusalOfThisThreadsLastCall(), "the marker was taken")
+    }
+
     /// A report handed back is read whatever the connection's fields say - a refusal, a stop
     /// before the send, a statement another thread has since run.
     func testAHandedBackReportIsReadWhateverTheConnectionsFieldsSay() {

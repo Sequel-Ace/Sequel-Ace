@@ -1062,9 +1062,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
 			[self _closeSessionMarkedForReplacement];
 			[self _unlockConnection];
-			return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
-				return [self _reconnectAfterSessionLossAllowingRetries:YES];
-			}];
+			// Through the statement call like the check: a reconnect the coordinator turns away is
+			// reported as refused, with the reason, and the marker taken.
+			return [SAStatementCall runCheck:^BOOL{ return [self _reconnectAfterSessionLossAllowingRetries:YES]; } handedOver:YES on:[self _statementCallHost]];
 		}
 		[self _unlockConnection];
 	}
@@ -1073,9 +1073,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
-		return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
-			return [self _reconnectAfterSessionLossAllowingRetries:YES];
-		}];
+		return [SAStatementCall runCheck:^BOOL{ return [self _reconnectAfterSessionLossAllowingRetries:YES]; } handedOver:YES on:[self _statementCallHost]];
 	}
 	
 	// If the connection was recently used, return success - unless its socket
