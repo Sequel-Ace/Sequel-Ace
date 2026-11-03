@@ -94,13 +94,40 @@ private final class SAStoppedOnceCarriedOutConnection: SPMySQLConnection {
     }
 }
 
+/// A connection that takes a statement's report only once a streaming download that has ended
+/// already has let the session go - the shortest download there is, settled before the report.
+private final class SAFastStreamSettlingConnection: SPMySQLConnection {
+    @objc(_reportOfLastStatement) func reportOfLastStatementOnceSettled() -> SAStatementReport {
+        // A download that ends lets the attached report go; a short one does so before this.
+        let deadline = Date().addingTimeInterval(2)
+        while value(forKey: "currentStatementReport") != nil, Date() < deadline {
+            usleep(1_000)
+        }
+        let selector = NSSelectorFromString("_reportOfLastStatement")
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        typealias Report = @convention(c) (AnyObject, Selector) -> Unmanaged<SAStatementReport>
+        return unsafeBitCast(implementation, to: Report.self)(self, selector).takeUnretainedValue()
+    }
+}
+
 /// A connection that records which thread its connection check ran on.
 private final class SACheckWatchingConnection: SPMySQLConnection {
     private(set) var checkThread: Thread?
 
-    override func check() -> Bool {
+    @objc(_checkConnectionNow) func checkNowAndRecordTheThread() -> Bool {
         checkThread = Thread.current
-        return super.check()
+        let selector = NSSelectorFromString("_checkConnectionNow")
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        typealias Check = @convention(c) (AnyObject, Selector) -> Bool
+        return unsafeBitCast(implementation, to: Check.self)(self, selector)
+    }
+}
+
+/// A connection whose check fails, with an error written on the connection the way a check writes it.
+private final class SAFailingCheckConnection: SPMySQLConnection {
+    @objc(_checkConnectionNow) func checkNowAndFail() -> Bool {
+        perform(NSSelectorFromString("_updateLastErrorMessage:"), with: "The check failed")
+        return false
     }
 }
 
@@ -123,8 +150,9 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
     private func serverRunsAStatementContaining(_ text: String, seenFrom observer: SPMySQLConnection) throws -> Bool {
         let processes = try XCTUnwrap(observer.queryString("SHOW FULL PROCESSLIST"),
                                       "the process list could not be read: \(observer.lastErrorMessage() ?? "no error")")
-        for case let row as [Any] in processes.getAllRows() {
-            for case let column as String in row where column.contains(text) {
+        for row in processes.getAllRows() {
+            let columns: [Any] = (row as? [Any]) ?? ((row as? [String: Any]).map { Array($0.values) } ?? [])
+            for case let column as String in columns where column.contains(text) {
                 return true
             }
         }
@@ -382,6 +410,87 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(affectedRows, 1)
         XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT COUNT(*) FROM mysql.sa_carried_out") as? NSString)?.integerValue, 1,
                        "the write stands")
+    }
+
+    /// A fast streaming statement downloads on a thread of its own from the moment its result
+    /// exists; the shortest download ends, and lets the session go, before the statement's report
+    /// is taken. That report is the statement's own - settled, not attached to the session - and a
+    /// stop of later work on the connection leaves it alone.
+    func testAFastStreamSettledBeforeItsReportWasTakenIsLeftAloneByAStopOfLaterWork() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAFastStreamSettlingConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        try prepareSlowRows(on: connection)
+
+        let aReturned = DispatchSemaphore(value: 0)
+        let laterWorkWasStopped = DispatchSemaphore(value: 0)
+        let aRead = expectation(description: "A read its report")
+        var aRows = 0
+        var aWasCancelled = true
+        var aErrored = true
+        Thread.detachNewThread {
+            if let result = connection.streamingQueryString("SELECT 1", useLowMemoryBlockingStreaming: false) as? SPMySQLStreamingResult {
+                while result.getRowAsArray() != nil {
+                    aRows += 1
+                }
+            }
+            aReturned.signal()
+            _ = laterWorkWasStopped.wait(timeout: .now() + 20)
+            aWasCancelled = connection.lastQueryWasCancelled
+            aErrored = connection.queryErrored()
+            aRead.fulfill()
+        }
+        XCTAssertEqual(aReturned.wait(timeout: .now() + 10), .success, "A returned")
+
+        // Later work on another thread, stopped while the server is at it - rows that take their
+        // time, which the server aborts when the query is killed.
+        let bReturned = expectation(description: "B returned")
+        var bWasCancelled = false
+        Thread.detachNewThread {
+            _ = connection.queryString(self.slowRowsStatement)
+            bWasCancelled = connection.lastQueryWasCancelled
+            bReturned.fulfill()
+        }
+        var bRuns = false
+        for _ in 0..<100 where !bRuns {
+            bRuns = try serverRunsAStatementContaining("sa_slow_rows", seenFrom: observer)
+            if !bRuns {
+                usleep(50_000)
+            }
+        }
+        XCTAssertTrue(bRuns, "B runs on the server")
+        connection.cancelCurrentQuery()
+        wait(for: [bReturned], timeout: 15)
+        XCTAssertTrue(bWasCancelled, "the stop was B's")
+        laterWorkWasStopped.signal()
+        wait(for: [aRead], timeout: 20)
+
+        XCTAssertEqual(aRows, 1)
+        XCTAssertFalse(aWasCancelled, "A's report is its own, settled before B")
+        XCTAssertFalse(aErrored)
+    }
+
+    /// A failed check asked for on the main thread - which runs on the worker - is read on the
+    /// main thread: its error is handed back there, in front of a statement's report handed back
+    /// earlier in the same turn.
+    func testAFailedCheckAskedForOnTheMainThreadIsReadThere() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAFailingCheckConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
+
+        _ = connection.queryString("SELECT 1")
+        XCTAssertFalse(connection.queryErrored(), "a statement's report is handed back first")
+
+        // The check is due, and fails.
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+        XCTAssertFalse(connection.checkIfNecessary())
+        XCTAssertTrue(connection.queryErrored(), "the check's error is read where the check was asked for")
+        XCTAssertEqual(connection.lastErrorMessage(), "The check failed")
     }
 
     // MARK: - What a statement reports after its report was taken

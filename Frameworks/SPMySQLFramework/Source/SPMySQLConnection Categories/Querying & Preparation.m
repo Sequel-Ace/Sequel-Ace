@@ -391,7 +391,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
-	statementHoldsSession = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -628,17 +627,20 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				// For fast streaming and low memory streaming result sets, set up the result
 				case SPMySQLResultAsLowMemStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
+					[self _attachReportOfStreamingStatement];
 					theResult = [[SPMySQLStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 
 				case SPMySQLResultAsFastStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
+					[self _attachReportOfStreamingStatement];
 					theResult = [[SPMySQLFastStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 
 				// Also set up the result for streaming result data stores, but note the data download does not start yet
 				case SPMySQLResultAsStreamingResultStore:
 					mysqlResult = mysql_use_result(mySQLConnection);
+					[self _attachReportOfStreamingStatement];
 					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 			}
@@ -648,6 +650,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			theErrorID = mysql_errno(mySQLConnection);
 			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+			// A result the server could not deliver whole - the query killed while its rows were
+			// being stored - was not carried out, whatever the send said.
+			if (theErrorID != 0) theStatementWasCarriedOut = NO;
 		} else {
 			theResult = [[SPMySQLEmptyResult alloc] init];
 		}
@@ -667,10 +672,6 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		theErrorID = 1317;
 		theSqlstate = @"70100";
 	}
-
-	// A streaming result keeps the session for its rows; what the connection writes until it is
-	// released - the download's error, a stop - is the statement's still, and goes into its report.
-	statementHoldsSession = [theResult isKindOfClass:[SPMySQLStreamingResult class]];
 
 	// Unlock the connection if appropriate - if not a streaming result type.
 	if (![theResult isKindOfClass:[SPMySQLStreamingResult class]]) {
@@ -858,21 +859,49 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (SAStatementReport *)_reportOfLastStatement
 {
-	SAStatementReport *theReport = [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
-	                                                                      errorID:queryErrorID
-	                                                                     sqlState:querySqlstate
-	                                                                 affectedRows:lastQueryAffectedRowCount
-	                                                                     insertID:lastQueryInsertID
-	                                                                 wasCancelled:lastQueryWasCancelled];
-	// A statement that keeps the session for its rows keeps its report with the connection too,
-	// for what is written while the session is held; the release of the session lets it go.
-	if (statementHoldsSession) {
-		statementHoldsSession = NO;
-		@synchronized (self) {
-			currentStatementReport = theReport;
+	// A streaming statement's report was attached before its rows could start to arrive, and is
+	// still the connection's while the session is held: the statement's own final status goes in
+	// here, and what the download writes keeps going in. A download that has ended already let
+	// it go, and the connection's fields - which that download wrote last - are the report.
+	@synchronized (self) {
+		if (currentStatementReport) {
+			if (lastQueryWasCancelled) [currentStatementReport recordCancellation];
+			[currentStatementReport recordAffectedRows:lastQueryAffectedRowCount insertID:lastQueryInsertID];
+			return currentStatementReport;
 		}
 	}
-	return theReport;
+	return [self _reportFromTheConnectionsFields];
+}
+
+/**
+ * A report of what the connection's fields say now: the last statement's error, rows and stop.
+ */
+- (SAStatementReport *)_reportFromTheConnectionsFields
+{
+	return [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
+	                                               errorID:queryErrorID
+	                                              sqlState:querySqlstate
+	                                          affectedRows:lastQueryAffectedRowCount
+	                                              insertID:lastQueryInsertID
+	                                          wasCancelled:lastQueryWasCancelled];
+}
+
+/**
+ * Attaches a fresh report to the statement about to keep the session for its rows - before its
+ * result exists and can start downloading, so that nothing the download writes is missed, and
+ * so that no report is attached to a session the download has let go of already. The release
+ * of the session, in `_unlockConnection`, lets the report go.
+ */
+- (void)_attachReportOfStreamingStatement
+{
+	@synchronized (self) {
+		currentStatementReport = [[SAStatementReport alloc] initWithErrorMessage:nil
+		                                                                 errorID:0
+		                                                                sqlState:nil
+		                                                            affectedRows:0
+		                                                                insertID:lastQueryInsertID
+		                                                            wasCancelled:NO];
+	}
 }
 
 /**

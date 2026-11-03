@@ -156,6 +156,10 @@
 - (SAStatementReport *)_reportThisThreadReads;
 /** Notes that a statement reached the server and was carried out, for the database assertion. */
 - (void)_noteStatementCarriedOut:(NSString *)theQueryString;
+/** A report of what the connection's fields say now: the last statement's error, rows and stop. */
+- (SAStatementReport *)_reportFromTheConnectionsFields;
+/** Attaches a fresh report to the statement about to keep the session for its rows, before its result exists and can start downloading. */
+- (void)_attachReportOfStreamingStatement;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding

@@ -916,7 +916,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	BOOL theConnectionIsUsable = [self _checkConnectionNow];
 	// A failed check's error is this caller's to read, handed to its thread like a statement's
 	// report: a report handed back earlier would otherwise stand in front of it.
-	if (!theConnectionIsUsable) [SAStatementReport handBack:[self _reportOfLastStatement] for:self];
+	if (!theConnectionIsUsable) [SAStatementReport handBack:[self _reportFromTheConnectionsFields] for:self];
 	return theConnectionIsUsable;
 }
 
@@ -1055,10 +1055,16 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		SPLog(@"connection socket reports the peer is gone; checking despite recent use");
 	}
 	
-	// Otherwise check the connection
-	return [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
-		return [self checkConnection];
+	// Otherwise check the connection. The check runs on the worker when asked for on the main
+	// thread: a failed check's error is handed to this thread here, where it is read - unless
+	// the user stopped waiting, and the stop was handed back already.
+	BOOL theConnectionIsUsable = [self _runConnectionWorkKeepingInterfaceAlive:^BOOL{
+		return [self _checkConnectionNow];
 	}];
+	if (!theConnectionIsUsable && ![SAStatementReport reportHandedBackToThisThreadFor:self].wasCancelled) {
+		[SAStatementReport handBack:[self _reportFromTheConnectionsFields] for:self];
+	}
+	return theConnectionIsUsable;
 }
 
 /**

@@ -195,11 +195,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	BOOL lastQueryWasCancelled;
 
 	// The report of the statement that still holds the session - a streaming statement, whose rows
-	// are read after its report was taken - which what the connection writes meanwhile goes into;
-	// nil once the session is released.
+	// are read after its report was taken - attached before its result exists, which what the
+	// connection writes meanwhile goes into; nil once the session is released.
 	SAStatementReport *currentStatementReport;
-	// Whether the statement just run keeps the session for its result's rows.
-	BOOL statementHoldsSession;
 
 	// Timing details
 	uint64_t lastConnectionUsedTime;
@@ -292,10 +290,13 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 - (BOOL)isConnectedViaSSL;
 /** Whether the connection answers; a failed check's error is the calling thread's to read, like a statement's report. */
 - (BOOL)checkConnection;
+/** Checks the connection when it is due - lost in the background, marked to be replaced, idle for a while - running the check on the worker for the main thread; a failed check's error is the calling thread's to read. */
 - (BOOL)checkConnectionIfNecessary;
 /** Ends the delegate's wait for connection work and stops that work: the thread it runs on, and the query it may have waiting on the server. */
 - (void)cancelConnectionCheck;
+/** How long the connection has been connected, in seconds; -1 when it is not. */
 - (double)timeConnected;
+/** Whether the user asked for the disconnect. */
 - (BOOL)userTriggeredDisconnect;
 - (BOOL)isNotMariadb103;
 - (BOOL)isMariaDB;

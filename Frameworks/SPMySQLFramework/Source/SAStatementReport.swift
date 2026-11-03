@@ -120,11 +120,22 @@ public final class SAStatementReport: NSObject {
         return storedSqlState
     }
 
+    private var storedAffectedRows: UInt64
+    private var storedInsertID: UInt64
+
     /// The rows the statement changed, deleted, inserted or selected.
-    @objc public let affectedRows: UInt64
+    @objc public var affectedRows: UInt64 {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedAffectedRows
+    }
 
     /// The insert ID the connection carries, which an insert sets and other statements leave.
-    @objc public let insertID: UInt64
+    @objc public var insertID: UInt64 {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedInsertID
+    }
 
     /// Whether the statement was cancelled.
     @objc public var wasCancelled: Bool {
@@ -146,8 +157,8 @@ public final class SAStatementReport: NSObject {
         storedErrorMessage = errorMessage
         storedErrorID = errorID
         storedSqlState = sqlState
-        self.affectedRows = affectedRows
-        self.insertID = insertID
+        storedAffectedRows = affectedRows
+        storedInsertID = insertID
         storedWasCancelled = wasCancelled
         super.init()
     }
@@ -179,6 +190,18 @@ public final class SAStatementReport: NSObject {
         lock.lock()
         defer { lock.unlock() }
         storedSqlState = sqlState
+    }
+
+    /// Records the rows affected and the insert ID carried, as the statement settles.
+    /// - Parameters:
+    ///   - affectedRows: The rows affected.
+    ///   - insertID: The insert ID carried.
+    @objc(recordAffectedRows:insertID:)
+    public func record(affectedRows: UInt64, insertID: UInt64) {
+        lock.lock()
+        defer { lock.unlock() }
+        storedAffectedRows = affectedRows
+        storedInsertID = insertID
     }
 
     /// Records that the statement was cancelled while it held the session.
