@@ -59,21 +59,16 @@
 	// If selecting the database failed, return failure.
 	if ([self queryErrored]) {
 
-		// If the encoding needs to be restored, the error message and ID have to be stored so the
-		// actual error is still available to inspect on the class...
+		// If the encoding needs to be restored, the selection's report is kept across the restore,
+		// whose own statement hands its report to this thread: the selection's failure is what
+		// this caller reads. The connection's fields are left as the restore wrote them - written
+		// here, outside the lease, they could be taken for another thread's statement's.
 		if (encodingChangeRequired) {
-			NSString *theErrorString = [self lastErrorMessage];
-			NSUInteger theErrorID = [self lastErrorID];
-			NSString *theSqlstate = [self lastSqlstate];
+			SAStatementReport *theSelectionsReport = [self _reportThisThreadReads] ?: [self _reportFromTheConnectionsFields];
 
 			[self restoreStoredEncoding];
 
-			[self _updateLastErrorMessage:theErrorString];
-			[self _updateLastErrorID:theErrorID];
-			[self _updateLastSqlstate:theSqlstate];
-			// The restore's own statement handed its report to this thread; the selection's
-			// failure is what this caller reads.
-			[SAStatementReport handBack:[self _reportFromTheConnectionsFields] for:self];
+			[SAStatementReport handBack:theSelectionsReport for:self];
 		}
 
 		return NO;

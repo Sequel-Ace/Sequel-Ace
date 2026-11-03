@@ -561,6 +561,8 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertFalse(connection.selectDatabase("sa_no_such_database_\(UUID().uuidString.prefix(8))"))
         XCTAssertTrue(connection.queryErrored(), "the selection's failure is read")
         XCTAssertEqual(connection.lastErrorID(), 1049, "unknown database")
+        // The connection's own fields are the restore's: nothing was written there outside the lease.
+        XCTAssertEqual((connection.value(forKey: "queryErrorID") as? UInt) ?? 0, 0, "the fields say what the restore said")
     }
 
     // MARK: - What a statement reports after its report was taken
