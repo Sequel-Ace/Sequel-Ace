@@ -86,6 +86,32 @@ final class SAStatementReportTests: XCTestCase {
         XCTAssertTrue(connection.lastQueryWasCancelled, "but its caller reads the stop until the next statement")
     }
 
+    /// The connection as the statement call sees it, for a statement that ran.
+    private final class SAScriptedCallHost: NSObject, SAStatementCallHost {
+        let sessionAccess = SAConnectionSessionAccess()
+        var insertIDCarried: UInt64 = 0
+        var explicitStopsForgotten = 0
+        func forgetAnExplicitStop() { explicitStopsForgotten += 1 }
+        func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? { work() }
+    }
+
+    /// A statement that ran and failed keeps its own report, whatever refusal marker may stand on
+    /// the thread: the refusal report is for a statement that never ran.
+    func testAStatementThatRanAndFailedKeepsItsReportPastARefusalMarker() {
+        let host = SAScriptedCallHost()
+        defer { SAStatementReport.forgetReportHandedBackToThisThread(for: host) }
+        host.sessionAccess.noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: true)
+        let failure = SAStatementReport(errorMessage: "Table 'x' doesn't exist", errorID: 1146, sqlState: "42S02",
+                                        affectedRows: 0, insertID: 0, wasCancelled: false)
+
+        let result = SAStatementCall.run({ SAStatementRun(result: nil, report: failure) }, on: host)
+
+        XCTAssertNil(result)
+        XCTAssertTrue(SAStatementReport.reportHandedBackToThisThread(for: host) === failure, "the statement's own failure")
+        XCTAssertEqual(host.explicitStopsForgotten, 1)
+        XCTAssertFalse(host.sessionAccess.takeTheRefusalOfThisThreadsLastCall(), "the marker was taken all the same")
+    }
+
     /// A report handed back is read whatever the connection's fields say - a refusal, a stop
     /// before the send, a statement another thread has since run.
     func testAHandedBackReportIsReadWhateverTheConnectionsFieldsSay() {

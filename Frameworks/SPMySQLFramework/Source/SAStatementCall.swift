@@ -63,11 +63,13 @@ public final class SAStatementCall: NSObject {
         }
 
         // No run means the statement was refused or given up on, and the connection records that
-        // itself; given up on, its caller was already told. A refusal is reported here.
+        // itself; given up on, its caller was already told. A refusal is reported here - and only
+        // for a statement that never ran: one that ran and failed has its own report, handed back
+        // above, whatever refusal marker may stand on the thread.
         let lease = host.sessionAccess
         let refusedWhileWaiting = lease.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork
         let refused = lease.takeTheRefusalOfThisThreadsLastCall()
-        if result == nil, refused {
+        if run == nil, refused {
             let reason = refusedWhileWaiting
                 ? NSLocalizedString("The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.",
                                     comment: "Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection")

@@ -248,7 +248,11 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
     func testStoppingTheWaitLeavesAnotherThreadsStatementAlone() throws {
         let delegate = SAWaitingDelegate()
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
-        defer { connection.disconnect() }
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
 
         // A statement of another thread's holds the session - a table load, say.
         let otherStarted = DispatchSemaphore(value: 0)
@@ -264,7 +268,15 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             otherAnswered.fulfill()
         }
         XCTAssertEqual(otherStarted.wait(timeout: .now() + 2), .success)
-        Thread.sleep(forTimeInterval: 0.2)
+        // Until the other thread's statement holds the session on the server, not for a while.
+        var otherRuns = false
+        for _ in 0..<250 where !otherRuns {
+            otherRuns = try serverRunsAStatementContaining("'other'", seenFrom: observer)
+            if !otherRuns {
+                usleep(20_000)
+            }
+        }
+        XCTAssertTrue(otherRuns, "the other thread's statement holds the session")
 
         // The main thread's statement queues behind it; the user stops waiting for it at once.
         delegate.onceWhileWaiting = { _ in connection.cancelCheck() }
