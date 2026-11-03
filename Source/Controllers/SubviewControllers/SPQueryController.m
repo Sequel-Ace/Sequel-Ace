@@ -388,9 +388,9 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-    // Disable "Copy with Column Names" and "Copy as SQL INSERT"
+    // Disable "Copy with Column Names" and the "Copy as SQL" commands
     // in the main menu
-    if ([menuItem tag] == SPEditMenuCopyWithColumns || [menuItem tag] == SPEditMenuCopyAsSQL || [menuItem tag] == SPEditMenuCopyAsSQLNoAutoInc) {
+    if ([menuItem tag] == SPEditMenuCopyWithColumns || [menuItem tag] == SPEditMenuCopyAsSQL || [menuItem tag] == SPEditMenuCopyAsSQLNoAutoInc || [menuItem tag] == SPEditMenuCopyAsSQLUpdate) {
         return NO;
     }
     
