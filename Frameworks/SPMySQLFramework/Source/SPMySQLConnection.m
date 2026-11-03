@@ -413,9 +413,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (SAStatementReport *)_reportOfStatementHoldingTheSession
 {
-	@synchronized (self) {
-		return currentStatementReport;
-	}
+	return statementReportHold.current;
 }
 
 /**
@@ -507,6 +505,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	return [result boolValue];
 }
 
+/**
+ * Adds flags to the client flags the connection is made with.
+ */
 - (void)addClientFlags:(SPMySQLClientFlags)opts
 {
 	[self setClientFlags:([self clientFlags] | opts)];
@@ -746,6 +747,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
 		_sessionAccess = [[SAConnectionSessionAccess alloc] init];
 		connectionWorkCoordinator = [[SAConnectionWorkCoordinator alloc] init];
+		statementReportHold = [[SAStatementReportHold alloc] init];
 
 		// Start with no selected database
 		database = nil;

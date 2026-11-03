@@ -73,10 +73,11 @@ public final class SAConnectionCancellation: NSObject {
     /// - Parameter coordinator: The coordinator whose work the user stopped waiting for.
     @objc(userStoppedWaitingForWorkOf:)
     public func userStoppedWaiting(forWorkOf coordinator: SAConnectionWorkCoordinator) {
-        let tokens = coordinator.tokensOfWorkWaitedFor
         let worker = coordinator.currentWorkerThread
-        coordinator.abandonWorkForUserStop()
-        guard let worker, let host else {
+        // Only the work given up on: work that finished first keeps its result, and a streaming
+        // statement among it keeps its download.
+        let tokens = coordinator.abandonWorkForUserStopReturningAbandonedTokens()
+        guard let worker, let host, !tokens.isEmpty else {
             return
         }
         let hold = host.sessionAccess.reserveCancellation(ofWork: tokens, on: worker)

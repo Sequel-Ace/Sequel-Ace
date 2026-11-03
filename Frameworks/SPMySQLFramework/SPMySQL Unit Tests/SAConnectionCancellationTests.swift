@@ -461,4 +461,21 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .whenNothingIsOpen))
         XCTAssertFalse(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .notMarked))
     }
+
+    // MARK: - A stop of one piece of work with no session to send on
+
+    /// A stop of one piece of work whose query has no session to be killed on - torn down, or not
+    /// up yet - holds nothing and stops nobody: its thread is cancelled already, and the operations
+    /// waiting for the session keep their turn.
+    func testAStopOfOnePieceOfWorkWithNoSessionToSendOnHoldsNothing() {
+        let lease = SAConnectionSessionAccess()
+        lease.beginNativeQuery()
+        defer { lease.endNativeQuery() }
+
+        let hold = lease.reserveCancellation(ofWork: [], on: Thread.current)
+
+        XCTAssertFalse(hold.holdsTheQuery)
+        XCTAssertEqual(hold.query, 0)
+    }
+
 }

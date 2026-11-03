@@ -100,7 +100,7 @@ private final class SAFastStreamSettlingConnection: SPMySQLConnection {
     @objc(_reportOfLastStatement) func reportOfLastStatementOnceSettled() -> SAStatementReport {
         // A download that ends lets the attached report go; a short one does so before this.
         let deadline = Date().addingTimeInterval(2)
-        while value(forKey: "currentStatementReport") != nil, Date() < deadline {
+        while (value(forKey: "statementReportHold") as? SAStatementReportHold)?.current != nil, Date() < deadline {
             usleep(1_000)
         }
         let selector = NSSelectorFromString("_reportOfLastStatement")

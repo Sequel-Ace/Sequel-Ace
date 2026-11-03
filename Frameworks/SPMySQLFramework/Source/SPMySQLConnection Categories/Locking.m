@@ -84,9 +84,7 @@
 
 	// The statement that held the session for its rows is done with it: what is written from
 	// here on is not its, and its report - already with its caller - takes nothing more.
-	@synchronized (self) {
-		currentStatementReport = nil;
-	}
+	[statementReportHold sessionWasReleased];
 
 	// Each packet carries its own session-state items, and fetching the next one replaces them -
 	// so a report that came with an earlier result would be gone by the time the session is

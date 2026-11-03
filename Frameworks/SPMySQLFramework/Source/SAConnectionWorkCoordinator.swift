@@ -157,12 +157,6 @@ public final class SAConnectionWorkCoordinator: NSObject {
         Thread.current.threadDictionary[workTokenKey] as? UInt64
     }
 
-    /// The tokens of the work being waited for right now, outermost first.
-    var tokensOfWorkWaitedFor: [UInt64] {
-        inFlightLock.lock()
-        defer { inFlightLock.unlock() }
-        return inFlight.map { $0.token }
-    }
 
     /// Whether the current thread is already waiting for work on this coordinator.
     ///
@@ -362,14 +356,24 @@ public final class SAConnectionWorkCoordinator: NSObject {
     /// that never ran would then look as if it had. Work that finished before this counts as
     /// finished; so does work queued behind it on the same thread, which is given up on too.
     @objc public func abandonWorkForUserStop() {
+        abandonWorkForUserStopReturningAbandonedTokens()
+    }
+
+    /// Gives up the work being waited for, and says which pieces were given up on.
+    ///
+    /// Work that finished before the stop counts as finished, and its caller gets its result: a
+    /// streaming statement among them still holds the session for its rows, and a stop that
+    /// reached its query would kill a download its caller was told succeeded.
+    /// - Returns: The tokens of the work given up on - none of the work that had finished.
+    @discardableResult
+    func abandonWorkForUserStopReturningAbandonedTokens() -> [UInt64] {
         inFlightLock.lock()
         let waitedFor = inFlight
         inFlightLock.unlock()
 
-        for entry in waitedFor {
-            _ = entry.outcome.abandon()
-        }
+        let abandoned = waitedFor.filter { $0.outcome.abandon() }.map { $0.token }
         cancel()
+        return abandoned
     }
 
     /// The thread the coordinator's work runs on now, if it has one.

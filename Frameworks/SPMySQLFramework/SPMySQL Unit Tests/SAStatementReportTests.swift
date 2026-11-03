@@ -39,10 +39,10 @@ final class SAStatementReportTests: XCTestCase {
     /// What the connection writes while a statement still holds the session - a streaming
     /// download's error, a stop - goes into that statement's report, which its caller reads; once
     /// the session is released nothing more does.
-    func testWhatTheConnectionWritesWhileTheStatementHoldsTheSessionReachesItsReport() {
+    func testWhatTheConnectionWritesWhileTheStatementHoldsTheSessionReachesItsReport() throws {
         let connection = SPMySQLConnection()
-        let report = self.report()
-        connection.setValue(report, forKey: "currentStatementReport")
+        let hold = try XCTUnwrap(connection.value(forKey: "statementReportHold") as? SAStatementReportHold)
+        let report = hold.attach(insertID: 0)
         SAStatementReport.handBack(report, for: connection)
         defer { SAStatementReport.forgetReportHandedBackToThisThread(for: connection) }
         XCTAssertFalse(connection.queryErrored())
@@ -61,7 +61,7 @@ final class SAStatementReportTests: XCTestCase {
         // The session is released: the report is the statement's as it ended, whatever is written next.
         connection.perform(NSSelectorFromString("_tryLockConnection"))
         connection.perform(NSSelectorFromString("_unlockConnection"))
-        XCTAssertNil(connection.value(forKey: "currentStatementReport"))
+        XCTAssertNil(hold.current)
         write("_updateLastErrorMessage:", "a later statement's error", on: connection)
         write("_updateLastErrorID:", UInt(1146), on: connection)
         XCTAssertEqual(connection.lastErrorMessage(), "Query execution was interrupted")
@@ -71,10 +71,10 @@ final class SAStatementReportTests: XCTestCase {
     /// An explicit stop of the connection's work - a KILL issued over another connection, marked
     /// here - reaches the report of a statement that still holds the session, and every caller
     /// until the next statement starts.
-    func testAnExplicitStopReachesTheHeldReportAndEveryCallerUntilTheNextStatement() {
+    func testAnExplicitStopReachesTheHeldReportAndEveryCallerUntilTheNextStatement() throws {
         let connection = SPMySQLConnection()
-        let held = report()
-        connection.setValue(held, forKey: "currentStatementReport")
+        let hold = try XCTUnwrap(connection.value(forKey: "statementReportHold") as? SAStatementReportHold)
+        let held = hold.attach(insertID: 0)
         let earlier = report()
         SAStatementReport.handBack(earlier, for: connection)
         defer { SAStatementReport.forgetReportHandedBackToThisThread(for: connection) }
@@ -141,6 +141,26 @@ final class SAStatementReportTests: XCTestCase {
         XCTAssertTrue(SAStatementReport.reportHandedBackToThisThread(for: host) === failure, "the statement's own failure")
         XCTAssertEqual(host.explicitStopsForgotten, 1)
         XCTAssertFalse(host.sessionAccess.takeTheRefusalOfThisThreadsLastCall(), "the marker was taken all the same")
+    }
+
+    /// The held report takes the statement's own final status as the statement settles, and goes
+    /// with the session: once released, the connection's fields are the report.
+    func testTheHeldReportTakesTheStatementsOwnStatusAndGoesWithTheSession() {
+        let hold = SAStatementReportHold()
+        XCTAssertNil(hold.current)
+        let held = hold.attach(insertID: 7)
+        XCTAssertTrue(hold.current === held)
+
+        let fields = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 3, insertID: 9, wasCancelled: true)
+        XCTAssertTrue(hold.reportOfStatement(settledWith: fields) === held, "the attached report, settled")
+        XCTAssertTrue(held.wasCancelled)
+        XCTAssertEqual(held.affectedRows, 3)
+        XCTAssertEqual(held.insertID, 9)
+
+        hold.sessionWasReleased()
+        XCTAssertNil(hold.current)
+        let later = SAStatementReport(errorMessage: "later", errorID: 1146, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
+        XCTAssertTrue(hold.reportOfStatement(settledWith: later) === later, "nothing attached: the fields' report")
     }
 
     /// A report handed back is read whatever the connection's fields say - a refusal, a stop

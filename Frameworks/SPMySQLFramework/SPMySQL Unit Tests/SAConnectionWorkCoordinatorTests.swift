@@ -343,6 +343,29 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.cancelledWorkRecorded, 1)
     }
 
+    /// A stop that comes once the work has finished - in the moment before the interface notices -
+    /// gives nothing up: the work's caller gets its result, and nothing of the work's is there to
+    /// be stopped on the server.
+    func testAStopAfterTheWorkFinishedGivesNothingUp() {
+        let host = SAScriptedWorkHost()
+        var abandoned: [UInt64]?
+        host.whileWaiting = { [coordinator] isFinished in
+            while !isFinished() {
+                usleep(1_000)
+            }
+            abandoned = coordinator.abandonWorkForUserStopReturningAbandonedTokens()
+        }
+
+        let result = coordinator.run({
+            usleep(300_000)
+            return "answered"
+        }, on: host)
+
+        XCTAssertEqual(result as? String, "answered")
+        XCTAssertEqual(abandoned, [])
+        XCTAssertEqual(host.cancelledWorkRecorded, 0)
+    }
+
     /// Work the main thread would hand over while a question is out to it is refused before
     /// anything is enqueued, and marked as refused, so the statement path reports it as not sent.
     func testMainThreadWorkIsRefusedAndMarkedWhileAQuestionIsOut() {

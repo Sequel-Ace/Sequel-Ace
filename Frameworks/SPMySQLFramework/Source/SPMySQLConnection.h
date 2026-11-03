@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAStatementReport, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAStatementReport, SAStatementReportHold, SPMySQLKeepAliveTimer;
 
 /**
  * How a session is to be replaced before its next use. One word, so that a reader sees the whole
@@ -199,9 +199,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	BOOL explicitlyCancelled;
 
 	// The report of the statement that still holds the session - a streaming statement, whose rows
-	// are read after its report was taken - attached before its result exists, which what the
-	// connection writes meanwhile goes into; nil once the session is released.
-	SAStatementReport *currentStatementReport;
+	// are read after its report was taken - attached before its result exists, let go as the
+	// session is released; what the connection writes meanwhile goes into it.
+	SAStatementReportHold *statementReportHold;
 
 	// Timing details
 	uint64_t lastConnectionUsedTime;

@@ -243,6 +243,13 @@ import Darwin
                     return SACancellationHold(query: 0, session: 0, serverThread: 0,
                                               holdsTheQuery: false, killWasAlreadyAccepted: false)
                 }
+                // With no session to send a request on, a stop of one piece of work has nothing
+                // to do: its thread is cancelled already, and the pending operations keep their
+                // turn - the stop of everything below records itself against them, this one not.
+                if cancellationSocket < 0 || serverThreadID == 0 {
+                    return SACancellationHold(query: 0, session: 0, serverThread: 0,
+                                              holdsTheQuery: false, killWasAlreadyAccepted: false)
+                }
             }
             guard cancellingQuery == nil else {
                 // A request for the query is already on its way, and no second one is sent. The

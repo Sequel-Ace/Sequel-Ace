@@ -860,18 +860,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (SAStatementReport *)_reportOfLastStatement
 {
-	// A streaming statement's report was attached before its rows could start to arrive, and is
-	// still the connection's while the session is held: the statement's own final status goes in
-	// here, and what the download writes keeps going in. A download that has ended already let
-	// it go, and the connection's fields - which that download wrote last - are the report.
-	@synchronized (self) {
-		if (currentStatementReport) {
-			if (lastQueryWasCancelled) [currentStatementReport recordCancellation];
-			[currentStatementReport recordAffectedRows:lastQueryAffectedRowCount insertID:lastQueryInsertID];
-			return currentStatementReport;
-		}
-	}
-	return [self _reportFromTheConnectionsFields];
+	return [statementReportHold reportOfStatementSettledWith:[self _reportFromTheConnectionsFields]];
 }
 
 /**
@@ -888,21 +877,12 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 }
 
 /**
- * Attaches a fresh report to the statement about to keep the session for its rows - before its
- * result exists and can start downloading, so that nothing the download writes is missed, and
- * so that no report is attached to a session the download has let go of already. The release
- * of the session, in `_unlockConnection`, lets the report go.
+ * Attaches a fresh report to the statement about to keep the session for its rows, before its
+ * result exists and can start downloading; the release of the session lets it go.
  */
 - (void)_attachReportOfStreamingStatement
 {
-	@synchronized (self) {
-		currentStatementReport = [[SAStatementReport alloc] initWithErrorMessage:nil
-		                                                                 errorID:0
-		                                                                sqlState:nil
-		                                                            affectedRows:0
-		                                                                insertID:lastQueryInsertID
-		                                                            wasCancelled:NO];
-	}
+	[statementReportHold attachWithInsertID:lastQueryInsertID];
 }
 
 /**
