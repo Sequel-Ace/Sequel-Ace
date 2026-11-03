@@ -152,13 +152,16 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             workMayFinish.wait()
             workReturned.signal()
             return "too late"
+        }, whenSlow: { _ in
+            // The interface stops waiting only once the work is running: a worker thread that is
+            // let go before it has begun never runs what was queued for it.
+            XCTAssertEqual(workStarted.wait(timeout: .now() + 5), .success, "the work has started")
         })
 
         XCTAssertFalse(outcome.finished)
         XCTAssertTrue(outcome.wasAbandoned)
         XCTAssertNil(outcome.result)
 
-        XCTAssertEqual(workStarted.wait(timeout: .now() + 2), .success)
         workMayFinish.signal()
         XCTAssertEqual(workReturned.wait(timeout: .now() + 2), .success)
         XCTAssertNil(outcome.result, "what the work returns afterwards is nobody's answer")
@@ -188,9 +191,11 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
     /// Work the user stops never counts as finished, even when it returns before the waiting ends.
     func testWorkStoppedByTheUserNeverCountsAsFinished() {
+        let workStarted = DispatchSemaphore(value: 0)
         let workReturned = DispatchSemaphore(value: 0)
         var waitEndedAtOnce = false
         let outcome = run({
+            workStarted.signal()
             // Stands in for work that notices the stop and returns early without saying why.
             while !Thread.current.isCancelled {
                 usleep(1_000)
@@ -198,6 +203,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             workReturned.signal()
             return "stopped early"
         }, whenSlow: { isFinished in
+            XCTAssertEqual(workStarted.wait(timeout: .now() + 5), .success, "the work has started")
             coordinator.abandonWorkForUserStop()
             waitEndedAtOnce = isFinished()
 
@@ -213,9 +219,11 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
     /// Work the user stopped knows it, once it looks: the lease turns its thread away.
     func testWorkTheUserStoppedKnowsItHasBeenAbandoned() {
+        let workStarted = DispatchSemaphore(value: 0)
         let noticed = DispatchSemaphore(value: 0)
         var abandonedWhenItLooked = false
         _ = run({
+            workStarted.signal()
             while !Thread.current.isCancelled {
                 usleep(1_000)
             }
@@ -223,6 +231,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             noticed.signal()
             return nil
         }, whenSlow: { _ in
+            XCTAssertEqual(workStarted.wait(timeout: .now() + 5), .success, "the work has started")
             coordinator.abandonWorkForUserStop()
         })
 
