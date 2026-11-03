@@ -79,15 +79,26 @@ public final class SAStatementCall: NSObject {
         let refusedWhileWaiting = lease.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork
         let refused = lease.takeTheRefusalOfThisThreadsLastCall()
         if run == nil, refused {
-            let reason = refusedWhileWaiting
-                ? NSLocalizedString("The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.",
-                                    comment: "Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection")
-                : NSLocalizedString("The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.",
-                                    comment: "Error shown for a statement refused while the lost-connection question is open")
-            SAStatementReport.handBack(SAStatementReport(errorMessage: reason, errorID: 2013, sqlState: "HY000", affectedRows: 0,
-                                                         insertID: host.insertIDCarried, wasCancelled: false), for: host)
+            SAStatementReport.handBack(refusalReport(whileWaitingForEarlierWork: refusedWhileWaiting, on: host), for: host)
         }
         return result
+    }
+
+    /// The report of a call the connection turned away, with the reason: the question out to the
+    /// main thread, or the earlier work this thread is waiting for.
+    /// - Parameters:
+    ///   - whileWaitingForEarlierWork: Whether the call came in during this thread's wait for
+    ///     earlier work on the connection.
+    ///   - host: The connection.
+    /// - Returns: The report, error 2013.
+    private static func refusalReport(whileWaitingForEarlierWork: Bool, on host: SAStatementCallHost) -> SAStatementReport {
+        let reason = whileWaitingForEarlierWork
+            ? NSLocalizedString("The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.",
+                                comment: "Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection")
+            : NSLocalizedString("The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.",
+                                comment: "Error shown for a statement refused while the lost-connection question is open")
+        return SAStatementReport(errorMessage: reason, errorID: 2013, sqlState: "HY000", affectedRows: 0,
+                                 insertID: host.insertIDCarried, wasCancelled: false)
     }
 
     /// Runs a connection check and hands a failed check's report to the calling thread.
@@ -96,7 +107,10 @@ public final class SAStatementCall: NSObject {
     /// handed back earlier would otherwise stand in front of it. Not when the user stopped waiting
     /// for this very check, whose stop was handed back during it - told from a report of some
     /// statement stopped earlier, which does not stand in front of the check's error, by the
-    /// report's identity before and after the check.
+    /// report's identity before and after the check. A check handed over can be turned away before
+    /// it runs - a question out to the main thread, or earlier work this thread is waiting for -
+    /// and is reported as refused then, with the reason, like a statement: the connection's fields
+    /// describe some other statement.
     /// - Parameters:
     ///   - check: The check itself, which writes its error on the connection.
     ///   - handedOver: Whether the check runs through the hand-off - on the worker for the main
@@ -107,9 +121,14 @@ public final class SAStatementCall: NSObject {
     public static func runCheck(_ check: @escaping () -> Bool, handedOver: Bool, on host: SAStatementCallHost) -> Bool {
         let reportBefore = SAStatementReport.reportHandedBackToThisThread(for: host)
         let usable = handedOver ? host.runConnectionWorkKeepingInterfaceAlive(check) : check()
+        let lease = host.sessionAccess
+        let refusedWhileWaiting = lease.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork
+        let refused = handedOver && lease.takeTheRefusalOfThisThreadsLastCall()
         let reportAfter = SAStatementReport.reportHandedBackToThisThread(for: host)
         let thisCheckWasStopped = reportAfter !== reportBefore && reportAfter?.wasCancelled == true
-        if !usable, !thisCheckWasStopped {
+        if !usable, refused {
+            SAStatementReport.handBack(refusalReport(whileWaitingForEarlierWork: refusedWhileWaiting, on: host), for: host)
+        } else if !usable, !thisCheckWasStopped {
             SAStatementReport.handBack(host.reportFromTheConnectionsFields, for: host)
         }
         return usable

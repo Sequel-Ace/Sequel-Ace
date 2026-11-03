@@ -95,8 +95,38 @@ final class SAStatementReportTests: XCTestCase {
         var fields = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
         var reportFromTheConnectionsFields: SAStatementReport { fields }
         func forgetAnExplicitStop() { explicitStopsForgotten += 1 }
+        /// Whether handed-over work is turned away before it runs, the way the coordinator turns it
+        /// away while this thread waits for earlier work.
+        var refusesHandedOverWork = false
         func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? { work() }
-        func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool { work() }
+        func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool {
+            if refusesHandedOverWork {
+                sessionAccess.noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: true)
+                return false
+            }
+            return work()
+        }
+    }
+
+    /// A check handed over that the coordinator turns away - earlier work this thread is waiting
+    /// for, a question out to the main thread - is reported as refused, with the reason, like a
+    /// statement: the connection's fields describe some other statement then. The marker is taken.
+    func testARefusedHandedOverCheckIsReportedAsRefused() {
+        let host = SAScriptedCallHost()
+        defer { SAStatementReport.forgetReportHandedBackToThisThread(for: host) }
+        host.fields = SAStatementReport(errorMessage: "some other statement's", errorID: 1146, sqlState: "42S02",
+                                        affectedRows: 0, insertID: 0, wasCancelled: false)
+        host.refusesHandedOverWork = true
+
+        XCTAssertFalse(SAStatementCall.runCheck({
+            XCTFail("a check turned away does not run")
+            return true
+        }, handedOver: true, on: host))
+
+        let report = SAStatementReport.reportHandedBackToThisThread(for: host)
+        XCTAssertEqual(report?.errorID, 2013, "refused, not some other statement's error")
+        XCTAssertEqual(report?.errorMessage?.contains("still waiting for an earlier statement"), true, "and told why")
+        XCTAssertFalse(host.sessionAccess.takeTheRefusalOfThisThreadsLastCall(), "the marker was taken")
     }
 
     /// A failed check hands the connection's fields to the calling thread - past a report handed
