@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAStatementReport, SAStatementReportHold, SPMySQLKeepAliveTimer;
 
 /**
  * How a session is to be replaced before its next use. One word, so that a reader sees the whole
@@ -63,6 +63,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
     __weak NSObject <SPMySQLConnectionDelegate> *delegate;
 	BOOL delegateSupportsWillQueryString;
 	BOOL delegateSupportsConnectionLost;
+	// Whether the delegate shows a wait for connection work and lets the user end it - which is
+	// what makes the connection hand a main thread's work to its worker at all.
+	BOOL delegateSupportsConnectionCheckProgress;
 	BOOL delegateQueryLogging; // Defaults to YES if protocol implemented
 
 	// Basic connection details
@@ -133,6 +136,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	// How a query is stopped: recorded first, the server asked, the socket shut down after a
 	// grace period. The lease keeps the books; this holds the policy.
 	SAConnectionCancellation *connectionCancellation;
+	// Where a main thread's connection work runs, so that the window keeps answering while the
+	// work waits for a server, and the delegate can show the wait and let the user end it.
+	SAConnectionWorkCoordinator *connectionWorkCoordinator;
 	// How the session is to be replaced before its next use - a SASessionReplacementMark: not at
 	// all; once nothing is open in it; or regardless, because a ping cut off before its answer
 	// came may still get that answer, which the next statement would read as its own result. One
@@ -187,6 +193,15 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 
 	// Query cancellation details
 	BOOL lastQueryWasCancelled;
+	// Whether the connection's work was stopped explicitly - a KILL issued over another
+	// connection, marked here - since the last statement was asked for: every caller reads that,
+	// whichever statement's report it holds, until the next statement is asked for.
+	BOOL explicitlyCancelled;
+
+	// The report of the statement that still holds the session - a streaming statement, whose rows
+	// are read after its report was taken - attached before its result exists, let go as the
+	// session is released; what the connection writes meanwhile goes into it.
+	SAStatementReportHold *statementReportHold;
 
 	// Timing details
 	uint64_t lastConnectionUsedTime;
@@ -273,11 +288,19 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 #pragma mark -
 #pragma mark Connection state
 
+/** Whether the connection is in the connected state. */
 - (BOOL)isConnected;
+/** Whether the connection is in the connected state and its session is encrypted. */
 - (BOOL)isConnectedViaSSL;
+/** Whether the connection answers; a failed check's error is the calling thread's to read, like a statement's report. */
 - (BOOL)checkConnection;
+/** Checks the connection when it is due - lost in the background, marked to be replaced, idle for a while - running the check on the worker for the main thread; a failed check's error is the calling thread's to read. */
 - (BOOL)checkConnectionIfNecessary;
+/** Ends the delegate's wait for connection work and stops that work: the thread it runs on, and the query it may have waiting on the server. */
+- (void)cancelConnectionCheck;
+/** How long the connection has been connected, in seconds; -1 when it is not. */
 - (double)timeConnected;
+/** Whether the user asked for the disconnect. */
 - (BOOL)userTriggeredDisconnect;
 - (BOOL)isNotMariadb103;
 - (BOOL)isMariaDB;

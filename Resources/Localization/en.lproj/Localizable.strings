@@ -2287,6 +2287,21 @@
 /* Query cancelled error */
 "Query cancelled." = "Query cancelled.";
 
+/* connection wait sheet title */
+"Waiting for the server…" = "Waiting for the server…";
+
+/* connection wait sheet elapsed time, %@ is a spelled-out duration such as '14 seconds' */
+"The server has not answered for %@." = "The server has not answered for %@.";
+
+/* connection wait sheet cancel button */
+"Stop Waiting" = "Stop Waiting";
+
+/* Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection */
+"The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again." = "The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.";
+
+/* connection wait sheet note while a finished wait is held up by another window's wait */
+"Continues once the other window has finished waiting." = "Continues once the other window has finished waiting.";
+
 /* Query cancel by resetting connection error */
 "Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset.";
 

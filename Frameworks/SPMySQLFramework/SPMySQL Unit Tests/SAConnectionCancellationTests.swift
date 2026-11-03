@@ -63,8 +63,12 @@ private final class SACancellationHost: NSObject, SAConnectionCancellationHost {
         }
     }
 
+    /// What the test wants to look at the moment the query is marked.
+    var whenMarked: (() -> Void)?
+
     func markRunningQueryCancelled() {
         note("marked")
+        whenMarked?()
     }
 }
 
@@ -338,6 +342,99 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertTrue(SAConnectionCancellation.sessionIsReplacedBeforeUse(mark: .regardless, sessionHasOpenTransaction: false))
     }
 
+    /// The user's stop gives the work up before the server is asked: the caller waiting for the
+    /// work is told at once - the worker's thread let go, so the next piece of work gets one of its
+    /// own - and the request to the server does not hold the main thread up.
+    func testTheUsersStopGivesTheWorkUpBeforeAskingTheServer() {
+        let coordinator = SAConnectionWorkCoordinator()
+        host.killAnswer = .blockedThenAccepted
+        defer { host.letTheKillReturn.signal() }
+        var theWorkerWasStillThereBeforeTheStop: Bool?
+        var theWorkerWasLetGoWhenMarked: Bool?
+        var theWorkerWasLetGoWhenTheStopReturned: Bool?
+        var theStopReturnedBeforeTheKillWasAnswered: Bool?
+        let theWorkerBeganItsQuery = DispatchSemaphore(value: 0)
+
+        let outcome = coordinator.run({ [host] in
+            // The work stands for a statement whose native query the worker is running on the session.
+            host.sessionAccess.beginNativeQuery()
+            theWorkerBeganItsQuery.signal()
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            return nil
+        }, whenSlow: { _ in
+            // The stop comes once the query is running, as the user's does: a sheet is only up for
+            // work that has been going on for a while.
+            XCTAssertEqual(theWorkerBeganItsQuery.wait(timeout: .now() + 2), .success)
+            theWorkerWasStillThereBeforeTheStop = coordinator.currentWorkerThread != nil
+            host.whenMarked = { theWorkerWasLetGoWhenMarked = coordinator.currentWorkerThread == nil }
+            let stopStarted = Date()
+            cancellation.userStoppedWaiting(forWorkOf: coordinator)
+            theWorkerWasLetGoWhenTheStopReturned = coordinator.currentWorkerThread == nil
+            theStopReturnedBeforeTheKillWasAnswered = Date().timeIntervalSince(stopStarted) < 1
+        })
+
+        XCTAssertEqual(theWorkerWasStillThereBeforeTheStop, true)
+        XCTAssertTrue(outcome.wasAbandoned, "the work was given up on")
+        XCTAssertEqual(theWorkerWasLetGoWhenTheStopReturned, true, "and its thread let go by the time the stop returned")
+        XCTAssertEqual(theStopReturnedBeforeTheKillWasAnswered, true, "without waiting for the server")
+        XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success, "which was asked all the same")
+        XCTAssertTrue(host.recordedCalls().contains("kill 42"))
+        XCTAssertFalse(host.recordedCalls().contains("marked"),
+                       "the connection's running query is not marked for a stop of one thread's work: that thread reports its own statement as cancelled")
+        XCTAssertEqual(theWorkerWasLetGoWhenMarked, nil, "nothing was marked")
+    }
+
+    /// The user's stop is about the worker's work alone. A native query another thread is running
+    /// on the session - a table load the stopped work was queued behind - is neither killed nor
+    /// marked, and the operations waiting for the session keep their turn.
+    func testTheUsersStopLeavesAnotherThreadsQueryAlone() {
+        let coordinator = SAConnectionWorkCoordinator()
+        // The native query on the session is this thread's, not the worker's.
+        host.sessionAccess.beginNativeQuery()
+        var theWorkerWasLetGo: Bool?
+
+        let outcome = coordinator.run({
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            return nil
+        }, whenSlow: { _ in
+            cancellation.userStoppedWaiting(forWorkOf: coordinator)
+            theWorkerWasLetGo = coordinator.currentWorkerThread == nil
+        })
+
+        XCTAssertTrue(outcome.wasAbandoned, "the work was given up on")
+        XCTAssertEqual(theWorkerWasLetGo, true, "and its thread let go")
+        XCTAssertNotEqual(host.killWasAsked.wait(timeout: .now() + 0.3), .success, "the other thread's query was not killed")
+        XCTAssertEqual(host.recordedCalls(), [], "nor marked")
+        XCTAssertTrue(host.sessionAccess.reserveCancellation().holdsTheQuery,
+                      "and the query is still there for a stop of everything to hold")
+    }
+
+    /// A thread that was given up on never sends: the lease answers its statement as cancelled
+    /// before it goes out, whether or not a stop was recorded against anything.
+    func testAThreadGivenUpOnNeverSends() {
+        let lease = host.sessionAccess
+        let looked = expectation(description: "the given-up thread looked")
+        var maySend: Bool?
+        var reportsCancelled: Bool?
+
+        Thread.detachNewThread {
+            Thread.current.cancel()
+            maySend = lease.beginNativeQuery()
+            reportsCancelled = lease.currentQueryWasCancelled
+            lease.endNativeQuery()
+            looked.fulfill()
+        }
+
+        wait(for: [looked], timeout: 2)
+        XCTAssertEqual(maySend, false)
+        XCTAssertEqual(reportsCancelled, true)
+        XCTAssertFalse(lease.currentQueryWasCancelled, "while a thread not given up on is not affected")
+    }
+
     /// A session whose ping was cut off before its answer came is replaced; any other is kept.
     func testASessionIsReplacedOnlyAfterAPingCutOffBeforeItsAnswer() {
         XCTAssertTrue(SAConnectionCancellation.replacesSessionAfterPing(cutOff: true, pingSucceeded: false))
@@ -364,4 +461,21 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .whenNothingIsOpen))
         XCTAssertFalse(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .notMarked))
     }
+
+    // MARK: - A stop of one piece of work with no session to send on
+
+    /// A stop of one piece of work whose query has no session to be killed on - torn down, or not
+    /// up yet - holds nothing and stops nobody: its thread is cancelled already, and the operations
+    /// waiting for the session keep their turn.
+    func testAStopOfOnePieceOfWorkWithNoSessionToSendOnHoldsNothing() {
+        let lease = SAConnectionSessionAccess()
+        lease.beginNativeQuery()
+        defer { lease.endNativeQuery() }
+
+        let hold = lease.reserveCancellation(ofWork: [], on: Thread.current)
+
+        XCTAssertFalse(hold.holdsTheQuery)
+        XCTAssertEqual(hold.query, 0)
+    }
+
 }

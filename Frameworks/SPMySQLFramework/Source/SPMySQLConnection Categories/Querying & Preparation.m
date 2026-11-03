@@ -360,33 +360,23 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
  assertingDatabase:(NSString *)databaseName
 databaseContextIsRequired:(BOOL)databaseContextIsRequired
 {
-    id theResult = [self.sessionAccess performQuery:^id {
-        return [self _queryString:theQueryString
-                   usingEncoding:theEncoding
-                  withResultType:theReturnType
-               assertingDatabase:databaseName
-       databaseContextIsRequired:databaseContextIsRequired];
-    } recover:^BOOL {
-        return [self _reconnectAllowingRetries:YES];
-    }];
-
-    // A statement that was refused the session never reached the server. Saying so is what
-    // keeps it apart from one that ran and changed nothing: callers read the row count and the
-    // error together, and both would still describe the statement before this one - which is
-    // how an edit that was never written comes to be treated as saved.
-    BOOL theSessionWasRefused = [self.sessionAccess takeTheRefusalOfThisThreadsLastCall];
-    if (!theResult && theSessionWasRefused) {
-        // The statement never reached `_queryString:`, which is where each query clears what the
-        // one before it left. A stop recorded against an earlier query would otherwise still
-        // stand here, and callers that read it alongside the error - the content view among
-        // them - take a cancelled query to be one the user already knows about and say nothing.
-        lastQueryWasCancelled = NO;
-        lastQueryAffectedRowCount = 0;
-        [self _updateLastErrorMessage:NSLocalizedString(@"The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.", @"Error shown for a statement refused while the lost-connection question is open")];
-        [self _updateLastErrorID:2013];
-        [self _updateLastSqlstate:@"HY000"];
-    }
-    return theResult;
+    // The call is the Swift side's (`SAStatementCall`): the statement runs through the hand-off -
+    // on the connection's worker when asked for on the main thread, where it was asked for
+    // otherwise - takes its report with its result while the session is still held, and the
+    // report goes to the calling thread, as does a refusal. This is the legacy query under the
+    // lease, and nothing more.
+    return [SAStatementCall run:^SAStatementRun *{
+        return [self.sessionAccess performQuery:^id {
+            id theWorkResult = [self _queryString:theQueryString
+                                   usingEncoding:theEncoding
+                                  withResultType:theReturnType
+                               assertingDatabase:databaseName
+                       databaseContextIsRequired:databaseContextIsRequired];
+            return [[SAStatementRun alloc] initWithResult:theWorkResult report:[self _reportOfLastStatement]];
+        } recover:^BOOL {
+            return [self _reconnectAllowingRetries:YES];
+        }];
+    } on:[self _statementCallHost]];
 }
 
 - (id)_queryString:(NSString *)theQueryString
@@ -401,6 +391,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
+	explicitlyCancelled = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -466,6 +457,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger queryAttemptsAllowed = 1;
 	if (retryQueriesOnConnectionFailure) queryAttemptsAllowed++;
 	int queryStatus;
+	// Whether the statement reached the server and was carried out, which a stop that lands
+	// afterwards does not undo.
+	BOOL theStatementWasCarriedOut = NO;
 
 	// The bytes of the attempt under way, held while they are sent.
 	NSData *queryData = nil;
@@ -547,7 +541,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
-			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
+			theStatementWasCarriedOut = YES;
+			[self _noteStatementCarriedOut:theQueryString];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
 			//  -1 indicates that the query returned an error or that, for a SELECT query, mysql_affected_rows() was called prior to calling mysql_store_result()."
@@ -633,17 +628,20 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				// For fast streaming and low memory streaming result sets, set up the result
 				case SPMySQLResultAsLowMemStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
+					[self _attachReportOfStreamingStatement];
 					theResult = [[SPMySQLStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 
 				case SPMySQLResultAsFastStreamingResult:
 					mysqlResult = mysql_use_result(mySQLConnection);
+					[self _attachReportOfStreamingStatement];
 					theResult = [[SPMySQLFastStreamingResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 
 				// Also set up the result for streaming result data stores, but note the data download does not start yet
 				case SPMySQLResultAsStreamingResultStore:
 					mysqlResult = mysql_use_result(mySQLConnection);
+					[self _attachReportOfStreamingStatement];
 					theResult = [[SPMySQLStreamingResultStore alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding connection:self];
 					break;
 			}
@@ -653,6 +651,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			theErrorID = mysql_errno(mySQLConnection);
 			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+			// A result the server could not deliver whole - the query killed while its rows were
+			// being stored - was not carried out, whatever the send said.
+			if (theErrorID != 0) theStatementWasCarriedOut = NO;
 		} else {
 			theResult = [[SPMySQLEmptyResult alloc] init];
 		}
@@ -663,8 +664,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastQueryInsertID = mySQLConnection->insert_id;
 	}
 
-	// If the query was cancelled, override the error state
-	lastQueryWasCancelled = self.sessionAccess.currentQueryWasCancelled;
+	// If the query was cancelled, override the error state - unless the statement had been carried
+	// out by the time the stop landed: it undoes nothing then, and a statement reported cancelled
+	// would be tried again, a write applied twice.
+	lastQueryWasCancelled = !theStatementWasCarriedOut && self.sessionAccess.currentQueryWasCancelled;
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -734,6 +737,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (unsigned long long)rowsAffectedByLastQuery
 {
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
+	if (handedBack) return handedBack.affectedRows;
 	return lastQueryAffectedRowCount;
 }
 
@@ -743,6 +748,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (unsigned long long)lastInsertID
 {
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
+	if (handedBack) return handedBack.insertID;
 	return lastQueryInsertID;
 }
 
@@ -754,6 +761,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (BOOL)queryErrored
 {
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
+	if (handedBack) return handedBack.errorMessage != nil;
 	return (queryErrorMessage)?YES:NO;
 }
 
@@ -763,12 +772,16 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (NSString *)lastErrorMessage
 {
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
+	if (handedBack) return handedBack.errorMessage;
 	if (!queryErrorMessage) return nil;
 	return [NSString stringWithString:queryErrorMessage];
 }
 
 - (NSString *)lastSqlstate
 {
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
+	if (handedBack) return handedBack.sqlState;
 	if(!querySqlstate) return nil;
 	return [NSString stringWithString:querySqlstate];
 }
@@ -779,6 +792,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (NSUInteger)lastErrorID
 {
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
+	if (handedBack) return handedBack.errorID;
 	return queryErrorID;
 }
 
@@ -839,6 +854,54 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 #pragma mark Private API
 
 @implementation SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+/**
+ * What the last statement reported, as the connection keeps it for its caller.
+ */
+- (SAStatementReport *)_reportOfLastStatement
+{
+	return [statementReportHold reportOfStatementSettledWith:[self _reportFromTheConnectionsFields]];
+}
+
+/**
+ * A report of what the connection's fields say now: the last statement's error, rows and stop.
+ */
+- (SAStatementReport *)_reportFromTheConnectionsFields
+{
+	return [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
+	                                               errorID:queryErrorID
+	                                              sqlState:querySqlstate
+	                                          affectedRows:lastQueryAffectedRowCount
+	                                              insertID:lastQueryInsertID
+	                                          wasCancelled:lastQueryWasCancelled];
+}
+
+/**
+ * Attaches a fresh report to the statement about to keep the session for its rows, before its
+ * result exists and can start downloading; the release of the session lets it go.
+ */
+- (void)_attachReportOfStreamingStatement
+{
+	[statementReportHold attachWithInsertID:lastQueryInsertID];
+}
+
+/**
+ * The report this thread reads the last statement from: one handed back to it, or nil for the
+ * connection's own fields.
+ */
+- (SAStatementReport *)_reportThisThreadReads
+{
+	return [SAStatementReport reportHandedBackToThisThreadFor:self];
+}
+
+/**
+ * Notes that a statement reached the server and was carried out: the database assertion learns
+ * of it, so that the session's database is known from here on.
+ */
+- (void)_noteStatementCarriedOut:(NSString *)theQueryString
+{
+	[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
+}
 
 /**
  * Asks the server over a second connection to kill the query in this server session.
@@ -953,6 +1016,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
         // DO NOT remove
         queryErrorMessage = nil;
     }
+	// And into the report of a statement that still holds the session, for its caller.
+	[[self _reportOfStatementHoldingTheSession] recordErrorMessage:queryErrorMessage];
 }
 
 /**
@@ -971,6 +1036,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	} else {
 		queryErrorID = theErrorID;
 	}
+	[[self _reportOfStatementHoldingTheSession] recordErrorID:queryErrorID];
 }
 
 /**
@@ -993,6 +1059,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	if(theSqlstate && [theSqlstate length]) {
 		querySqlstate = [[NSString alloc] initWithString:theSqlstate];
 	}
+	[[self _reportOfStatementHoldingTheSession] recordSqlState:querySqlstate];
 }
 
 @end

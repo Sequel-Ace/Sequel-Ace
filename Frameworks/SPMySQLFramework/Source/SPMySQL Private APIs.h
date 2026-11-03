@@ -37,7 +37,8 @@
 #import "Locking.h"
 #import "Conversion.h"
 
-@class SAConnectionSessionAccess, SAConnectionSetupDeadline;
+@class SAConnectionSessionAccess, SAConnectionSetupDeadline, SAStatementReport;
+@protocol SAStatementCallHost;
 
 // Class extension: these are implemented in the main @implementation block of
 // SPMySQLConnection.m (declaring them on the PrivateAPI category would make
@@ -63,6 +64,18 @@
 - (void)markSessionReplacement:(SASessionReplacementMark)mark;
 /** Closes a session marked to be replaced - SASessionReplacement takes the steps; the connection must be held. The next use reconnects. */
 - (void)_closeSessionMarkedForReplacement;
+/** Runs connection work off the main thread while the delegate shows the wait; nil if it was refused or the wait ended first. */
+- (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
+/** The connection as the statement call sees it; the conformance is declared with the connection, where the categories cannot see it. */
+- (id<SAStatementCallHost>)_statementCallHost;
+/** The report of the statement that still holds the session, which what the connection writes meanwhile goes into; nil once the session is released. */
+- (SAStatementReport *)_reportOfStatementHoldingTheSession;
+/** Checks the connection; a failed check writes its error on the connection, for `checkConnection` to hand to its caller. */
+- (BOOL)_checkConnectionNow;
+/** Runs yes-or-no connection work the same way; NO if the user stopped waiting. */
+- (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
+/** Whether the current thread is the one reconnecting, and so sets up the new session. */
+- (BOOL)_currentThreadIsReconnecting;
 
 @end
 
@@ -137,6 +150,16 @@
 
 /** Asks the server over a second connection to kill the query in this server session; whether it accepted. */
 - (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
+/** What the last statement reported - error, rows affected, cancelled or not - as the connection keeps it. */
+- (SAStatementReport *)_reportOfLastStatement;
+/** The report this thread reads the last statement from: one handed back to it, or nil for the connection's own fields. */
+- (SAStatementReport *)_reportThisThreadReads;
+/** Notes that a statement reached the server and was carried out, for the database assertion. */
+- (void)_noteStatementCarriedOut:(NSString *)theQueryString;
+/** A report of what the connection's fields say now: the last statement's error, rows and stop. */
+- (SAStatementReport *)_reportFromTheConnectionsFields;
+/** Attaches a fresh report to the statement about to keep the session for its rows, before its result exists and can start downloading. */
+- (void)_attachReportOfStreamingStatement;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding

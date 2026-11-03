@@ -5980,7 +5980,27 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)noConnectionAvailable:(id)connection
 {
-    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No connection available", @"no connection available message") message:NSLocalizedString(@"An error has occurred and there doesn't seem to be a connection available.", @"no connection available informatie message") callback:nil];
+    // Through the main run loop: the connection asks this from its worker for a statement started on
+    // the main thread, and the alert is AppKit's to show there.
+    [SAMainRunLoop runAndWait:^{
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No connection available", @"no connection available message") message:NSLocalizedString(@"An error has occurred and there doesn't seem to be a connection available.", @"no connection available informatie message") callback:nil];
+    }];
+}
+
+/**
+ * Invoked when connection work has to wait for a server long enough to be noticed. The work runs
+ * on the connection's own thread; the window waits for it here, in an event loop that keeps it
+ * answering, and offers to stop waiting.
+ */
+- (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished
+{
+    SAConnectionCheckSheet *sheet = [[SAConnectionCheckSheet alloc] init];
+
+    __weak id weakConnection = connection;
+    [sheet waitInWindow:[self parentWindowControllerWindow] untilFinished:isFinished whenCancelled:^{
+        // The user has said they will not wait. That ends this piece of work and stops it.
+        [weakConnection cancelConnectionCheck];
+    }];
 }
 
 /**
@@ -5990,6 +6010,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
 
     SPLog(@"connectionLost");
+
+    // A window holds one sheet at a time, and this question outranks a note about waiting.
+    NSWindow *questionWindow = [self parentWindowControllerWindow];
+    [SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
 
     SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
 
@@ -6009,7 +6033,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                                                                    isAWSIAMConnection:([connectionController type] == SPAWSIAMConnection)
                                                                                            awsProfile:[connectionController awsProfile]];
 
-        connectionErrorCode = [SAConnectionLostAlert runModalForWindow:[self.parentWindowController window] copy:sheetCopy]
+        // On the sheet that is already up, if one is: a sheet queued behind an attached one stays
+        // hidden, and the question would wait for an answer nobody can give.
+        connectionErrorCode = [SAConnectionLostAlert runModalForWindow:([SAConnectionCheckSheet hostForWaitNoteOnWindow:questionWindow] ?: questionWindow) copy:sheetCopy]
             ? SPMySQLConnectionLostReconnect
             : SPMySQLConnectionLostDisconnect;
 
@@ -6021,6 +6047,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
     }
 
+    // Whatever was chosen, the connection carries on working on it, and the wait for that
+    // work can have the window back.
+    [SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
+
     return connectionErrorCode;
 }
 
@@ -6029,11 +6059,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)showErrorWithTitle:(NSString *)theTitle message:(NSString *)theMessage
 {
-    SPMainQSync(^{
+    // Through the main run loop, not the main queue: the connection can ask this from its own
+    // thread while the main thread waits for that thread's work from inside a main-queue block,
+    // which would never get to a block queued behind it.
+    [SAMainRunLoop runAndWait:^{
         if ([[self.parentWindowController window] isVisible]) {
             [NSAlert createWarningAlertWithTitle:theTitle message:theMessage callback:nil];
         }
-    });
+    }];
 }
 
 /**
