@@ -158,6 +158,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (void)markRunningQueryCancelled
 {
 	lastQueryWasCancelled = YES;
+	// And in the report of a statement that still holds the session: a download being stopped.
+	[[self _reportOfStatementHoldingTheSession] recordCancellation];
 }
 
 #pragma mark -
@@ -398,6 +400,17 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 #pragma mark -
 #pragma mark What the statement call asks of the connection
+
+/**
+ * The report of the statement that still holds the session, which what the connection writes
+ * meanwhile goes into; nil once the session is released.
+ */
+- (SAStatementReport *)_reportOfStatementHoldingTheSession
+{
+	@synchronized (self) {
+		return currentStatementReport;
+	}
+}
 
 /**
  * The connection as the statement call sees it; the conformance is declared here, where the
@@ -899,6 +912,19 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  * NOTE: In general -checkConnectionIfNecessary should be used instead!
  */
 - (BOOL)checkConnection
+{
+	BOOL theConnectionIsUsable = [self _checkConnectionNow];
+	// A failed check's error is this caller's to read, handed to its thread like a statement's
+	// report: a report handed back earlier would otherwise stand in front of it.
+	if (!theConnectionIsUsable) [SAStatementReport handBack:[self _reportOfLastStatement] for:self];
+	return theConnectionIsUsable;
+}
+
+/**
+ * Checks the connection; a failed check writes its error on the connection, for `checkConnection`
+ * to hand to its caller.
+ */
+- (BOOL)_checkConnectionNow
 {
     SPLog(@"checkConnection");
 

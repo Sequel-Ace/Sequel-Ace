@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SAConnectionWorkCoordinator, SADatabaseAssertionState, SPMySQLKeepAliveTimer;
+@class SAConnectionCancellation, SAConnectionEscaper, SAConnectionLostDecisionGate, SAConnectionSetupDeadline, SAConnectionWorkCoordinator, SADatabaseAssertionState, SAStatementReport, SPMySQLKeepAliveTimer;
 
 /**
  * How a session is to be replaced before its next use. One word, so that a reader sees the whole
@@ -194,9 +194,12 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	// Query cancellation details
 	BOOL lastQueryWasCancelled;
 
-	// The number of statements that have started on the connection. The last statement's report
-	// carries it, and a thread reads the connection's own fields for a report of that number.
-	unsigned long long statementNumber;
+	// The report of the statement that still holds the session - a streaming statement, whose rows
+	// are read after its report was taken - which what the connection writes meanwhile goes into;
+	// nil once the session is released.
+	SAStatementReport *currentStatementReport;
+	// Whether the statement just run keeps the session for its result's rows.
+	BOOL statementHoldsSession;
 
 	// Timing details
 	uint64_t lastConnectionUsedTime;
@@ -287,6 +290,7 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 - (BOOL)isConnected;
 /** Whether the connection is in the connected state and its session is encrypted. */
 - (BOOL)isConnectedViaSSL;
+/** Whether the connection answers; a failed check's error is the calling thread's to read, like a statement's report. */
 - (BOOL)checkConnection;
 - (BOOL)checkConnectionIfNecessary;
 /** Ends the delegate's wait for connection work and stops that work: the thread it runs on, and the query it may have waiting on the server. */

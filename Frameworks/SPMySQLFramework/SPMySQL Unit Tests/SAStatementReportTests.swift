@@ -11,48 +11,74 @@ import XCTest
 /// What a thread reads a statement's report from, and how long a report handed back to it stands.
 final class SAStatementReportTests: XCTestCase {
 
-    private func report(errorID: UInt = 0, statementNumber: UInt64) -> SAStatementReport {
+    private func report(errorID: UInt = 0, statementNumber: UInt64 = 0) -> SAStatementReport {
         SAStatementReport(errorMessage: errorID == 0 ? nil : "error \(errorID)", errorID: errorID, sqlState: nil,
-                          affectedRows: 0, insertID: 0, wasCancelled: false, statementNumber: statementNumber)
+                          affectedRows: 0, insertID: 0, wasCancelled: false)
     }
 
-    /// The connection's own fields are read for the statement the hand-back is about, as long as
-    /// no later statement has started: what the statement reports after its report was taken - a
-    /// streaming download's error or stop, a failed connection check - reaches its caller.
-    func testTheConnectionsOwnFieldsAreReadWhileTheyDescribeTheStatementHandedBack() {
+    /// Calls one of the connection's private writers that takes a string, by way of the runtime.
+    private func write(_ selector: String, _ message: String?, on connection: SPMySQLConnection) {
+        let selector = NSSelectorFromString(selector)
+        guard let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector) else {
+            return XCTFail("no \(selector)")
+        }
+        typealias Writer = @convention(c) (AnyObject, Selector, NSString?) -> Void
+        unsafeBitCast(implementation, to: Writer.self)(connection, selector, message as NSString?)
+    }
+
+    /// Calls one of the connection's private writers that takes a number, by way of the runtime.
+    private func write(_ selector: String, _ number: UInt, on connection: SPMySQLConnection) {
+        let selector = NSSelectorFromString(selector)
+        guard let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector) else {
+            return XCTFail("no \(selector)")
+        }
+        typealias Writer = @convention(c) (AnyObject, Selector, UInt) -> Void
+        unsafeBitCast(implementation, to: Writer.self)(connection, selector, number)
+    }
+
+    /// What the connection writes while a statement still holds the session - a streaming
+    /// download's error, a stop - goes into that statement's report, which its caller reads; once
+    /// the session is released nothing more does.
+    func testWhatTheConnectionWritesWhileTheStatementHoldsTheSessionReachesItsReport() {
         let connection = SPMySQLConnection()
-        connection.setValue(7, forKey: "statementNumber")
-        SAStatementReport.handBack(report(statementNumber: 7), for: connection)
+        let report = self.report()
+        connection.setValue(report, forKey: "currentStatementReport")
+        SAStatementReport.handBack(report, for: connection)
         defer { SAStatementReport.forgetReportHandedBackToThisThread(for: connection) }
         XCTAssertFalse(connection.queryErrored())
         XCTAssertFalse(connection.lastQueryWasCancelled)
 
-        // The download is stopped, or fails, or the check does: written on the connection, after
-        // the statement's report was taken.
-        connection.setValue("Query execution was interrupted", forKey: "queryErrorMessage")
-        connection.setValue(1317, forKey: "queryErrorID")
+        // The download is stopped: written on the connection after the report was taken, from the
+        // stopping thread and the downloading one.
+        write("_updateLastErrorMessage:", "Query execution was interrupted", on: connection)
+        write("_updateLastErrorID:", UInt(1317), on: connection)
         connection.perform(NSSelectorFromString("markRunningQueryCancelled"))
         XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorMessage(), "Query execution was interrupted")
         XCTAssertEqual(connection.lastErrorID(), 1317)
         XCTAssertTrue(connection.lastQueryWasCancelled)
 
-        // Another statement starts on the connection: the fields are its, the hand-back the caller's.
-        connection.setValue(8, forKey: "statementNumber")
-        XCTAssertFalse(connection.queryErrored())
-        XCTAssertEqual(connection.lastErrorID(), 0)
-        XCTAssertFalse(connection.lastQueryWasCancelled)
+        // The session is released: the report is the statement's as it ended, whatever is written next.
+        connection.perform(NSSelectorFromString("_tryLockConnection"))
+        connection.perform(NSSelectorFromString("_unlockConnection"))
+        XCTAssertNil(connection.value(forKey: "currentStatementReport"))
+        write("_updateLastErrorMessage:", "a later statement's error", on: connection)
+        write("_updateLastErrorID:", UInt(1146), on: connection)
+        XCTAssertEqual(connection.lastErrorMessage(), "Query execution was interrupted")
+        XCTAssertEqual(connection.lastErrorID(), 1317)
     }
 
-    /// A report about no statement that ran - a refusal, a stop before the send - is read whatever
-    /// the connection's fields say.
-    func testAReportAboutNoStatementIsAlwaysRead() {
+    /// A report handed back is read whatever the connection's fields say - a refusal, a stop
+    /// before the send, a statement another thread has since run.
+    func testAHandedBackReportIsReadWhateverTheConnectionsFieldsSay() {
         let connection = SPMySQLConnection()
-        connection.setValue(3, forKey: "statementNumber")
         SAStatementReport.handBack(SAStatementReport(errorMessage: "refused", errorID: 2013, sqlState: "HY000",
                                                      affectedRows: 0, insertID: 0, wasCancelled: false), for: connection)
         defer { SAStatementReport.forgetReportHandedBackToThisThread(for: connection) }
-        XCTAssertEqual(SAStatementReport.reportHandedBackToThisThread(for: connection)?.statementNumber, SAStatementReport.noStatement)
+        write("_updateLastErrorMessage:", nil, on: connection)
+        write("_updateLastErrorID:", UInt(0), on: connection)
         XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorMessage(), "refused")
         XCTAssertEqual(connection.lastErrorID(), 2013)
     }
 

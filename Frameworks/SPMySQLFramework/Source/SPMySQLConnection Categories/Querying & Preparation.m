@@ -391,9 +391,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
-	// A statement of its own, as far as reports go: from here on the connection's fields describe
-	// this statement, and a report handed back about an earlier one stays its caller's.
-	statementNumber++;
+	statementHoldsSession = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -670,6 +668,10 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		theSqlstate = @"70100";
 	}
 
+	// A streaming result keeps the session for its rows; what the connection writes until it is
+	// released - the download's error, a stop - is the statement's still, and goes into its report.
+	statementHoldsSession = [theResult isKindOfClass:[SPMySQLStreamingResult class]];
+
 	// Unlock the connection if appropriate - if not a streaming result type.
 	if (![theResult isKindOfClass:[SPMySQLStreamingResult class]]) {
 		[self _tryLockConnection];
@@ -856,22 +858,30 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (SAStatementReport *)_reportOfLastStatement
 {
-	return [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
-	                                               errorID:queryErrorID
-	                                              sqlState:querySqlstate
-	                                          affectedRows:lastQueryAffectedRowCount
-	                                              insertID:lastQueryInsertID
-	                                          wasCancelled:lastQueryWasCancelled
-	                                       statementNumber:statementNumber];
+	SAStatementReport *theReport = [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
+	                                                                      errorID:queryErrorID
+	                                                                     sqlState:querySqlstate
+	                                                                 affectedRows:lastQueryAffectedRowCount
+	                                                                     insertID:lastQueryInsertID
+	                                                                 wasCancelled:lastQueryWasCancelled];
+	// A statement that keeps the session for its rows keeps its report with the connection too,
+	// for what is written while the session is held; the release of the session lets it go.
+	if (statementHoldsSession) {
+		statementHoldsSession = NO;
+		@synchronized (self) {
+			currentStatementReport = theReport;
+		}
+	}
+	return theReport;
 }
 
 /**
- * The report this thread reads the last statement from: one handed back to it about a statement
- * the connection has since moved on from, or nil for the connection's own fields.
+ * The report this thread reads the last statement from: one handed back to it, or nil for the
+ * connection's own fields.
  */
 - (SAStatementReport *)_reportThisThreadReads
 {
-	return [SAStatementReport reportThisThreadReadsFor:self statementNumber:statementNumber];
+	return [SAStatementReport reportHandedBackToThisThreadFor:self];
 }
 
 /**
@@ -996,6 +1006,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
         // DO NOT remove
         queryErrorMessage = nil;
     }
+	// And into the report of a statement that still holds the session, for its caller.
+	[[self _reportOfStatementHoldingTheSession] recordErrorMessage:queryErrorMessage];
 }
 
 /**
@@ -1014,6 +1026,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	} else {
 		queryErrorID = theErrorID;
 	}
+	[[self _reportOfStatementHoldingTheSession] recordErrorID:queryErrorID];
 }
 
 /**
@@ -1036,6 +1049,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	if(theSqlstate && [theSqlstate length]) {
 		querySqlstate = [[NSString alloc] initWithString:theSqlstate];
 	}
+	[[self _reportOfStatementHoldingTheSession] recordSqlState:querySqlstate];
 }
 
 @end

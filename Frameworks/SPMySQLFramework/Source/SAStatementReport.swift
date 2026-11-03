@@ -4,8 +4,6 @@
 //
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
 //
-//  More info at <https://github.com/Sequel-Ace/Sequel-Ace>
-//
 
 import Foundation
 
@@ -20,14 +18,18 @@ import Foundation
 /// thread. A report handed back belongs to the thread it was handed to, and to the connection it
 /// was about; it stands until that thread's next statement on the connection or, on the main
 /// thread, the next turn of its run loop, whichever comes first - the caller reads it straight
-/// after the call that handed it back - and nothing of it is ever written over the report of a
-/// statement running. A thread reads the connection's own report - the last statement's,
-/// whichever thread ran it - when nothing is handed back to it, and also while those fields still
-/// describe the statement handed back, that is until a later statement starts on the connection
-/// (``statementNumber``): what a statement reports after its report was taken - the error or stop
-/// of a streaming download, a failed connection check - reaches its caller that way.
+/// after the call that handed it back. While it stands the thread reads it and nothing else; the
+/// connection's own fields are read by a thread that has nothing handed back to it.
+///
+/// A statement that still holds the session when its report is taken - a streaming statement,
+/// whose rows are read after - keeps its report with the connection as well, and what the
+/// connection writes while the session is held - the download's error, a stop - goes into that
+/// report, under its lock, from whichever thread writes it. The connection lets the report go as
+/// the session is released; nothing written after that is the statement's.
 @objc(SAStatementReport)
 public final class SAStatementReport: NSObject {
+
+    // MARK: - The reports handed back to threads
 
     /// The key under which a thread keeps the reports handed back to it.
     private static let handedBackKey = "SAStatementReport.handedBack"
@@ -82,38 +84,41 @@ public final class SAStatementReport: NSObject {
 
     /// The report handed back to the current thread about this connection, if one stands.
     /// - Parameter connection: The connection.
-    /// - Returns: The report, or nil when nothing is handed back.
+    /// - Returns: The report, or nil when the thread reads the connection's own fields.
     @objc(reportHandedBackToThisThreadFor:)
     public static func reportHandedBackToThisThread(for connection: AnyObject) -> SAStatementReport? {
         handedBackToThisThread.object(forKey: connection)
     }
 
-    /// The report the current thread reads the last statement from: one handed back to it about a
-    /// statement the connection has since moved on from - or nil, for the connection's own fields.
-    /// Those fields describe the statement handed back until a later one starts, and carry what
-    /// that statement reported after its report was taken: the error or stop of a streaming
-    /// download, a failed connection check. A report about no statement that ran is read whatever
-    /// the fields say.
-    /// - Parameters:
-    ///   - connection: The connection.
-    ///   - statementNumber: The number of the statement the connection's fields describe now.
-    /// - Returns: The report to read, or nil for the connection's own fields.
-    @objc(reportThisThreadReadsFor:statementNumber:)
-    public static func reportThisThreadReads(for connection: AnyObject, statementNumber: UInt64) -> SAStatementReport? {
-        guard let handedBack = reportHandedBackToThisThread(for: connection), handedBack.statementNumber != statementNumber else {
-            return nil
-        }
-        return handedBack
-    }
+    // MARK: - What the statement reported
+
+    /// Guards what the connection may still write while the statement holds the session.
+    private let lock = NSLock()
+    private var storedErrorMessage: String?
+    private var storedErrorID: UInt
+    private var storedSqlState: String?
+    private var storedWasCancelled: Bool
 
     /// The error message, or nil when the statement did not fail.
-    @objc public let errorMessage: String?
+    @objc public var errorMessage: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedErrorMessage
+    }
 
     /// The error number; zero when the statement did not fail.
-    @objc public let errorID: UInt
+    @objc public var errorID: UInt {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedErrorID
+    }
 
     /// The SQL state, or nil when the statement did not fail.
-    @objc public let sqlState: String?
+    @objc public var sqlState: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedSqlState
+    }
 
     /// The rows the statement changed, deleted, inserted or selected.
     @objc public let affectedRows: UInt64
@@ -122,40 +127,13 @@ public final class SAStatementReport: NSObject {
     @objc public let insertID: UInt64
 
     /// Whether the statement was cancelled.
-    @objc public let wasCancelled: Bool
-
-    /// The number of the statement the report is about, as the connection counts the statements
-    /// that start on it; ``noStatement`` for a report about no statement that ran - a refusal, a
-    /// stop before the send. While the connection's own fields are of this number they describe
-    /// the same statement, and the thread reads them rather than the report.
-    @objc public let statementNumber: UInt64
-
-    /// The statement number of a report about no statement that ran.
-    public static let noStatement: UInt64 = .max
-
-    /// Keeps what the connection reports now about the statement of a number.
-    /// - Parameters:
-    ///   - errorMessage: The error message, or nil.
-    ///   - errorID: The error number.
-    ///   - sqlState: The SQL state, or nil.
-    ///   - affectedRows: The rows affected.
-    ///   - insertID: The insert ID carried.
-    ///   - wasCancelled: Whether the statement was cancelled.
-    ///   - statementNumber: The statement's number on the connection.
-    @objc(initWithErrorMessage:errorID:sqlState:affectedRows:insertID:wasCancelled:statementNumber:)
-    public init(errorMessage: String?, errorID: UInt, sqlState: String?, affectedRows: UInt64, insertID: UInt64, wasCancelled: Bool,
-                statementNumber: UInt64) {
-        self.errorMessage = errorMessage
-        self.errorID = errorID
-        self.sqlState = sqlState
-        self.affectedRows = affectedRows
-        self.insertID = insertID
-        self.wasCancelled = wasCancelled
-        self.statementNumber = statementNumber
-        super.init()
+    @objc public var wasCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedWasCancelled
     }
 
-    /// Keeps what is reported about no statement that ran: a refusal, or a stop before the send.
+    /// Keeps what the connection reports now.
     /// - Parameters:
     ///   - errorMessage: The error message, or nil.
     ///   - errorID: The error number.
@@ -164,9 +142,50 @@ public final class SAStatementReport: NSObject {
     ///   - insertID: The insert ID carried.
     ///   - wasCancelled: Whether the statement was cancelled.
     @objc(initWithErrorMessage:errorID:sqlState:affectedRows:insertID:wasCancelled:)
-    public convenience init(errorMessage: String?, errorID: UInt, sqlState: String?, affectedRows: UInt64, insertID: UInt64, wasCancelled: Bool) {
-        self.init(errorMessage: errorMessage, errorID: errorID, sqlState: sqlState, affectedRows: affectedRows, insertID: insertID,
-                  wasCancelled: wasCancelled, statementNumber: Self.noStatement)
+    public init(errorMessage: String?, errorID: UInt, sqlState: String?, affectedRows: UInt64, insertID: UInt64, wasCancelled: Bool) {
+        storedErrorMessage = errorMessage
+        storedErrorID = errorID
+        storedSqlState = sqlState
+        self.affectedRows = affectedRows
+        self.insertID = insertID
+        storedWasCancelled = wasCancelled
+        super.init()
+    }
+
+    // MARK: - What the connection writes while the statement holds the session
+
+    /// Records the error message the connection wrote while the statement held the session.
+    /// - Parameter message: The message, or nil for no error.
+    @objc(recordErrorMessage:)
+    public func recordErrorMessage(_ message: String?) {
+        lock.lock()
+        defer { lock.unlock() }
+        storedErrorMessage = message
+    }
+
+    /// Records the error number the connection wrote while the statement held the session.
+    /// - Parameter errorID: The number; zero for no error.
+    @objc(recordErrorID:)
+    public func recordErrorID(_ errorID: UInt) {
+        lock.lock()
+        defer { lock.unlock() }
+        storedErrorID = errorID
+    }
+
+    /// Records the SQL state the connection wrote while the statement held the session.
+    /// - Parameter sqlState: The state, or nil.
+    @objc(recordSqlState:)
+    public func recordSqlState(_ sqlState: String?) {
+        lock.lock()
+        defer { lock.unlock() }
+        storedSqlState = sqlState
+    }
+
+    /// Records that the statement was cancelled while it held the session.
+    @objc public func recordCancellation() {
+        lock.lock()
+        defer { lock.unlock() }
+        storedWasCancelled = true
     }
 }
 

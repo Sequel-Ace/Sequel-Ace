@@ -64,18 +64,11 @@ private final class SAReportCaptureHoldingConnection: SPMySQLConnection {
             backgroundStatementWroteItsReport.signal()
             holdEnded = letTheBackgroundStatementCapture.wait(timeout: .now() + 5)
         }
-        return SAStatementReport(errorMessage: lastErrorMessageOnTheConnection(), errorID: lastErrorIDOnTheConnection(),
-                                 sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
-    }
-
-    /// The connection's own error message, not one handed back to this thread.
-    private func lastErrorMessageOnTheConnection() -> String? {
-        value(forKey: "queryErrorMessage") as? String
-    }
-
-    /// The connection's own error number.
-    private func lastErrorIDOnTheConnection() -> UInt {
-        (value(forKey: "queryErrorID") as? UInt) ?? 0
+        // The connection's own report, by way of the runtime: the method is private.
+        let selector = NSSelectorFromString("_reportOfLastStatement")
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        typealias Report = @convention(c) (AnyObject, Selector) -> Unmanaged<SAStatementReport>
+        return unsafeBitCast(implementation, to: Report.self)(self, selector).takeUnretainedValue()
     }
 }
 
@@ -409,11 +402,11 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
     private let slowRowsStatement = "SELECT i, REPEAT('x', 20000) AS padding, SLEEP(0.01) FROM mysql.sa_slow_rows"
 
     /// A streaming statement's report is taken when the statement returns its result, before its
-    /// rows are read. A stop during the download is written on the connection afterwards - and the
-    /// caller, reading on its own thread with the statement's report handed back to it, reads the
-    /// stop: the connection has not moved on to another statement, so its own fields are the
-    /// caller's. The caller is a task thread here, like the exporters, which runs its statement
-    /// where it asks for it.
+    /// rows are read, and stays with the connection while the statement holds the session. A stop
+    /// during the download is written into it from there - and the caller, reading on its own
+    /// thread with that report handed back to it, reads the stop, even once another thread's
+    /// statement has run on the connection in between. The caller is a task thread here, like
+    /// the exporters, which runs its statement where it asks for it.
     func testAStopDuringAStreamingDownloadIsReadByTheStatementsCaller() throws {
         let delegate = SAWaitingDelegate()
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
@@ -421,6 +414,8 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         try prepareSlowRows(on: connection)
 
         let tenRowsRead = DispatchSemaphore(value: 0)
+        let downloadEnded = DispatchSemaphore(value: 0)
+        let anotherStatementRan = DispatchSemaphore(value: 0)
         let finished = expectation(description: "the rows were read to the end")
         var rows = 0
         var wasCancelled = false
@@ -437,6 +432,9 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             } else {
                 tenRowsRead.signal()
             }
+            // Another thread's statement runs on the connection before this caller reads.
+            downloadEnded.signal()
+            _ = anotherStatementRan.wait(timeout: .now() + 10)
             wasCancelled = connection.lastQueryWasCancelled
             errored = connection.queryErrored()
             errorID = connection.lastErrorID()
@@ -444,6 +442,10 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         }
         XCTAssertEqual(tenRowsRead.wait(timeout: .now() + 10), .success, "rows are being read")
         connection.cancelCurrentQuery()
+        XCTAssertEqual(downloadEnded.wait(timeout: .now() + 20), .success, "the download ended")
+        _ = connection.queryString("SELECT 'another statement'")
+        XCTAssertFalse(connection.queryErrored(), "the other statement ran: \(connection.lastErrorMessage() ?? "")")
+        anotherStatementRan.signal()
         wait(for: [finished], timeout: 20)
 
         XCTAssertGreaterThanOrEqual(rows, 10)
@@ -454,7 +456,8 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
     }
 
     /// A connection lost during a streaming download - the SQL export's case - is read by the
-    /// statement's caller the same way, as an error that is not a stop.
+    /// statement's caller the same way, as an error that is not a stop, and again once another
+    /// thread's statement has been tried on the connection in between.
     func testALostConnectionDuringAStreamingDownloadIsReadByTheStatementsCaller() throws {
         let delegate = SAWaitingDelegate()
         let connection = try connected(SPMySQLConnection(), delegate: delegate)
@@ -467,6 +470,8 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         try prepareSlowRows(on: connection)
 
         let tenRowsRead = DispatchSemaphore(value: 0)
+        let downloadEnded = DispatchSemaphore(value: 0)
+        let anotherStatementRan = DispatchSemaphore(value: 0)
         let finished = expectation(description: "the rows were read to the end")
         var rows = 0
         var wasCancelled = false
@@ -483,6 +488,9 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             } else {
                 tenRowsRead.signal()
             }
+            // Another thread's statement is tried on the connection before this caller reads.
+            downloadEnded.signal()
+            _ = anotherStatementRan.wait(timeout: .now() + 10)
             wasCancelled = connection.lastQueryWasCancelled
             errored = connection.queryErrored()
             errorID = connection.lastErrorID()
@@ -491,6 +499,10 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(tenRowsRead.wait(timeout: .now() + 10), .success, "rows are being read")
         _ = observer.queryString("KILL \(serverThread)")
         XCTAssertFalse(observer.queryErrored(), "the connection was killed: \(observer.lastErrorMessage() ?? "")")
+        XCTAssertEqual(downloadEnded.wait(timeout: .now() + 20), .success, "the download ended")
+        // Tried, not necessarily run: the session is gone, and the delegate lets it go.
+        _ = connection.queryString("SELECT 'another statement'")
+        anotherStatementRan.signal()
         wait(for: [finished], timeout: 20)
 
         XCTAssertGreaterThanOrEqual(rows, 10)

@@ -68,6 +68,10 @@
 - (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work;
 /** The connection as the statement call sees it; the conformance is declared with the connection, where the categories cannot see it. */
 - (id<SAStatementCallHost>)_statementCallHost;
+/** The report of the statement that still holds the session, which what the connection writes meanwhile goes into; nil once the session is released. */
+- (SAStatementReport *)_reportOfStatementHoldingTheSession;
+/** Checks the connection; a failed check writes its error on the connection, for `checkConnection` to hand to its caller. */
+- (BOOL)_checkConnectionNow;
 /** Runs yes-or-no connection work the same way; NO if the user stopped waiting. */
 - (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work;
 /** Whether the current thread is the one reconnecting, and so sets up the new session. */
@@ -148,7 +152,7 @@
 - (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
 /** What the last statement reported - error, rows affected, cancelled or not - as the connection keeps it. */
 - (SAStatementReport *)_reportOfLastStatement;
-/** The report this thread reads the last statement from: one handed back to it about a statement the connection has since moved on from, or nil for the connection's own fields. */
+/** The report this thread reads the last statement from: one handed back to it, or nil for the connection's own fields. */
 - (SAStatementReport *)_reportThisThreadReads;
 /** Notes that a statement reached the server and was carried out, for the database assertion. */
 - (void)_noteStatementCarriedOut:(NSString *)theQueryString;
