@@ -31,8 +31,9 @@ public final class SAMainRunLoop: NSObject {
             return
         }
 
+        // Scheduled through Core Foundation, whose run loop calls are safe from any thread.
         let finished = DispatchSemaphore(value: 0)
-        RunLoop.main.perform(inModes: [.common]) {
+        CFRunLoopPerformBlock(CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue) {
             block()
             finished.signal()
         }

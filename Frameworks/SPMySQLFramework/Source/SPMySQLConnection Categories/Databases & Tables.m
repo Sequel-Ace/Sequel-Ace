@@ -30,6 +30,7 @@
 
 #import "Databases & Tables.h"
 #import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import "SPMySQLStringAdditions.h"
 #import "SPMySQLArrayAdditions.h"
 
@@ -70,6 +71,9 @@
 			[self _updateLastErrorMessage:theErrorString];
 			[self _updateLastErrorID:theErrorID];
 			[self _updateLastSqlstate:theSqlstate];
+			// The restore's own statement handed its report to this thread; the selection's
+			// failure is what this caller reads.
+			[SAStatementReport handBack:[self _reportFromTheConnectionsFields] for:self];
 		}
 
 		return NO;

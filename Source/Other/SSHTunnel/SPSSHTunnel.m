@@ -1047,7 +1047,9 @@ static unsigned short getRandomPort(void);
 	// A window holds one sheet at a time; a wait for the connection steps aside while this is asked.
 	NSWindow *questionWindow = parentWindow;
 	[SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
-	[parentWindow beginSheet:sshQuestionDialog completionHandler:nil];
+	// On the sheet that is already up, if one is - a sheet queued behind an attached one would
+	// stay hidden until that one ends, with the connection waiting for the answer.
+	[([SAConnectionCheckSheet hostForWaitNoteOnWindow:parentWindow] ?: parentWindow) beginSheet:sshQuestionDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow:sshQuestionDialog];
 	[SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
 }
@@ -1141,7 +1143,7 @@ static unsigned short getRandomPort(void);
 	// A window holds one sheet at a time; a wait for the connection steps aside while this is asked.
 	NSWindow *questionWindow = parentWindow;
 	[SAConnectionCheckSheet suspendWaitsInWindow:questionWindow];
-	[parentWindow beginSheet:sshPasswordDialog completionHandler:nil];
+	[([SAConnectionCheckSheet hostForWaitNoteOnWindow:parentWindow] ?: parentWindow) beginSheet:sshPasswordDialog completionHandler:nil];
 	[[NSApplication sharedApplication] runModalForWindow: sshPasswordDialog];
 	[SAConnectionCheckSheet resumeWaitsInWindow:questionWindow];
 }

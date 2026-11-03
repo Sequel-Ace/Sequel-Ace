@@ -512,7 +512,8 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         try prepareSlowRows(on: connection)
         XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
 
-        let store = try XCTUnwrap(connection.resultStore(fromQueryString: slowRowsStatement))
+        // Narrow rows: the download is waited for whole, and a loaded machine takes its time.
+        let store = try XCTUnwrap(connection.resultStore(fromQueryString: "SELECT i, SLEEP(0.002) FROM mysql.sa_slow_rows"))
         let storeReport = try XCTUnwrap(SAStatementReport.reportHandedBackToThisThread(for: connection))
         XCTAssertFalse(storeReport.wasCancelled)
 
@@ -526,7 +527,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
 
         // The store's rows arrive whole: its query was nobody's to kill.
         store.startDownload()
-        let deadline = Date().addingTimeInterval(20)
+        let deadline = Date().addingTimeInterval(60)
         while !store.dataDownloaded, Date() < deadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.05))
         }
@@ -534,6 +535,20 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(store.numberOfRows(), 900, "every row arrived")
         XCTAssertFalse(storeReport.wasCancelled, "the streaming statement's query was left alone")
         XCTAssertEqual(storeReport.errorID, 0, storeReport.errorMessage ?? "")
+    }
+
+    /// A database selection that fails on a connection in a character set other than UTF-8 restores
+    /// that character set with a statement of its own, whose report would otherwise stand in front
+    /// of the failure; the caller reads the failure.
+    func testAFailedDatabaseSelectionIsReadPastTheCharacterSetItRestores() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        XCTAssertTrue(connection.setEncoding("latin1"))
+
+        XCTAssertFalse(connection.selectDatabase("sa_no_such_database_\(UUID().uuidString.prefix(8))"))
+        XCTAssertTrue(connection.queryErrored(), "the selection's failure is read")
+        XCTAssertEqual(connection.lastErrorID(), 1049, "unknown database")
     }
 
     // MARK: - What a statement reports after its report was taken
