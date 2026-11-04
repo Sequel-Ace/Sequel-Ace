@@ -4469,3 +4469,24 @@
 
 /* Content filter: field selector accessibility label. */
 "Filter Field" = "Filter Field";
+
+/* Preferences : General : default export format label */
+"Default Export Format:" = "Default Export Format:";
+
+/* Preferences : General : default export format option that keeps the context-based choice */
+"Automatic" = "Automatic";
+
+/* Preferences : General : default export format tooltip */
+"Format File > Export opens on. Automatic uses CSV when the Content or Query view is showing rows, otherwise the format of your last export." = "Format File > Export opens on. Automatic uses CSV when the Content or Query view is showing rows, otherwise the format of your last export.";
+
+/* Preferences : General : default export format option */
+"SQL" = "SQL";
+
+/* Preferences : General : default export format option */
+"CSV" = "CSV";
+
+/* Preferences : General : default export format option */
+"XML" = "XML";
+
+/* Preferences : General : default export format option */
+"Dot" = "Dot";

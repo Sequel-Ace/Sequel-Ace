@@ -379,6 +379,9 @@ static inline void SetOnOff(NSNumber *ref,id obj);
  * tables are currently selected then all tables are checked. Note that in this instance the default export 
  * type is SQL where as in the case of filtered or query result export the default type is CSV.
  *
+ * The Default Export Format preference overrides that export type. SQL and Dot can only export tables, so
+ * they use the selected tables even if a result is displayed.
+ *
  * @param sender The caller (can be anything or nil as it is not currently used).
  */
 - (void)exportData {
@@ -396,15 +399,20 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	BOOL isCustomQuerySelected = ([tableDocumentInstance isCustomQuerySelected] && ([[customQueryInstance currentResult] count] > 1)); 
 	BOOL isContentSelected     = ([[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent] && ([[tableContentInstance currentResult] count] > 1));
 	
-	if (isContentSelected) {		
-		selectedTables = nil;
-		selectedExportType = SPCSVExport;
-		selectedExportSource = SPFilteredExport;
+	BOOL isResultDisplayed = (isContentSelected || isCustomQuerySelected);
+	SAExportDefaultFormat defaultFormat = [SAExportDefaultFormatResolver formatForPreference:[prefs integerForKey:SPDefaultExportFormat] isResultDisplayed:isResultDisplayed];
+
+	switch (defaultFormat) {
+		case SAExportDefaultFormatSql: selectedExportType = SPSQLExport; break;
+		case SAExportDefaultFormatCsv: selectedExportType = SPCSVExport; break;
+		case SAExportDefaultFormatXml: selectedExportType = SPXMLExport; break;
+		case SAExportDefaultFormatDot: selectedExportType = SPDotExport; break;
+		case SAExportDefaultFormatAutomatic: break;
 	}
-	else if (isCustomQuerySelected) {
+
+	if (isResultDisplayed && [SAExportDefaultFormatResolver formatCanExportDisplayedResult:defaultFormat]) {
 		selectedTables = nil;
-		selectedExportType = SPCSVExport;
-		selectedExportSource = SPQueryExport;
+		selectedExportSource = isContentSelected ? SPFilteredExport : SPQueryExport;
 	}
 	else {
 		selectedTables = ([selectedTables count]) ? selectedTables : nil; 
