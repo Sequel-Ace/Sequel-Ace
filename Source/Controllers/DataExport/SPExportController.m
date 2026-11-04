@@ -293,6 +293,9 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 
 	// MARK: removed default export location
 	
+	// refreshTableList: only lists routines for SQL, so the requested format has to be active first
+	if(format != SPAnyExportType) [exportTypeTabBar selectTabViewItemAtIndex:format];
+
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
 		
@@ -301,7 +304,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 	
 	// overwrite those with settings for the current export
 	
-	// Select the correct tab
+	// Select the correct tab (the settings above may have switched it to the last export's format)
 	if(format != SPAnyExportType) [exportTypeTabBar selectTabViewItemAtIndex:format];
 	
 	[self updateDisplayedExportFilename];
@@ -380,7 +383,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
  * type is SQL where as in the case of filtered or query result export the default type is CSV.
  *
  * The Default Export Format preference overrides that export type. SQL and Dot can only export tables, so
- * they use the selected tables even if a result is displayed.
+ * they use the table source even if a result is displayed: SQL exports the selected tables, Dot all of them.
  *
  * @param sender The caller (can be anything or nil as it is not currently used).
  */

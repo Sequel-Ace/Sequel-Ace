@@ -39,8 +39,8 @@ import Foundation
         return format
     }
 
-    /// Whether a format can export the displayed result rather than selected tables. SQL and Dot
-    /// are table-only, so they fall back to the tables selected in the table list.
+    /// Whether a format can export the displayed result rather than tables. SQL and Dot are
+    /// table-only: SQL falls back to the tables selected in the table list, Dot to all tables.
     @objc(formatCanExportDisplayedResult:)
     static func canExportDisplayedResult(_ format: SAExportDefaultFormat) -> Bool {
         switch format {
