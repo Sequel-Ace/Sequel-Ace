@@ -355,9 +355,10 @@ import OSLog
         var currentProfile: String?
         var foundProfile = false
 
-        // In config file, profile sections are named "profile xyz" except for "default"
+        // In config file, profile sections are named "profile xyz". "default" may be written
+        // either as [default] or [profile default] (the latter is what `aws configure sso` writes).
         let targetSection = profileName
-        let targetSectionAlt: String? = isConfigFile && profileName != "default"
+        let targetSectionAlt: String? = isConfigFile
             ? "profile \(profileName)"
             : nil
 

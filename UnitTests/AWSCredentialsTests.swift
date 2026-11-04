@@ -223,6 +223,29 @@ final class AWSCredentialsTests: XCTestCase {
         }
     }
 
+    func testProfileLoadsDefaultFromProfilePrefixedConfigSection() throws {
+        let configContents = """
+        [sso-session my-org]
+        sso_start_url = https://my-org.awsapps.com/start
+        sso_region = eu-west-1
+
+        [profile default]
+        sso_session = my-org
+        sso_account_id = 123456789012
+        sso_role_name = DeveloperAccess
+        region = eu-west-1
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "default")
+
+            XCTAssertEqual(credentials.profileName, "default")
+            XCTAssertTrue(credentials.isSSOProfile)
+            XCTAssertEqual(credentials.ssoAccountID, "123456789012")
+            XCTAssertEqual(credentials.ssoRoleName, "DeveloperAccess")
+        }
+    }
+
     func testProfileLoadsLoginSession() throws {
         let configContents = """
         [default]
