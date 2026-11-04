@@ -293,8 +293,9 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 
 	// MARK: removed default export location
 	
-	// refreshTableList: only lists routines for SQL, so the requested format has to be active first
-	if(format != SPAnyExportType) [exportTypeTabBar selectTabViewItemAtIndex:format];
+	// refreshTableList: only lists routines for SQL, so SQL has to be active first. Other formats wait until
+	// after the refresh, so routines already in the list are there if the sheet is then switched to SQL.
+	if(format == SPSQLExport) [exportTypeTabBar selectTabViewItemAtIndex:format];
 
 	// initially popuplate the tables list
 	[self refreshTableList:nil];
