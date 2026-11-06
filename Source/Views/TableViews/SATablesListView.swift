@@ -19,6 +19,9 @@ import AppKit
 /// the search only ever sees the text they commit.
 @objc(SATablesListView) final class SATablesListView: SPTableView, NSTextInputClient {
 
+    /// File-backed workspaces can supply object types without a server controller.
+    var objectTypeAtRow: ((Int) -> SPTableType)?
+
     private static let typeAheadResetInterval: TimeInterval = 0.3
 
     private let typeAhead = SATypeAheadMatcher(resetInterval: SATablesListView.typeAheadResetInterval)
@@ -864,9 +867,9 @@ import AppKit
     /// unselectable while a load task runs, which would empty the candidate
     /// list mid-sequence.
     private func searchableRows() -> [SARowEntry] {
-        guard let dataSource, let delegate, let tablesList = delegate as? SPTablesList else {
-            return []
-        }
+        guard let dataSource, let delegate else { return [] }
+        let tablesList = delegate as? SPTablesList
+        guard objectTypeAtRow != nil || tablesList != nil else { return [] }
         let column = tableColumns.first
 
         var rows: [SARowEntry] = []
@@ -875,7 +878,7 @@ import AppKit
 
         for row in 0..<numberOfRows {
             let value = dataSource.tableView?(self, objectValueFor: column, row: row) as? String
-            let objectType = tablesList.tableType(atRow: row)
+            let objectType = objectTypeAtRow?(row) ?? tablesList?.tableType(atRow: row) ?? SPTableType(rawValue: -1)
 
             if delegate.tableView?(self, isGroupRow: row) ?? false {
                 section = value ?? ""

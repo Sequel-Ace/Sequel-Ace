@@ -140,10 +140,10 @@
  */
 - (NSUndoManager *)undoManager {
     if ([[self windowController] isKindOfClass:[SPWindowController class]]) {
-		return [[(SPWindowController *)[self windowController] databaseDocument] undoManager];
-
-	}
-	return [super undoManager];
+        SPDatabaseDocument *document = [(SPWindowController *)[self windowController] mysqlDocument];
+        if (document) return [document undoManager];
+    }
+    return [super undoManager];
 }
 
 #pragma mark - Method overrides

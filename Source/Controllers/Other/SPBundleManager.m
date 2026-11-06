@@ -727,6 +727,7 @@ static SPBundleManager *sharedManager = nil;
 	BOOL checkForKeyEquivalents = ([event type] == NSEventTypeKeyDown) ? YES : NO;
 
 	id firstResponder = [[NSApp keyWindow] firstResponder];
+    if ([SASQLiteQueryEditorTextView handleFormatBundle:sender responder:firstResponder]) return;
 
 	NSString *scope = [[sender representedObject] objectForKey:@"scope"];
 	NSString *keyEqKey = nil;

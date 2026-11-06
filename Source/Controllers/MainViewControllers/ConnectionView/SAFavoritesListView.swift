@@ -65,7 +65,7 @@ struct SAFavoritesListView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let outlineView = SPFavoritesOutlineView()
-        outlineView.selectionHighlightStyle = .sourceList
+        outlineView.useSequelAceSourceListSelection()
         outlineView.headerView = nil
         outlineView.focusRingType = .none
         outlineView.allowsEmptySelection = true
@@ -192,5 +192,12 @@ struct SAFavoritesListView: NSViewRepresentable {
                 dataSource.delegate?.favoritesListNodeDoubleClicked(node)
             }
         }
+    }
+}
+
+extension NSTableView {
+    /// Match the cell-based source lists loaded from Sequel Ace's nibs.
+    func useSequelAceSourceListSelection() {
+        selectionHighlightStyle = .sourceList
     }
 }
