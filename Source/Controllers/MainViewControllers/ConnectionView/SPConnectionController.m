@@ -200,6 +200,14 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 
 @synthesize delegate;
 @synthesize type;
+
+- (void)setType:(NSUInteger)newType {
+    type = newType;
+    if (newType < connectionTypeTabs.numberOfTabViewItems &&
+        [connectionTypeTabs indexOfTabViewItem:connectionTypeTabs.selectedTabViewItem] != newType) {
+        [connectionTypeTabs selectTabViewItemAtIndex:newType];
+    }
+}
 @synthesize name;
 @synthesize host;
 @synthesize user;
@@ -398,6 +406,8 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
  */
 - (IBAction)initiateConnection:(id)sender
 {
+    if ([SASQLiteConnectionTab isSelectedIn:connectionTypeTabs]) return;
+
     // If this action was triggered via a double-click on the favorites outline view,
     // ensure that one of the connections was double-clicked, not the area above or below
     if (sender == favoritesOutlineView && [favoritesOutlineView clickedRow] <= 0) return;
@@ -4241,8 +4251,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)tabView:(NSTabView *)tabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem
 {
     NSInteger selectedTabView = [tabView indexOfTabViewItem:tabViewItem];
+    BOOL sqliteSelected = [SASQLiteConnectionTab isSelectedIn:tabView];
+    [connectButton setHidden:sqliteSelected];
+    if (sqliteSelected) {
+        if (previousType == SPVaultConnection) [vaultRoleListController cancelActiveLogin];
+        [self resizeTabViewToConnectionType:SPTCPIPConnection animating:YES];
+        return;
+    }
 
-
+    [self setType:(NSUInteger)selectedTabView];
     if (selectedTabView == previousType) return;
 
     // Leaving the Vault tab: abort any in-flight role refresh so its OIDC login
@@ -4738,6 +4755,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         allowSplitViewResizing = NO;
 
         [self loadNib];
+        [SASQLiteConnectionTab installIn:connectionTypeTabs];
 
         NSArray *colorList = SPFavoriteColorSupport.sharedInstance.userColorList;
         [sshColorField setColorList:colorList];

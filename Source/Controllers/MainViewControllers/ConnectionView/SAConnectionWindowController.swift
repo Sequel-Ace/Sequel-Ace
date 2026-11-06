@@ -157,6 +157,7 @@ import SwiftUI
 
     /// Populates the form from the sidebar selection.
     private func applySelection(_ item: SAFavoriteItem) {
+        formModel.showsSQLite = false
         selection = item.id
 
         // Picking another row supersedes any credential work already running,
@@ -210,6 +211,7 @@ import SwiftUI
     /// so those have to be resolved here — the same work `-_resolvedMySQLPassword`
     /// and the Vault block in `-initiateConnection:` do for the embedded form.
     private func connectUsingForm() {
+        guard !formModel.showsSQLite else { return }
         if let failure = formModel.validate() {
             showConnectionError(title: failure.alertTitle, detail: failure.alertMessage)
             return

@@ -444,7 +444,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             }
 
             // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-            if (![windowController.databaseDocument mySQLVersion]) {
+            if (![windowController.mysqlDocument mySQLVersion]) {
                 continue;
             }
 
@@ -505,6 +505,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  * Menu item validation.
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+    NSNumber *sqliteValidation = [self sqliteMenuValidation:menuItem];
+    if (sqliteValidation) return sqliteValidation.boolValue;
+
     SEL action = [menuItem action];
     if (action == @selector(newWindow:) || action == @selector(openConnectionSheet:) || action == @selector(openStandaloneConnectionWindow:)) {
         return YES;
@@ -731,6 +734,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // the encodingPopUp contains the chosen encoding; otherwise autodetect encoding
     if (encodingPopUp) {
         [[NSUserDefaults standardUserDefaults] setInteger:[[encodingPopUp selectedItem] tag] forKey:SPLastSQLFileEncoding];
+    }
+
+    if ([self loadSQLiteQuery:sqlString]) {
+        [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:filePath]];
+        return;
     }
 
     // Check if at least one document exists.  If not, open one.
@@ -1492,7 +1500,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 
     // Iterate through each open window
-    for (SPWindowController *windowController in [self.tabManager windowControllers]) {
+    for (SPWindowController *windowController in [self.tabManager mysqlWindowControllers]) {
         // Kill any BASH commands which are currently active
         for (NSDictionary *cmd in [windowController.databaseDocument runningActivities]) {
             NSInteger pid = [[cmd objectForKey:@"pid"] integerValue];
@@ -1593,7 +1601,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     for (NSWindow *aWindow in [self orderedWindows]) {
         if ([[aWindow windowController] isMemberOfClass:[SPWindowController class]]) {
-            [orderedDocuments addObject:[(SPWindowController *)[aWindow windowController] databaseDocument]];
+            SPDatabaseDocument *document = [(SPWindowController *)[aWindow windowController] mysqlDocument];
+            if (document) [orderedDocuments addObject:document];
         }
     }
     return orderedDocuments;

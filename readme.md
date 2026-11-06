@@ -3,7 +3,7 @@ Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon-1024.png" 
 [![Crowdin](https://badges.crowdin.net/sequel-ace/localized.svg)](https://crowdin.com/project/sequel-ace)
 
 Sequel Ace is the "sequel" to the longtime macOS tool Sequel Pro.
-Sequel Ace is a fast, easy-to-use Mac database management application for working with MySQL & MariaDB databases.
+Sequel Ace is a fast, easy-to-use Mac database management application for working with MySQL and MariaDB databases and local SQLite files.
 
 If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace) or sponsor one of our maintainers via GitHub Sponsors!
 
@@ -19,6 +19,9 @@ Documentation can be found at the website [sequel-ace.com](https://sequel-ace.co
 - **Databases:**
   - **MySQL:** >= 5.7
   - **MariaDB:** >= 10.0
+  - **SQLite:** Local SQLite 3 files using the version supplied by macOS.
+
+Choose **SQLite** in the connection screen to open or create a database in a standard Sequel Ace tab. SQLite tabs support table and schema browsing, row edits, SQL queries, CSV and SQLite SQL transfers, and full database backups. Use a backup for databases with virtual tables. CSV is a text interchange format and binary values are displayed as hex. Use SQLite SQL or a backup to preserve their types.
 
 
 ### Previous Versions:

@@ -22,6 +22,54 @@ extension SPAppController {
         tabManager.newWindowForTab()
     }
 
+    @MainActor @IBAction func openSQLiteDatabase(_ sender: Any) {
+        SASQLiteOpening.chooseDatabase(from: NSApp.mainWindow)
+    }
+
+    @MainActor @IBAction func newSQLiteDatabase(_ sender: Any) {
+        SASQLiteOpening.createDatabase(from: NSApp.mainWindow)
+    }
+
+    @MainActor private var activeSQLiteWorkspace: SASQLiteWorkspaceModel? {
+        tabManager.activeWorkspaceController?.sqliteWorkspace
+    }
+
+    @MainActor @objc func loadSQLiteQuery(_ sql: String) -> Bool {
+        guard let workspace = activeSQLiteWorkspace else { return false }
+        workspace.sql = sql
+        workspace.selectedSQL = ""
+        workspace.section = .query
+        return true
+    }
+
+    @MainActor @objc func sqliteMenuValidation(_ item: NSMenuItem) -> NSNumber? {
+        if item.action == #selector(openSQLiteDatabase(_:)) || item.action == #selector(newSQLiteDatabase(_:)) {
+            return NSNumber(value: NSApp.mainWindow?.attachedSheet == nil)
+        }
+        guard let workspace = activeSQLiteWorkspace else { return nil }
+        switch item.action {
+        case #selector(newTab(_:)):
+            return NSNumber(value: workspace.window?.attachedSheet == nil)
+        case #selector(SPAppController.`import`(_:)):
+            return NSNumber(value: workspace.canWrite)
+        case #selector(export(_:)):
+            return NSNumber(value: !workspace.busy)
+        case #selector(viewContent(_:)), #selector(viewStructure(_:)), #selector(viewQuery(_:)),
+             #selector(viewRelations(_:)), #selector(viewTriggers(_:)), #selector(viewStatus(_:)), #selector(refreshTables(_:)):
+            return NSNumber(value: true)
+        case #selector(addConnectionToFavorites(_:)), #selector(saveConnectionSheet(_:)),
+             #selector(importFromClipboard(_:)), #selector(printDocument(_:)):
+            return NSNumber(value: false)
+        default:
+            var menu = item.menu
+            while let parent = menu?.supermenu, parent !== NSApp.mainMenu { menu = parent }
+            let tag = NSApp.mainMenu?.items.first { $0.submenu === menu }?.tag
+            // View, Database and Table actions target MySQL unless handled above.
+            if let tag, (3...5).contains(tag) { return NSNumber(value: false) }
+            return nil
+        }
+    }
+
     /// An open standalone connection window, kept alive until it closes.
     private struct StandaloneConnectionWindow {
         /// Keep the controller around so the window isn't deallocated.
@@ -59,8 +107,12 @@ extension SPAppController {
         )
     }
 
-    @IBAction func export(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.exportData()
+    @MainActor @IBAction func export(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.showsExport = true
+        } else {
+            tabManager.activeWindowController?.databaseDocument.exportData()
+        }
     }
 
     @IBAction func addConnectionToFavorites(_ sender: Any) {
@@ -71,8 +123,12 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.saveConnectionSheet(sender)
     }
 
-    @IBAction func `import`(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.importFile()
+    @MainActor @IBAction func `import`(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.showsImport = true
+        } else {
+            tabManager.activeWindowController?.databaseDocument.importFile()
+        }
     }
 
     @IBAction func importFromClipboard(_ sender: Any) {
@@ -94,28 +150,52 @@ extension SPAppController {
 
     // MARK: View menu actions
 
-    @IBAction func viewStructure(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.viewStructure()
+    @MainActor @IBAction func viewStructure(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.section = .structure
+        } else {
+            tabManager.activeWindowController?.databaseDocument.viewStructure()
+        }
     }
 
-    @IBAction func viewContent(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.viewContent()
+    @MainActor @IBAction func viewContent(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.section = .data
+        } else {
+            tabManager.activeWindowController?.databaseDocument.viewContent()
+        }
     }
 
-    @IBAction func viewQuery(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.viewQuery()
+    @MainActor @IBAction func viewQuery(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.section = .query
+        } else {
+            tabManager.activeWindowController?.databaseDocument.viewQuery()
+        }
     }
 
-    @IBAction func viewStatus(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.viewStatus()
+    @MainActor @IBAction func viewStatus(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.section = .status
+        } else {
+            tabManager.activeWindowController?.databaseDocument.viewStatus()
+        }
     }
 
-    @IBAction func viewRelations(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.viewRelations()
+    @MainActor @IBAction func viewRelations(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.section = .relations
+        } else {
+            tabManager.activeWindowController?.databaseDocument.viewRelations()
+        }
     }
 
-    @IBAction func viewTriggers(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.viewTriggers()
+    @MainActor @IBAction func viewTriggers(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.section = .triggers
+        } else {
+            tabManager.activeWindowController?.databaseDocument.viewTriggers()
+        }
     }
 
     @IBAction func backForwardInHistory(_ sender: Any) {
@@ -156,8 +236,12 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.alterDatabase()
     }
 
-    @IBAction func refreshTables(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.refreshTables()
+    @MainActor @IBAction func refreshTables(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.reloadObjects()
+        } else {
+            tabManager.activeWindowController?.databaseDocument.refreshTables()
+        }
     }
 
     @IBAction func flushPrivileges(_ sender: Any) {
