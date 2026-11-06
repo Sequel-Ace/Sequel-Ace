@@ -8,6 +8,7 @@ struct SASQLiteWorkspaceView: View {
     @State private var confirmsDeletion = false
     @State private var resultOffset = 0
     @State private var tableSearch = ""
+    @State private var exportAction: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,15 +58,41 @@ struct SASQLiteWorkspaceView: View {
             Button("CSV…") { model.selectImport(csv: true) }
             Button("SQLite SQL…") { model.selectImport(csv: false) }
         }
-        .confirmationDialog("Export from SQLite", isPresented: $model.showsExport) {
-            Button("Table or View as CSV…") { model.exportTable() }
-                .disabled(model.currentObject == nil)
-            Button("Loaded Query Results as CSV…") { model.exportResult() }
-                .disabled(model.queryResult?.result?.columns.isEmpty != false)
-            Button("Database as SQLite SQL…") { model.exportSQL() }
-            Button("Create SQLite Backup…") { model.backup(restore: false) }
-            Button("Restore as New SQLite Database…") { model.backup(restore: true) }
+        .sheet(isPresented: $model.showsExport, onDismiss: runExportAction) {
+            exportOptions
         }
+    }
+
+    private var exportOptions: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Export from SQLite").font(.headline)
+            Button("Table or View as CSV…") { selectExport { model.exportTable() } }
+                .disabled(model.currentObject == nil)
+            Button("Loaded Query Results as CSV…") { selectExport { model.exportResult() } }
+                .disabled(model.queryResult?.result?.columns.isEmpty != false)
+            Button("Database as SQLite SQL…") { selectExport { model.exportSQL() } }
+            Divider()
+            Button("Create SQLite Backup…") { selectExport { model.backup(restore: false) } }
+            Button("Restore as New SQLite Database…") { selectExport { model.backup(restore: true) } }
+            HStack {
+                Spacer()
+                Button("Cancel") { model.showsExport = false }
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(20)
+        .frame(width: 350)
+    }
+
+    private func selectExport(_ action: @escaping () -> Void) {
+        exportAction = action
+        model.showsExport = false
+    }
+
+    private func runExportAction() {
+        let action = exportAction
+        exportAction = nil
+        action?()
     }
 
     private var statusBar: some View {
