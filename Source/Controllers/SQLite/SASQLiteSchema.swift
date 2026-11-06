@@ -34,6 +34,7 @@ struct SASQLiteStructure: Sendable {
     let triggers: SASQLiteResult
     let definition: String?
     let schemaVersion: Int64
+    let encoding: String
 
     var accessibleRowID: String? {
         guard object.kind == .table, !object.withoutRowID else { return nil }
@@ -58,6 +59,42 @@ struct SASQLitePage: Sendable {
     let structure: SASQLiteStructure
     let rows: [SASQLiteRow]
     let hasMore: Bool
+    let totalRows: Int64
+    let matchingRows: Int64
+}
+
+struct SASQLiteBrowseOptions: Sendable {
+    struct Filter: Sendable {
+        enum Operator: String, CaseIterable, Sendable {
+            case contains, equals, notEqual, beginsWith, endsWith, greaterThan, lessThan, isNull, isNotNull
+        }
+
+        let columnID: Int64
+        let operation: Operator
+        let value: String
+
+        func predicate(for column: SASQLiteColumn) -> (String, [SASQLiteValue]) {
+            let identifier = column.identifier
+            switch operation {
+            case .isNull: return (identifier + " IS NULL", [])
+            case .isNotNull: return (identifier + " IS NOT NULL", [])
+            case .equals: return (identifier + " = ?", [.init(value)])
+            case .notEqual: return (identifier + " <> ?", [.init(value)])
+            case .greaterThan: return (identifier + " > ?", [.init(value)])
+            case .lessThan: return (identifier + " < ?", [.init(value)])
+            case .contains, .beginsWith, .endsWith:
+                let escaped = value.replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "%", with: "\\%").replacingOccurrences(of: "_", with: "\\_")
+                let prefix = operation == .beginsWith ? "" : "%"
+                let suffix = operation == .endsWith ? "" : "%"
+                return ("CAST(" + identifier + " AS TEXT) LIKE ? ESCAPE '\\'", [.init(prefix + escaped + suffix)])
+            }
+        }
+    }
+
+    var filter: Filter?
+    var sortColumn: Int64?
+    var descending = false
 }
 
 enum SASQLiteColumnType: String, CaseIterable, Sendable {
@@ -82,10 +119,19 @@ struct SASQLiteColumnDefinition: Sendable {
 enum SASQLiteSchemaChange: Sendable {
     case createTable(String, [SASQLiteColumnDefinition])
     case renameTable(SASQLiteObject, String)
+    case duplicateTable(SASQLiteObject, String, includeRows: Bool)
+    case truncateTable(SASQLiteObject)
     case dropObject(SASQLiteObject)
     case addColumn(SASQLiteObject, SASQLiteColumnDefinition)
     case renameColumn(SASQLiteObject, SASQLiteColumn, String)
     case dropColumn(SASQLiteObject, SASQLiteColumn)
+    case redefineColumn(SASQLiteObject, SASQLiteColumn, String)
+    case addIndex(SASQLiteObject, name: String, columns: [SASQLiteColumn], unique: Bool)
+    case dropIndex(String)
+    case addRelation(SASQLiteObject, SASQLiteForeignKey)
+    case dropRelation(SASQLiteObject, Int64)
+    case saveTrigger(String, replacing: String?)
+    case dropTrigger(String)
 }
 
 extension SASQLiteConnection {
@@ -114,7 +160,9 @@ extension SASQLiteConnection {
             }
         let indexes = try query("""
             SELECT list.name AS Name, list."unique" AS "Unique", list.origin AS Origin,
-                   list.partial AS Partial, schema.sql AS SQL
+                   list.partial AS Partial,
+                   (SELECT group_concat(name, ', ') FROM pragma_index_info(list.name, 'main')) AS Columns,
+                   schema.sql AS SQL
             FROM pragma_index_list(?, 'main') AS list
             LEFT JOIN main.sqlite_schema AS schema ON schema.name = list.name AND schema.type = 'index'
             ORDER BY list.name
@@ -130,24 +178,35 @@ extension SASQLiteConnection {
             SELECT sql FROM main.sqlite_schema WHERE name = ? AND type IN ('table', 'view')
             """, bindings: bindings).rows.first?.first?.string
         return SASQLiteStructure(object: object, columns: columns, indexes: indexes, foreignKeys: foreignKeys,
-                                 triggers: triggers, definition: definition, schemaVersion: try schemaVersion())
+                                 triggers: triggers, definition: definition, schemaVersion: try schemaVersion(),
+                                 encoding: try query("PRAGMA main.encoding").rows.first?.first?.string ?? "")
     }
 
-    func page(_ object: SASQLiteObject, offset: Int, size: Int) throws -> SASQLitePage {
+    func page(_ object: SASQLiteObject, offset: Int, size: Int, options: SASQLiteBrowseOptions = .init()) throws -> SASQLitePage {
         try readSnapshot {
             let structure = try structure(object)
             let rowID = structure.accessibleRowID.map(Self.identifier)
             let projection = (rowID.map { [$0] } ?? []) + structure.visibleColumns.map(\.identifier)
             guard !projection.isEmpty else { throw SASQLiteError.invalidInput }
-            let order = rowID.map { [$0] } ?? structure.primaryKey.map(\.identifier)
+            var order = rowID.map { [$0] } ?? structure.primaryKey.map(\.identifier)
+            if let sortColumn = options.sortColumn, let column = structure.visibleColumns.first(where: { $0.id == sortColumn }) {
+                order.insert(column.identifier + (options.descending ? " DESC" : " ASC"), at: 0)
+            }
             let orderBy = order.isEmpty ? "" : " ORDER BY " + order.joined(separator: ", ")
+            let filter = options.filter.flatMap { filter in
+                structure.visibleColumns.first { $0.id == filter.columnID }.map { filter.predicate(for: $0) }
+            }
+            let whereSQL = filter.map { " WHERE " + $0.0 } ?? ""
+            let parameters = filter?.1 ?? []
+            let total = try query("SELECT count(*) FROM \(object.reference)").rows.first?.first?.integer ?? 0
+            let matching = filter == nil ? total : try query("SELECT count(*) FROM \(object.reference)\(whereSQL)", bindings: parameters).rows.first?.first?.integer ?? 0
             let rows = try query("""
-                SELECT \(projection.joined(separator: ", ")) FROM \(object.reference)\(orderBy) LIMIT ? OFFSET ?
-                """, bindings: [.integer(Int64(size + 1)), .integer(Int64(offset))]).rows
+                SELECT \(projection.joined(separator: ", ")) FROM \(object.reference)\(whereSQL)\(orderBy) LIMIT ? OFFSET ?
+                """, bindings: parameters + [.integer(Int64(size + 1)), .integer(Int64(offset))]).rows
             return SASQLitePage(structure: structure, rows: rows.prefix(size).map { values in
                 SASQLiteRow(values: rowID == nil ? values : Array(values.dropFirst()),
                             rowID: rowID == nil ? nil : values.first?.integer)
-            }, hasMore: rows.count > size)
+            }, hasMore: rows.count > size, totalRows: total, matchingRows: matching)
         }
     }
 
@@ -158,6 +217,10 @@ extension SASQLiteConnection {
             try createTable(name, columns: columns)
         case let .renameTable(object, name):
             try query("ALTER TABLE \(object.reference) RENAME TO \(Self.validatedIdentifier(name))")
+        case let .duplicateTable(object, name, includeRows):
+            try duplicateTable(object, as: name, includeRows: includeRows)
+        case let .truncateTable(object):
+            try query("DELETE FROM \(object.reference)")
         case let .dropObject(object):
             let kind = object.kind == .view ? "VIEW" : "TABLE"
             try query("DROP \(kind) \(object.reference)")
@@ -167,6 +230,62 @@ extension SASQLiteConnection {
             try query("ALTER TABLE \(object.reference) RENAME COLUMN \(column.identifier) TO \(Self.validatedIdentifier(name))")
         case let .dropColumn(object, column):
             try query("ALTER TABLE \(object.reference) DROP COLUMN \(column.identifier)")
+        case let .redefineColumn(object, column, declaration):
+            try rebuild(object) { definition, _ in
+                try definition.redefineColumn(column.name, declaration: declaration)
+            }
+        case let .addIndex(object, name, columns, unique):
+            guard !columns.isEmpty else { throw SASQLiteError.invalidInput }
+            let index = try Self.validatedIdentifier(name)
+            let table = Self.identifier(object.name)
+            let names = columns.map(\.identifier).joined(separator: ", ")
+            try query("CREATE \(unique ? "UNIQUE " : "")INDEX main.\(index) ON \(table) (\(names))")
+        case let .dropIndex(name):
+            try query("DROP INDEX main.\(Self.validatedIdentifier(name))")
+        case let .addRelation(object, relation):
+            try rebuild(object) { definition, _ in definition.terms.append(try relation.sql()) }
+        case let .dropRelation(object, id):
+            try rebuild(object) { definition, structure in
+                try definition.removeForeignKey(id, metadata: structure.foreignKeys.rows)
+            }
+        case let .saveTrigger(sql, replacing):
+            let tokens = SASQLiteTableDefinition.tokens(sql)
+            guard tokens.first?.text.uppercased() == "CREATE",
+                  tokens.dropFirst().first?.text.uppercased() == "TRIGGER",
+                  let range = SASQLiteSQLStyle.currentStatement(in: sql, at: 0),
+                  !tokens.contains(where: { $0.range.location >= NSMaxRange(range) }) else {
+                throw SASQLiteError.invalidInput
+            }
+            try writeTransaction {
+                if let replacing { try query("DROP TRIGGER main.\(Self.validatedIdentifier(replacing))") }
+                try query(sql)
+            }
+        case let .dropTrigger(name):
+            try query("DROP TRIGGER main.\(Self.validatedIdentifier(name))")
+        }
+    }
+
+    private func duplicateTable(_ object: SASQLiteObject, as name: String, includeRows: Bool) throws {
+        guard object.kind == .table else { throw SASQLiteError.invalidInput }
+        let nameSQL = try Self.validatedIdentifier(name)
+        try writeTransaction {
+            let structure = try structure(object)
+            guard let original = structure.definition else { throw SASQLiteError.invalidInput }
+            let tokens = SASQLiteTableDefinition.tokens(original)
+            guard let tableIndex = tokens.firstIndex(where: { $0.kind == .keyword && $0.text.uppercased() == "TABLE" }) else {
+                throw SASQLiteError.invalidInput
+            }
+            var nameIndex = tableIndex + 1
+            if tokens.dropFirst(nameIndex).prefix(3).map({ $0.text.uppercased() }) == ["IF", "NOT", "EXISTS"] {
+                nameIndex += 3
+            }
+            guard tokens.indices.contains(nameIndex) else { throw SASQLiteError.invalidInput }
+            let definition = (original as NSString).replacingCharacters(in: tokens[nameIndex].range, with: "main." + nameSQL)
+            try query(definition)
+            if includeRows {
+                let columns = structure.writableColumns.map(\.identifier).joined(separator: ", ")
+                try query("INSERT INTO main.\(nameSQL) (\(columns)) SELECT \(columns) FROM \(object.reference)")
+            }
         }
     }
 
@@ -247,5 +366,189 @@ extension SASQLiteStructure {
             throw SASQLiteError.noActiveRow
         }
         return (keys.map { $0.identifier + " COLLATE BINARY IS ?" }.joined(separator: " AND "), values)
+    }
+}
+
+struct SASQLiteForeignKey: Sendable {
+    enum Action: String, CaseIterable, Sendable {
+        case noAction = "NO ACTION"
+        case restrict = "RESTRICT"
+        case cascade = "CASCADE"
+        case setNull = "SET NULL"
+        case setDefault = "SET DEFAULT"
+    }
+
+    let name: String
+    let from: String
+    let referencedTable: String
+    let referencedColumn: String
+    let onUpdate: Action
+    let onDelete: Action
+
+    func sql() throws -> String {
+        let nameSQL = name.isEmpty ? "" : "CONSTRAINT " + (try SASQLiteConnection.validatedIdentifier(name)) + " "
+        let source = try SASQLiteConnection.validatedIdentifier(from)
+        let table = try SASQLiteConnection.validatedIdentifier(referencedTable)
+        let target = try SASQLiteConnection.validatedIdentifier(referencedColumn)
+        return "\(nameSQL)FOREIGN KEY (\(source)) REFERENCES \(table) (\(target)) ON UPDATE \(onUpdate.rawValue) ON DELETE \(onDelete.rawValue)"
+    }
+}
+
+/// Preserve constraints and table options SQLite does not expose as form fields.
+struct SASQLiteTableDefinition {
+    var terms: [String]
+    let suffix: String
+
+    init(_ sql: String) throws {
+        let tokens = Self.tokens(sql)
+        guard let opening = tokens.firstIndex(where: { $0.kind == .symbol && $0.text == "(" }) else {
+            throw SASQLiteError.invalidInput
+        }
+        let source = sql as NSString
+        var terms: [String] = []
+        var start = NSMaxRange(tokens[opening].range)
+        var depth = 1
+        for token in tokens.dropFirst(opening + 1) where token.kind == .symbol {
+            if token.text == "(" { depth += 1 }
+            if token.text == ")" { depth -= 1 }
+            if depth == 0 || depth == 1 && token.text == "," {
+                let text = source.substring(with: NSRange(location: start, length: token.range.location - start))
+                terms.append(text.trimmingCharacters(in: .whitespacesAndNewlines))
+                if depth == 0 {
+                    self.terms = terms
+                    suffix = source.substring(from: NSMaxRange(token.range))
+                    return
+                }
+                start = NSMaxRange(token.range)
+            }
+        }
+        throw SASQLiteError.invalidInput
+    }
+
+    func column(_ name: String) -> String? {
+        terms.first { term in
+            Self.tokens(term).first.map { Self.unquote($0).utf8.elementsEqual(name.utf8) } == true
+        }
+    }
+
+    mutating func redefineColumn(_ name: String, declaration: String) throws {
+        guard let original = column(name), let index = terms.firstIndex(of: original) else { throw SASQLiteError.invalidInput }
+        let validation = try Self("CREATE TABLE validation (\(declaration))")
+        guard validation.terms.count == 1, validation.suffix.isEmpty, validation.column(name) != nil else {
+            throw SASQLiteError.invalidInput
+        }
+        terms[index] = declaration
+    }
+
+    mutating func removeForeignKey(_ id: Int64, metadata: [[SASQLiteValue]]) throws {
+        // SQLite lists foreign keys in reverse declaration order. Verify the
+        // candidate's source and target against the engine metadata before editing.
+        let candidates = terms.indices.reversed().compactMap { index -> (Int, [SASQLiteSQLStyle.Token], Int)? in
+            let tokens = Self.topLevelTokens(terms[index])
+            guard let reference = tokens.firstIndex(where: { $0.kind == .keyword && $0.text.uppercased() == "REFERENCES" }) else { return nil }
+            return (index, tokens, reference)
+        }
+        let keys = Set(metadata.compactMap { $0.first?.integer })
+        guard candidates.count == keys.count, let index = Int(exactly: id), candidates.indices.contains(index),
+              let metadata = metadata.first(where: { $0.first?.integer == id }) else { throw SASQLiteError.invalidInput }
+        let (term, tokens, reference) = candidates[index]
+        guard tokens.indices.contains(reference + 1),
+              Self.unquote(tokens[reference + 1]).caseInsensitiveCompare(metadata[2].string ?? "") == .orderedSame else {
+            throw SASQLiteError.invalidInput
+        }
+        if ["FOREIGN", "CONSTRAINT"].contains(tokens.first?.text.uppercased()) {
+            terms.remove(at: term)
+            return
+        }
+        guard let column = tokens.first,
+              Self.unquote(column).caseInsensitiveCompare(metadata[3].string ?? "") == .orderedSame else {
+            throw SASQLiteError.invalidInput
+        }
+        let followingConstraint = tokens.indices.dropFirst(reference + 2).first { i in
+            guard tokens[i].kind == .keyword else { return false }
+            let keyword = tokens[i].text.uppercased()
+            if ["CONSTRAINT", "PRIMARY", "UNIQUE", "CHECK", "COLLATE", "GENERATED"].contains(keyword) { return true }
+            if ["DEFAULT", "NULL"].contains(keyword) { return tokens[i - 1].text.uppercased() != "SET" }
+            return keyword == "NOT" && tokens.indices.contains(i + 1) && tokens[i + 1].text.uppercased() == "NULL"
+        }
+        let start = reference >= 2 && tokens[reference - 2].text.uppercased() == "CONSTRAINT" ? reference - 2 : reference
+        let source = terms[term] as NSString
+        let from = tokens[start].range.location
+        let to = followingConstraint.map { tokens[$0].range.location } ?? source.length
+        terms[term] = source.replacingCharacters(in: NSRange(location: from, length: to - from), with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func tokens(_ sql: String) -> [SASQLiteSQLStyle.Token] {
+        SASQLiteSQLStyle.tokens(in: sql).filter { ![.whitespace, .blockComment, .lineComment].contains($0.kind) }
+    }
+
+    private static func topLevelTokens(_ sql: String) -> [SASQLiteSQLStyle.Token] {
+        var depth = 0
+        return tokens(sql).filter { token in
+            if token.kind == .symbol && token.text == "(" { depth += 1; return false }
+            if token.kind == .symbol && token.text == ")" { depth -= 1; return false }
+            return depth == 0
+        }
+    }
+
+    private static func unquote(_ token: SASQLiteSQLStyle.Token) -> String {
+        let text = token.text
+        guard let first = text.utf8.first, [34, 39, 91, 96].contains(first), text.count >= 2 else { return text }
+        let quote = String(decoding: [first], as: UTF8.self)
+        return String(text.dropFirst().dropLast()).replacingOccurrences(of: quote + quote, with: quote)
+    }
+}
+
+private extension SASQLiteConnection {
+    func rebuild(_ object: SASQLiteObject, change: (inout SASQLiteTableDefinition, SASQLiteStructure) throws -> Void) throws {
+        guard object.kind == .table else { throw SASQLiteError.invalidInput }
+        let foreignKeys = try query("PRAGMA foreign_keys").rows.first?.first?.integer ?? 0
+        let legacyRename = try query("PRAGMA legacy_alter_table").rows.first?.first?.integer ?? 0
+        try query("PRAGMA foreign_keys=OFF")
+        defer {
+            _ = try? query("PRAGMA foreign_keys=\(foreignKeys)")
+            _ = try? query("PRAGMA legacy_alter_table=\(legacyRename)")
+        }
+        try query("PRAGMA legacy_alter_table=ON")
+        try writeTransaction {
+            let original = try structure(object)
+            guard let sql = original.definition else { throw SASQLiteError.invalidInput }
+            var definition = try SASQLiteTableDefinition(sql)
+            try change(&definition, original)
+
+            let temporaryName = "sequel_ace_rebuild_" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+            let temporary = SASQLiteObject(name: temporaryName, kind: .table, withoutRowID: object.withoutRowID)
+            let create = "CREATE TABLE \(temporary.reference) (\(definition.terms.joined(separator: ",\n")))\(definition.suffix)"
+            try query(create)
+            let destination = try structure(temporary)
+            let originalNames = Set(original.visibleColumns.map { Data($0.name.utf8) })
+            let common = destination.writableColumns.filter { originalNames.contains(Data($0.name.utf8)) }.map(\.identifier)
+            let sourceID = original.accessibleRowID.map(Self.identifier)
+            let targetID = destination.accessibleRowID.map(Self.identifier)
+            var source = common
+            var target = common
+            if let sourceID, let targetID {
+                source.insert(sourceID, at: 0)
+                target.insert(targetID, at: 0)
+            }
+            guard !source.isEmpty else { throw SASQLiteError.invalidInput }
+            try query("INSERT INTO \(temporary.reference) (\(target.joined(separator: ", "))) SELECT \(source.joined(separator: ", ")) FROM \(object.reference)")
+
+            let hasSequence = try query("SELECT 1 FROM main.sqlite_schema WHERE name='sqlite_sequence'").rows.first != nil
+            let sequence = hasSequence
+                ? try query("SELECT seq FROM main.sqlite_sequence WHERE name = ?", bindings: [SASQLiteValue(object.name)]).rows.first?.first
+                : nil
+            try query("DROP TABLE \(object.reference)")
+            try query("ALTER TABLE \(temporary.reference) RENAME TO \(Self.identifier(object.name))")
+            if let sequence, SASQLiteTableDefinition.tokens(create).contains(where: { $0.kind == .keyword && $0.text.uppercased() == "AUTOINCREMENT" }) {
+                try query("DELETE FROM main.sqlite_sequence WHERE name = ?", bindings: [SASQLiteValue(object.name)])
+                try query("INSERT INTO main.sqlite_sequence(name, seq) VALUES (?, ?)", bindings: [SASQLiteValue(object.name), sequence])
+            }
+            for sql in original.indexes.rows.compactMap({ $0.last?.string }) + original.triggers.rows.compactMap({ $0.last?.string }) {
+                try query(sql)
+            }
+            guard try query("PRAGMA main.foreign_key_check", limit: 1).rows.isEmpty else { throw SASQLiteError.foreignKeyViolation }
+        }
     }
 }

@@ -21,7 +21,7 @@ Documentation can be found at the website [sequel-ace.com](https://sequel-ace.co
   - **MariaDB:** >= 10.0
   - **SQLite:** Local SQLite 3 files using the version supplied by macOS.
 
-Choose **SQLite** in the connection screen to open or create a database in a standard Sequel Ace tab. SQLite tabs support table and schema browsing, row edits, SQL queries, CSV and SQLite SQL transfers, and full database backups. Use a backup for databases with virtual tables. CSV is a text interchange format and binary values are displayed as hex. Use SQLite SQL or a backup to preserve their types.
+Choose **SQLite** in the connection screen to open or create a database in a standard Sequel Ace tab. SQLite tabs use the standard sidebar, result tables, and query controls. Browse and edit rows, columns, indexes, relations, and triggers, format SQLite SQL, and transfer CSV files, SQL files, and full database backups. Use a backup for databases with virtual tables. CSV is a text interchange format and binary values are displayed as hex. Use SQLite SQL or a backup to preserve their types.
 
 
 ### Previous Versions:

@@ -40,6 +40,30 @@ enum SASQLiteValue: Equatable, Sendable {
         }
     }
 
+    func compare(to other: SASQLiteValue) -> ComparisonResult {
+        switch (self, other) {
+        case let (.integer(left), .integer(right)): return NSNumber(value: left).compare(NSNumber(value: right))
+        case let (.integer(left), .real(right)): return NSNumber(value: left).compare(NSNumber(value: right))
+        case let (.real(left), .integer(right)): return NSNumber(value: left).compare(NSNumber(value: right))
+        case let (.real(left), .real(right)): return NSNumber(value: left).compare(NSNumber(value: right))
+        case let (.text(left), .text(right)), let (.blob(left), .blob(right)):
+            if left == right { return .orderedSame }
+            return left.lexicographicallyPrecedes(right) ? .orderedAscending : .orderedDescending
+        default:
+            if sortRank == other.sortRank { return .orderedSame }
+            return sortRank < other.sortRank ? .orderedAscending : .orderedDescending
+        }
+    }
+
+    private var sortRank: Int {
+        switch self {
+        case .null: return 0
+        case .integer, .real: return 1
+        case .text: return 2
+        case .blob: return 3
+        }
+    }
+
     static func hex(_ bytes: Data) -> String {
         let digits = Array("0123456789ABCDEF".utf8)
         return String(decoding: bytes.flatMap { [digits[Int($0 >> 4)], digits[Int($0 & 15)]] }, as: UTF8.self)
@@ -101,6 +125,7 @@ struct SASQLiteResult: Sendable {
     let rows: [[SASQLiteValue]]
     let changedRows: Int64
     let truncated: Bool
+    var columnTypes: [String?] = []
 }
 
 struct SASQLiteScriptResult: Sendable {
@@ -336,8 +361,11 @@ final class SASQLiteConnection {
                 rows.append(Self.values(statement))
             }
         }
-        let columns = (0..<sqlite3_column_count(statement)).map { String(cString: sqlite3_column_name(statement, $0)) }
-        return SASQLiteResult(columns: columns, rows: rows, changedRows: sqlite3_total_changes64(handle) - before, truncated: truncated)
+        let indexes = 0..<sqlite3_column_count(statement)
+        let columns = indexes.map { String(cString: sqlite3_column_name(statement, $0)) }
+        let types = indexes.map { sqlite3_column_decltype(statement, $0).map(String.init(cString:)) }
+        return SASQLiteResult(columns: columns, rows: rows, changedRows: sqlite3_total_changes64(handle) - before,
+                              truncated: truncated, columnTypes: types)
     }
 
     private func step(_ statement: OpaquePointer) throws -> Bool {

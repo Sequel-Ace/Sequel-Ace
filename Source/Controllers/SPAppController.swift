@@ -55,7 +55,7 @@ extension SPAppController {
         case #selector(export(_:)):
             return NSNumber(value: !workspace.busy)
         case #selector(viewContent(_:)), #selector(viewStructure(_:)), #selector(viewQuery(_:)),
-             #selector(viewRelations(_:)), #selector(viewTriggers(_:)), #selector(viewStatus(_:)), #selector(refreshTables(_:)):
+             #selector(viewRelations(_:)), #selector(viewTriggers(_:)), #selector(viewStatus(_:)), #selector(refreshTables(_:)), #selector(toggleConsole(_:)):
             return NSNumber(value: true)
         case #selector(addConnectionToFavorites(_:)), #selector(saveConnectionSheet(_:)),
              #selector(importFromClipboard(_:)), #selector(printDocument(_:)):
@@ -202,8 +202,12 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.backForwardInHistory(sender)
     }
 
-    @IBAction func toggleConsole(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.toggleConsole()
+    @MainActor @IBAction func toggleConsole(_ sender: Any) {
+        if let workspace = activeSQLiteWorkspace {
+            workspace.showConsole()
+        } else {
+            tabManager.activeWindowController?.databaseDocument.toggleConsole()
+        }
     }
 
     @IBAction func toggleNavigator(_ sender: Any) {

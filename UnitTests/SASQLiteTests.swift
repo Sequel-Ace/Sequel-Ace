@@ -246,6 +246,119 @@ final class SASQLiteTests: XCTestCase {
         XCTAssertEqual(try restored.query("SELECT a FROM t").rows, [[.integer(99)]])
     }
 
+    func testSQLiteQueryMetadataIncludesDeclaredTypes() throws {
+        try run("CREATE TABLE t(id INTEGER, title TEXT);")
+        let result = try database.query("SELECT id, title, 3 AS expression FROM t")
+        XCTAssertEqual(result.columns, ["id", "title", "expression"])
+        XCTAssertEqual(result.columnTypes, ["INTEGER", "TEXT", nil])
+    }
+
+    func testSQLiteFormattingPreservesQuotedNamesLiteralsAndParameters() throws {
+        try run("CREATE TABLE [order table] ([select] TEXT); INSERT INTO [order table] VALUES ('test');")
+        let original = #"""
+        select [select], x'00FF', 'a''b; FROM', :select, $ns::name(suffix), 1.5e+2 -- mixed Case
+        from [order table] where [select] = 'test';
+        """#
+        let formatted = SASQLiteSQLStyle.format(original)
+        XCTAssertTrue(formatted.contains("SELECT [select], x'00FF', 'a''b; FROM', :select, $ns::name(suffix), 1.5e+2 -- mixed Case"))
+        XCTAssertTrue(formatted.contains("\nFROM [order table]\nWHERE [select] = 'test';"))
+        let bindings: [SASQLiteValue] = [.integer(3), .integer(4)]
+        XCTAssertEqual(try database.query(formatted, bindings: bindings).rows,
+                       try database.query(original, bindings: bindings).rows)
+        XCTAssertEqual(SASQLiteSQLStyle.format(formatted), formatted)
+    }
+
+    func testSQLiteFormattingFindsEntireTriggerAtTheCaret() throws {
+        let trigger = """
+        create trigger example after insert on t begin
+          insert into log values ('💾;');
+          insert into log values ('second');
+        end;
+        """
+        let sql = trigger + "\nselect * from log;"
+        let range = try XCTUnwrap(SASQLiteSQLStyle.currentStatement(in: sql, at: (sql as NSString).range(of: "second").location))
+        XCTAssertEqual((sql as NSString).substring(with: range), trigger)
+        let tokens = SASQLiteSQLStyle.tokens(in: sql)
+        XCTAssertTrue(tokens.contains { $0.kind == .keyword && $0.text == "trigger" })
+        XCTAssertTrue(tokens.contains { $0.kind == .string && $0.text == "'💾;'" })
+        XCTAssertEqual(tokens.map(\.text).joined(), sql)
+    }
+
+    func testRebuildingColumnsAndRelationsPreservesRowsViewsIndexesAndTriggers() throws {
+        try run("""
+            CREATE TABLE parent(id INTEGER PRIMARY KEY);
+            INSERT INTO parent VALUES (1);
+            CREATE TABLE t(id INTEGER PRIMARY KEY AUTOINCREMENT, p INTEGER REFERENCES parent(id) ON DELETE CASCADE NOT NULL,
+                           value TEXT DEFAULT 'a');
+            INSERT INTO t(p,value) VALUES(1,'42');
+            UPDATE sqlite_sequence SET seq=90 WHERE name='t';
+            CREATE INDEX t_value ON t(value);
+            CREATE VIEW t_view AS SELECT value FROM t;
+            CREATE TABLE log(entry);
+            CREATE TRIGGER t_log AFTER INSERT ON t BEGIN INSERT INTO log VALUES(new.value); END;
+            """)
+        let object = try XCTUnwrap(database.objects().first { $0.name == "t" })
+        let column = try XCTUnwrap(database.structure(object).columns.first { $0.name == "value" })
+        try database.apply(.redefineColumn(object, column, "value INTEGER DEFAULT 7"))
+        XCTAssertEqual(try database.query("SELECT value FROM t_view").rows, [[.integer(42)]])
+        XCTAssertEqual(try database.structure(object).indexes.rows.count, 1)
+        XCTAssertEqual(try database.structure(object).triggers.rows.count, 1)
+        XCTAssertEqual(try database.query("SELECT seq FROM sqlite_sequence WHERE name='t'").rows, [[.integer(90)]])
+        try database.apply(.dropRelation(object, 0))
+        XCTAssertTrue(try database.structure(object).foreignKeys.rows.isEmpty)
+        XCTAssertTrue(try XCTUnwrap(database.structure(object).columns.first { $0.name == "p" }).notNull)
+        let foreignKey = SASQLiteForeignKey(name: "fk_p", from: "p", referencedTable: "parent", referencedColumn: "id",
+                                          onUpdate: .noAction, onDelete: .cascade)
+        try database.apply(.addRelation(object, foreignKey))
+        XCTAssertEqual(try database.structure(object).foreignKeys.rows.count, 1)
+        try database.query("INSERT INTO t(p) VALUES(1)")
+        XCTAssertEqual(try database.query("SELECT id FROM t ORDER BY id").rows, [[.integer(1)], [.integer(91)]])
+        XCTAssertEqual(try database.query("SELECT entry FROM log").rows, [[.integer(7)]])
+        XCTAssertEqual(try database.query("PRAGMA foreign_keys").rows, [[.integer(1)]])
+    }
+
+    func testFailedRelationChangeAndTriggerReplacementAreAtomic() throws {
+        try run("""
+            CREATE TABLE parent(id INTEGER PRIMARY KEY);
+            CREATE TABLE t(p INTEGER NOT NULL);
+            INSERT INTO t VALUES (88);
+            CREATE TRIGGER t_log AFTER INSERT ON t BEGIN SELECT 1; END;
+            """)
+        let object = try XCTUnwrap(database.objects().first { $0.name == "t" })
+        let foreignKey = SASQLiteForeignKey(name: "", from: "p", referencedTable: "parent", referencedColumn: "id",
+                                          onUpdate: .noAction, onDelete: .noAction)
+        XCTAssertThrowsError(try database.apply(.addRelation(object, foreignKey)))
+        XCTAssertTrue(try database.structure(object).foreignKeys.rows.isEmpty)
+        XCTAssertEqual(try database.query("SELECT p FROM t").rows, [[.integer(88)]])
+        XCTAssertThrowsError(try database.apply(.saveTrigger("CREATE TRIGGER invalid ON t", replacing: "t_log")))
+        XCTAssertEqual(try database.structure(object).triggers.rows.first?.first, .init("t_log"))
+    }
+
+    func testContentSortAndFilterUseSQLiteAndEscapeWildcards() throws {
+        try run("CREATE TABLE t(id INTEGER PRIMARY KEY, a TEXT); INSERT INTO t VALUES(1,'a%b'),(2,'a_b'),(3,'abc'),(4,'d%b');")
+        let object = try XCTUnwrap(database.objects().first)
+        let options = SASQLiteBrowseOptions(filter: .init(columnID: 1, operation: .contains, value: "%"),
+                                            sortColumn: 0, descending: true)
+        let page = try database.page(object, offset: 0, size: 1, options: options)
+        XCTAssertEqual(page.totalRows, 4)
+        XCTAssertEqual(page.matchingRows, 2)
+        XCTAssertEqual(page.rows.first?.values, [.integer(4), .init("d%b")])
+        XCTAssertTrue(page.hasMore)
+    }
+
+    func testSelectedSQLExportCanIncludeStructureOrDataIndependently() throws {
+        try run("CREATE TABLE t(a); INSERT INTO t VALUES(1); CREATE TABLE excluded(a);")
+        let object = try XCTUnwrap(database.objects().first { $0.name == "t" })
+        let output = file("selected.sql")
+        try database.exportSQL(to: output, cancellation: cancellation,
+                               options: .init(objects: [object.id], structure: true, content: false, drop: true))
+        let dump = try String(contentsOf: output, encoding: .utf8)
+        XCTAssertTrue(dump.contains("DROP TABLE IF EXISTS"))
+        XCTAssertTrue(dump.contains("CREATE TABLE t"))
+        XCTAssertFalse(dump.contains("INSERT INTO"))
+        XCTAssertFalse(dump.contains("excluded"))
+    }
+
     private func file(_ name: String) -> URL { directory.appendingPathComponent(name) }
 
     private func run(_ sql: String, file: StaticString = #filePath, line: UInt = #line) throws {

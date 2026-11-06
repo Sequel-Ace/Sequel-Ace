@@ -4709,3 +4709,225 @@
 
 /* SQLite control or view label */
 "Value Type" = "Value Type";
+
+/* Query editor command to format the current SQL statement or selection */
+"Format SQL" = "Format SQL";
+
+/* SQLite workspace label or command */
+"%lld rows in table" = "%lld rows in table";
+
+/* SQLite workspace label or command */
+"Add Index" = "Add Index";
+
+/* SQLite workspace label or command */
+"Add Relation" = "Add Relation";
+
+/* SQLite workspace label or command */
+"Add Trigger" = "Add Trigger";
+
+/* SQLite workspace label or command */
+"Add new table" = "Add new table";
+
+/* SQLite workspace label or command */
+"Allow Null" = "Allow Null";
+
+/* SQLite workspace label or command */
+"Automatic" = "Automatic";
+
+/* SQLite workspace label or command */
+"Begins With" = "Begins With";
+
+/* SQLite workspace label or command */
+"CSV" = "CSV";
+
+/* SQLite workspace label or command */
+"Choose Column" = "Choose Column";
+
+/* SQLite workspace label or command */
+"Choose Table" = "Choose Table";
+
+/* SQLite workspace label or command */
+"Clear History" = "Clear History";
+
+/* SQLite workspace label or command */
+"Column Definition" = "Column Definition";
+
+/* SQLite workspace label or command */
+"Contains" = "Contains";
+
+/* SQLite workspace label or command */
+"Copy CREATE Syntax" = "Copy CREATE Syntax";
+
+/* SQLite workspace label or command */
+"Copy Table Content" = "Copy Table Content";
+
+/* SQLite workspace label or command */
+"Create Syntax" = "Create Syntax";
+
+/* SQLite workspace label or command */
+"DROP TABLE syntax" = "DROP TABLE syntax";
+
+/* SQLite workspace label or command */
+"Does Not Equal" = "Does Not Equal";
+
+/* SQLite workspace label or command */
+"Duplicate Row" = "Duplicate Row";
+
+/* SQLite workspace label or command */
+"Duplicate Table" = "Duplicate Table";
+
+/* SQLite workspace label or command */
+"Duplicate Table…" = "Duplicate Table…";
+
+/* SQLite workspace label or command */
+"Edit Column" = "Edit Column";
+
+/* SQLite workspace label or command */
+"Edit Column…" = "Edit Column…";
+
+/* SQLite workspace label or command */
+"Edit Trigger" = "Edit Trigger";
+
+/* SQLite workspace label or command */
+"Ends With" = "Ends With";
+
+/* SQLite workspace label or command */
+"Equals" = "Equals";
+
+/* SQLite workspace label or command */
+"Event" = "Event";
+
+/* SQLite workspace label or command */
+"Export…" = "Export…";
+
+/* SQLite workspace label or command */
+"Filter Columns" = "Filter Columns";
+
+/* SQLite workspace label or command */
+"Format" = "Format";
+
+/* SQLite workspace label or command */
+"Greater Than" = "Greater Than";
+
+/* SQLite workspace label or command */
+"INDEX" = "INDEX";
+
+/* SQLite workspace label or command */
+"Include" = "Include";
+
+/* SQLite workspace label or command */
+"Index Name" = "Index Name";
+
+/* SQLite workspace label or command */
+"Is NULL" = "Is NULL";
+
+/* SQLite workspace label or command */
+"Is Not NULL" = "Is Not NULL";
+
+/* SQLite workspace label or command */
+"Key Name" = "Key Name";
+
+/* SQLite workspace label or command */
+"Less Than" = "Less Than";
+
+/* SQLite workspace label or command */
+"Mark all tables" = "Mark all tables";
+
+/* SQLite workspace label or command */
+"Name" = "Name";
+
+/* SQLite workspace label or command */
+"On Delete" = "On Delete";
+
+/* SQLite workspace label or command */
+"On Update" = "On Update";
+
+/* SQLite workspace label or command */
+"Operator" = "Operator";
+
+/* SQLite workspace label or command */
+"PINNED TABLES" = "PINNED TABLES";
+
+/* SQLite workspace label or command */
+"Query Favorites" = "Query Favorites";
+
+/* SQLite workspace label or command */
+"Query History" = "Query History";
+
+/* SQLite workspace label or command */
+"Query Results" = "Query Results";
+
+/* SQLite workspace label or command */
+"Reference Column" = "Reference Column";
+
+/* SQLite workspace label or command */
+"Reference Columns" = "Reference Columns";
+
+/* SQLite workspace label or command */
+"Reference Table" = "Reference Table";
+
+/* SQLite workspace label or command */
+"Remove Index" = "Remove Index";
+
+/* SQLite workspace label or command */
+"Remove Relation" = "Remove Relation";
+
+/* SQLite workspace label or command */
+"Remove Table…" = "Remove Table…";
+
+/* SQLite workspace label or command */
+"Remove Trigger" = "Remove Trigger";
+
+/* SQLite workspace label or command */
+"Rows" = "Rows";
+
+/* SQLite workspace label or command */
+"SQL" = "SQL";
+
+/* SQLite workspace label or command */
+"SQLite Backup" = "SQLite Backup";
+
+/* SQLite workspace label or command */
+"Save Query to Favorites" = "Save Query to Favorites";
+
+/* SQLite workspace label or command */
+"Source" = "Source";
+
+/* SQLite workspace label or command */
+"Switch Default" = "Switch Default";
+
+/* SQLite workspace label or command */
+"Timing" = "Timing";
+
+/* SQLite workspace label or command */
+"Toggle Pin Table" = "Toggle Pin Table";
+
+/* SQLite workspace label or command */
+"Toggle Record View" = "Toggle Record View";
+
+/* SQLite workspace label or command */
+"Toggle the visibility of the Information panel" = "Toggle the visibility of the Information panel";
+
+/* SQLite workspace label or command */
+"Trigger" = "Trigger";
+
+/* SQLite workspace label or command */
+"Trigger Definition" = "Trigger Definition";
+
+/* SQLite workspace label or command */
+"Truncate Table…" = "Truncate Table…";
+
+/* SQLite workspace label or command */
+"UNIQUE" = "UNIQUE";
+
+/* SQLite workspace label or command */
+"Unique" = "Unique";
+
+/* SQLite workspace label or command */
+"Unmark all tables" = "Unmark all tables";
+
+/* SQLite workspace label or command */
+"View" = "View";
+
+/* SQLite content status for a single row */
+"1 row in table" = "1 row in table";

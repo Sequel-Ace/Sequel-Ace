@@ -8,6 +8,18 @@ struct SASQLiteWorkspaceView: View {
     @State private var confirmsDeletion = false
     @State private var resultOffset = 0
     @State private var tableSearch = ""
+    @State private var columnSearch = ""
+    @State private var showsFavoriteName = false
+    @State private var showsClearHistory = false
+    @State private var favoriteName = ""
+    @State private var querySortColumn: Int?
+    @State private var querySortDescending = false
+    @State private var filterColumn: Int64?
+    @State private var filterOperator = SASQLiteBrowseOptions.Filter.Operator.contains
+    @State private var filterText = ""
+    @State private var selectedIndex: Int?
+    @State private var selectedRelation: Int?
+    @State private var selectedTrigger: Int?
     @State private var exportAction: (() -> Void)?
 
     var body: some View {
@@ -17,14 +29,14 @@ struct SASQLiteWorkspaceView: View {
                 Divider()
             }
             HSplitView {
-                sidebar.frame(minWidth: 160, idealWidth: 195, maxWidth: 245)
+                sidebar.frame(minWidth: 160, idealWidth: 214, maxWidth: 214)
                 VStack(spacing: 0) {
                     switch model.section {
                     case .data: dataView
                     case .structure: structureView
-                    case .relations: detailsGrid(\.foreignKeys)
-                    case .triggers: detailsGrid(\.triggers)
-                    case .status: definitionView
+                    case .relations: relationsView
+                    case .triggers: triggersView
+                    case .status: tableInfoView
                     case .query: queryView
                     }
                 }
@@ -32,6 +44,27 @@ struct SASQLiteWorkspaceView: View {
             }
         }
         .onAppear { model.start() }
+        .task(id: model.selection) {
+            selectedIndex = nil
+            selectedRelation = nil
+            selectedTrigger = nil
+            filterColumn = nil
+            filterText = ""
+            columnSearch = ""
+        }
+        .task(id: model.queryRunID) {
+            resultOffset = 0
+            querySortColumn = nil
+        }
+        .alert("Save Query to Favorites", isPresented: $showsFavoriteName) {
+            TextField("Name", text: $favoriteName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") { model.saveQueryFavorite(favoriteName) }
+        }
+        .alert("Clear History", isPresented: $showsClearHistory) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clear", role: .destructive) { model.clearQueryHistory() }
+        }
         .sheet(item: $editor) { editorSheet($0.content) }
         .sheet(item: $model.csvImport) { request in
             SASQLiteCSVImportView(request: request, objects: model.objects, current: model.page?.structure,
@@ -54,34 +87,14 @@ struct SASQLiteWorkspaceView: View {
         } message: {
             Text("This change will be saved to the SQLite database.")
         }
-        .confirmationDialog("Import into SQLite", isPresented: $model.showsImport) {
-            Button("CSV…") { model.selectImport(csv: true) }
-            Button("SQLite SQL…") { model.selectImport(csv: false) }
+        .task(id: model.showsImport) {
+            guard model.showsImport else { return }
+            model.showsImport = false
+            model.selectImport()
         }
         .sheet(isPresented: $model.showsExport, onDismiss: runExportAction) {
-            exportOptions
+            SASQLiteExportPanel(model: model, cancel: { model.showsExport = false }, export: selectExport)
         }
-    }
-
-    private var exportOptions: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Export from SQLite").font(.headline)
-            Button("Table or View as CSV…") { selectExport { model.exportTable() } }
-                .disabled(model.currentObject == nil)
-            Button("Loaded Query Results as CSV…") { selectExport { model.exportResult() } }
-                .disabled(model.queryResult?.result?.columns.isEmpty != false)
-            Button("Database as SQLite SQL…") { selectExport { model.exportSQL() } }
-            Divider()
-            Button("Create SQLite Backup…") { selectExport { model.backup(restore: false) } }
-            Button("Restore as New SQLite Database…") { selectExport { model.backup(restore: true) } }
-            HStack {
-                Spacer()
-                Button("Cancel") { model.showsExport = false }
-                    .keyboardShortcut(.cancelAction)
-            }
-        }
-        .padding(20)
-        .frame(width: 350)
     }
 
     private func selectExport(_ action: @escaping () -> Void) {
@@ -113,177 +126,503 @@ struct SASQLiteWorkspaceView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("Tables & Views").font(.headline)
-                Spacer()
-                Button { editor = .init(content: .schema(.createTable)) } label: {
-                    Image(systemName: "plus")
+            SASQLiteSearchField(text: $tableSearch, title: NSLocalizedString("Filter", comment: "Table sidebar filter"))
+                .frame(height: 24)
+                .padding(.horizontal, 3)
+                .padding(.vertical, 3)
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    let matches = model.objects.filter { tableSearch.isEmpty || $0.name.localizedCaseInsensitiveContains(tableSearch) }
+                    SASQLiteSidebarList(objects: matches, pinned: model.pinnedObjects,
+                                        selection: $model.selection, canSelect: !model.busy)
+                    if model.showsTableInformation {
+                        Divider()
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(model.busy || model.currentObject == nil ? "ACTIVITIES" : "TABLE INFORMATION")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                            if model.busy {
+                                HStack {
+                                    ProgressView().controlSize(.small)
+                                    Button("Cancel") { model.operation?.cancel() }
+                                }
+                            } else if let page = model.page {
+                                Text(page.structure.object.name)
+                                Text(page.totalRows == 1 ? "1 row in table" : "\(page.totalRows) rows in table").foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .frame(height: min(155, geometry.size.height * 0.25))
+                    }
                 }
-                .help("Create Table")
-                .accessibilityLabel("Create Table")
+                .background(.regularMaterial)
+            }
+            Divider()
+            HStack(spacing: 0) {
+                tableAction(NSImage.addTemplateName, name: "Add new table", enabled: model.canWrite) {
+                    editor = .init(content: .schema(.createTable))
+                }
+                Menu {
+                    sidebarActions
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.visible)
+                .fixedSize()
+                tableAction(NSImage.refreshTemplateName, name: "Refresh", enabled: !model.busy) {
+                    model.reloadObjects()
+                }
+                tableAction(symbol: "eye", name: "Toggle the visibility of the Information panel", enabled: true) {
+                    model.showsTableInformation.toggle()
+                }
+                Spacer()
+            }
+            .frame(height: 25)
+            .background(.bar)
+        }
+    }
+
+    @ViewBuilder private var sidebarActions: some View {
+        if let object = model.currentObject {
+            Button("Copy Table Name") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(object.name, forType: .string)
+            }
+            if object.kind == .table {
+                Button("Rename Table…") { editor = .init(content: .schema(.renameTable(object))) }
+                    .disabled(!model.canWrite)
+                Button("Duplicate Table…") { editor = .init(content: .schema(.duplicateTable(object))) }
+                    .disabled(!model.canWrite)
+                Divider()
+                Button("Truncate Table…", role: .destructive) {
+                    confirm { model.apply(.truncateTable(object)) }
+                }
                 .disabled(!model.canWrite)
             }
-            .padding(10)
+            Button("Remove Table…", role: .destructive) {
+                confirm { model.apply(.dropObject(object)) }
+            }
+            .disabled(!model.canWrite)
             Divider()
-            List(selection: $model.selection) {
-                ForEach(model.objects.filter { tableSearch.isEmpty || $0.name.localizedCaseInsensitiveContains(tableSearch) }) { object in
-                    Label(object.name, systemImage: object.kind == .view ? "eye" : "tablecells")
-                        .tag(object.id)
-                        .contextMenu {
-                            if object.kind != .view {
-                                Button("Rename Table…") { editor = .init(content: .schema(.renameTable(object))) }
-                                    .disabled(!model.canWrite)
-                            }
-                            Button("Delete…", role: .destructive) {
-                                confirm { model.apply(.dropObject(object)) }
-                            }
-                            .disabled(!model.canWrite)
-                        }
+            Button("Toggle Pin Table") { model.togglePin(object) }
+            Button("Open Table in New Tab") { SASQLiteOpening.openObject(object, from: model, inNewWindow: false) }
+            Button("Open Table in New Window") { SASQLiteOpening.openObject(object, from: model, inNewWindow: true) }
+            Divider()
+            Button("Copy CREATE Syntax") {
+                if let definition = model.page?.structure.definition {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(definition, forType: .string)
                 }
             }
-            .listStyle(.sidebar)
-            .disabled(model.busy)
-            .contextMenu {
-                Button("Create Table…") { editor = .init(content: .schema(.createTable)) }
-                    .disabled(!model.canWrite)
-            }
-            Divider()
-            TextField("Filter Tables", text: $tableSearch)
-                .textFieldStyle(.roundedBorder)
-                .padding(8)
+            .disabled(model.page?.structure.definition == nil)
+            Button("Export…") { model.showsExport = true }
+                .disabled(model.busy)
+        } else {
+            Button("Create Table…") { editor = .init(content: .schema(.createTable)) }
+                .disabled(!model.canWrite)
         }
     }
 
     @ViewBuilder private var dataView: some View {
         if let page = model.page {
-            SASQLiteGrid(columns: page.structure.visibleColumns.map(\.name), rows: page.rows.map(\.values),
-                         selection: $model.selectedRow)
-            Divider()
-            HStack {
-                Button("Add Row…") { editor = .init(content: .row(page.structure, nil)) }
-                    .disabled(!model.canWrite || page.structure.object.kind != .table)
-                Button("Edit Row…") {
-                    if let row = model.currentRow { editor = .init(content: .row(page.structure, row)) }
+            let columns = page.structure.visibleColumns
+            let terms = columnSearch.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            let displayed = columns.indices.filter { index in
+                terms.isEmpty || terms.contains { columns[index].name.localizedCaseInsensitiveContains($0) }
+            }
+            if model.showsFilters { dataFilters(columns) }
+            HSplitView {
+                SASQLiteResultTable(columns: displayed.map { columns[$0].name },
+                                    types: displayed.map { columns[$0].type },
+                                    rows: page.rows.map { row in displayed.map { row.values[$0] } },
+                                    selection: $model.selectedRow,
+                                    sortColumn: displayed.firstIndex { columns[$0].id == model.browse.sortColumn },
+                                    descending: model.browse.descending,
+                                    sort: { index in
+                    if displayed.indices.contains(index) { model.sort(by: columns[displayed[index]]) }
+                }) { row in
+                    guard model.canEditRow, let selected = model.currentRow, model.selectedRow == row else { return }
+                    editor = .init(content: .row(page.structure, selected))
                 }
-                .disabled(!model.canEditRow)
-                Button("Delete Row…") {
+                if model.showsRecord {
+                    SARecordView(model: model.recordModel).frame(minWidth: 240, idealWidth: 320, maxWidth: 410)
+                }
+            }
+            .task(id: model.selectedRow) {
+                let row = model.currentRow
+                model.showRecord(columns: columns.map(\.name), row: row?.values, edit: model.canEditRow ? { index, input in
+                    guard let row, columns.indices.contains(index), !columns[index].generated else { return false }
+                    let value: SASQLiteValue
+                    switch row.values[index] {
+                    case .integer:
+                        guard let integer = Int64(input) else { return false }
+                        value = .integer(integer)
+                    case .real:
+                        guard let real = Double(input), !real.isNaN else { return false }
+                        value = .real(real)
+                    case .text, .null:
+                        value = SASQLiteValue(input)
+                    case .blob:
+                        return false
+                    }
+                    model.save([columns[index].id: value], row: row, in: page.structure)
+                    return true
+                } : nil)
+            }
+            Divider()
+            HStack(spacing: 0) {
+                tableAction(NSImage.addTemplateName, name: "Add Row…",
+                            enabled: model.canWrite && page.structure.object.kind == .table) {
+                    editor = .init(content: .row(page.structure, nil))
+                }
+                tableAction(NSImage.removeTemplateName, name: "Delete Row…", enabled: model.canEditRow) {
                     if let row = model.currentRow { confirm { model.delete(row, in: page.structure) } }
                 }
-                .disabled(!model.canEditRow)
-
+                tableAction(symbol: "plus.square.on.square", name: "Duplicate Row", enabled: model.canWrite && page.structure.object.kind == .table && model.currentRow != nil) {
+                    if let row = model.currentRow { editor = .init(content: .duplicateRow(page.structure, row)) }
+                }
+                tableAction(symbol: "pencil", name: "Edit Row…", enabled: model.canEditRow) {
+                    if let row = model.currentRow { editor = .init(content: .row(page.structure, row)) }
+                }
+                tableAction(NSImage.refreshTemplateName, name: "Refresh", enabled: !model.busy) {
+                    model.loadPage(at: model.offset)
+                }
+                tableAction(symbol: "sidebar.right", name: "Toggle Record View", enabled: true) {
+                    model.toggleRecordView(nil)
+                }
+                tableAction(symbol: "line.3.horizontal.decrease", name: "Filter", enabled: !model.busy) {
+                    model.showsFilters.toggle()
+                }
+                SASQLiteSearchField(text: $columnSearch, title: NSLocalizedString("Filter Columns", comment: "Content column filter"))
+                    .frame(width: 135, height: 21)
+                Text(page.matchingRows == 1 ? "1 row in table" : "\(page.matchingRows) rows in table").font(.caption).padding(.leading, 8)
                 Spacer()
-
                 pager(offset: model.offset, count: page.rows.count, hasMore: page.hasMore) {
                     model.loadPage(at: $0)
                 }
             }
-            .padding(10)
+            .padding(.horizontal, 3)
+            .frame(height: 25)
+            .background(.bar)
         } else {
             emptySelection
+        }
+    }
+
+    private func dataFilters(_ columns: [SASQLiteColumn]) -> some View {
+        HStack {
+            Picker("Column", selection: $filterColumn) {
+                Text("Choose Column").tag(nil as Int64?)
+                ForEach(columns) { column in Text(column.name).tag(Optional(column.id)) }
+            }
+            .fixedSize()
+            Picker("Operator", selection: $filterOperator) {
+                ForEach(SASQLiteBrowseOptions.Filter.Operator.allCases, id: \.self) { operation in
+                    Text(filterTitle(operation)).tag(operation)
+                }
+            }
+            .fixedSize()
+            TextField("Value", text: $filterText)
+                .disabled(filterOperator == .isNull || filterOperator == .isNotNull)
+            Button("Filter") {
+                if let filterColumn {
+                    model.filter(using: .init(columnID: filterColumn, operation: filterOperator, value: filterText))
+                }
+            }
+            .disabled(filterColumn == nil || model.busy)
+            Button("Clear") {
+                filterText = ""
+                model.filter(using: nil)
+            }
+            .disabled(model.browse.filter == nil || model.busy)
+        }
+        .controlSize(.small)
+        .padding(6)
+        .background(.bar)
+    }
+
+    private func filterTitle(_ operation: SASQLiteBrowseOptions.Filter.Operator) -> LocalizedStringKey {
+        switch operation {
+        case .contains: return "Contains"
+        case .equals: return "Equals"
+        case .notEqual: return "Does Not Equal"
+        case .beginsWith: return "Begins With"
+        case .endsWith: return "Ends With"
+        case .greaterThan: return "Greater Than"
+        case .lessThan: return "Less Than"
+        case .isNull: return "Is NULL"
+        case .isNotNull: return "Is Not NULL"
         }
     }
 
     @ViewBuilder private var structureView: some View {
         if let structure = model.page?.structure {
-            TabView {
+            VSplitView {
                 VStack(spacing: 0) {
-                    SASQLiteColumnsView(structure: structure, selection: $model.selectedColumn)
-                    Divider()
-                    HStack {
-                        Button("Add Column…") { editor = .init(content: .schema(.addColumn(structure.object))) }
-                        Button("Rename Column…") {
-                            if let column = selectedColumn(in: structure) {
-                                editor = .init(content: .schema(.renameColumn(structure.object, column)))
-                            }
-                        }
-                        .disabled(selectedColumn(in: structure) == nil)
-                        Button("Delete Column…") {
-                            if let column = selectedColumn(in: structure) {
-                                confirm { model.apply(.dropColumn(structure.object, column)) }
-                            }
-                        }
-                        .disabled(selectedColumn(in: structure) == nil)
-                        Spacer()
+                    let columns = structure.visibleColumns
+                    let rows = columns.map { column in
+                        [SASQLiteValue(column.name), SASQLiteValue(column.type),
+                         SASQLiteValue(column.notNull || column.primaryKeyPosition > 0 ? "" : "✓"),
+                         column.defaultSQL.map(SASQLiteValue.init) ?? .null,
+                         SASQLiteValue(column.generated ? NSLocalizedString("Generated", comment: "Generated column") : "")]
                     }
-                    .disabled(!model.canWrite || structure.object.kind != .table)
-                    .padding(8)
+                    SASQLiteResultTable(columns: [
+                        NSLocalizedString("Field", comment: "Structure field name"),
+                        NSLocalizedString("Type", comment: "Structure field type"),
+                        NSLocalizedString("Allow Null", comment: "Structure field nullability"),
+                        NSLocalizedString("Default", comment: "Structure field default"),
+                        NSLocalizedString("Extra", comment: "Structure field attributes")
+                    ], types: [], rows: rows, selection: $model.selectedColumn) { index in
+                        if columns.indices.contains(index) { editColumn(columns[index], in: structure) }
+                    }
+                    let editable = model.canWrite && structure.object.kind == .table
+                    schemaFooter {
+                        tableAction(NSImage.addTemplateName, name: "Add Column…", enabled: editable) {
+                            editor = .init(content: .schema(.addColumn(structure.object)))
+                        }
+                        tableAction(NSImage.removeTemplateName, name: "Delete Column…", enabled: editable && selectedColumn(in: structure) != nil) {
+                            if let column = selectedColumn(in: structure) { confirm { model.apply(.dropColumn(structure.object, column)) } }
+                        }
+                        tableAction(symbol: "pencil", name: "Edit Column…", enabled: editable && selectedColumn(in: structure) != nil) {
+                            if let column = selectedColumn(in: structure) { editColumn(column, in: structure) }
+                        }
+                        tableAction(symbol: "character.cursor.ibeam", name: "Rename Column…", enabled: editable && selectedColumn(in: structure) != nil) {
+                            if let column = selectedColumn(in: structure) { editor = .init(content: .schema(.renameColumn(structure.object, column))) }
+                        }
+                        tableAction(NSImage.refreshTemplateName, name: "Refresh", enabled: !model.busy) { model.reloadObjects() }
+                    }
                 }
-                .tabItem { Text("Columns") }
-
-                resultGrid(structure.indexes).tabItem { Text("Indexes") }
+                .frame(minHeight: 140)
+                indexView(structure).frame(minHeight: 105)
             }
-            .padding(10)
+            .id(structure.object.id)
         } else {
             emptySelection
         }
     }
 
-    @ViewBuilder private func detailsGrid(_ result: KeyPath<SASQLiteStructure, SASQLiteResult>) -> some View {
+    private func editColumn(_ column: SASQLiteColumn, in structure: SASQLiteStructure) {
+        guard model.canWrite, structure.object.kind == .table,
+              let definition = structure.definition,
+              let declaration = try? SASQLiteTableDefinition(definition).column(column.name) else { return }
+        editor = .init(content: .column(structure, column, declaration))
+    }
+
+    private func indexView(_ structure: SASQLiteStructure) -> some View {
+        let rows = structure.indexes.rows
+        let selected = selectedIndex.flatMap { rows.indices.contains($0) ? rows[$0] : nil }
+        return VStack(alignment: .leading, spacing: 0) {
+            Text("Indexes").font(.headline).padding(6)
+            SASQLiteResultTable(columns: [NSLocalizedString("Key Name", comment: "Index name"),
+                                          NSLocalizedString("Unique", comment: "Index uniqueness"),
+                                          NSLocalizedString("Columns", comment: "Index columns")],
+                                types: [], rows: rows.map { [$0[0], $0[1], $0[4]] }, selection: $selectedIndex)
+            schemaFooter {
+                tableAction(NSImage.addTemplateName, name: "Add Index", enabled: model.canWrite && structure.object.kind == .table) {
+                    editor = .init(content: .index(structure))
+                }
+                tableAction(NSImage.removeTemplateName, name: "Remove Index", enabled: model.canWrite && selected?.last?.string != nil) {
+                    if let name = selected?.first?.string { confirm { model.apply(.dropIndex(name)) } }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var relationsView: some View {
         if let structure = model.page?.structure {
-            resultGrid(structure[keyPath: result])
+            let groups = Dictionary(grouping: structure.foreignKeys.rows, by: { $0[0].integer ?? -1 })
+            let ids = groups.keys.sorted()
+            let rows = ids.compactMap { id -> [SASQLiteValue]? in
+                guard let group = groups[id], let first = group.first else { return nil }
+                return [.integer(id), SASQLiteValue(group.compactMap { $0[3].string }.joined(separator: ", ")),
+                        first[2], SASQLiteValue(group.compactMap { $0[4].string }.joined(separator: ", ")), first[5], first[6]]
+            }
+            let titles = [NSLocalizedString("Name", comment: "Foreign key identifier"),
+                          NSLocalizedString("Columns", comment: "Foreign key columns"),
+                          NSLocalizedString("Reference Table", comment: "Foreign key target table"),
+                          NSLocalizedString("Reference Columns", comment: "Foreign key target columns"),
+                          NSLocalizedString("On Update", comment: "Foreign key update action"),
+                          NSLocalizedString("On Delete", comment: "Foreign key delete action")]
+            VStack(spacing: 0) {
+                SASQLiteResultTable(columns: titles, types: [], rows: rows, selection: $selectedRelation)
+                schemaFooter {
+                    let editable = model.canWrite && structure.object.kind == .table
+                    tableAction(NSImage.addTemplateName, name: "Add Relation", enabled: editable) {
+                        editor = .init(content: .relation(structure))
+                    }
+                    tableAction(NSImage.removeTemplateName, name: "Remove Relation", enabled: editable && selectedRelation.map(ids.indices.contains) == true) {
+                        if let selectedRelation, ids.indices.contains(selectedRelation) {
+                            confirm { model.apply(.dropRelation(structure.object, ids[selectedRelation])) }
+                        }
+                    }
+                    tableAction(NSImage.refreshTemplateName, name: "Refresh", enabled: !model.busy) { model.reloadObjects() }
+                }
+            }
         } else {
             emptySelection
         }
     }
 
-    @ViewBuilder private var definitionView: some View {
-        if let definition = model.page?.structure.definition {
-            ScrollView {
-                Text(definition)
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
+    @ViewBuilder private var triggersView: some View {
+        if let structure = model.page?.structure {
+            let triggers = structure.triggers.rows
+            let rows = triggers.map { row in
+                let header = SASQLiteTableDefinition.tokens(row[1].string ?? "").dropFirst(3).prefix { $0.text.uppercased() != "ON" }
+                let event = header.first { ["INSERT", "UPDATE", "DELETE"].contains($0.text.uppercased()) }?.text.uppercased() ?? ""
+                let timing = header.prefix { $0.text.uppercased() != event }.map { $0.text.uppercased() }.joined(separator: " ")
+                return [row[0], SASQLiteValue(event), SASQLiteValue(timing), row[1]]
+            }
+            let titles = [NSLocalizedString("Trigger", comment: "Trigger name"), NSLocalizedString("Event", comment: "Trigger event"),
+                          NSLocalizedString("Timing", comment: "Trigger timing"), NSLocalizedString("Statement", comment: "Trigger SQL")]
+            VStack(spacing: 0) {
+                SASQLiteResultTable(columns: titles, types: [], rows: rows, selection: $selectedTrigger) { index in
+                    if model.canWrite, triggers.indices.contains(index) {
+                        editor = .init(content: .trigger(structure.object, name: triggers[index][0].string, sql: triggers[index][1].string))
+                    }
+                }
+                schemaFooter {
+                    tableAction(NSImage.addTemplateName, name: "Add Trigger", enabled: model.canWrite && structure.object.kind != .virtual) {
+                        editor = .init(content: .trigger(structure.object, name: nil, sql: nil))
+                    }
+                    tableAction(NSImage.removeTemplateName, name: "Remove Trigger", enabled: model.canWrite && selectedTrigger.map(triggers.indices.contains) == true) {
+                        if let selectedTrigger, triggers.indices.contains(selectedTrigger), let name = triggers[selectedTrigger][0].string {
+                            confirm { model.apply(.dropTrigger(name)) }
+                        }
+                    }
+                    tableAction(NSImage.refreshTemplateName, name: "Refresh", enabled: !model.busy) { model.reloadObjects() }
+                }
             }
         } else {
             emptySelection
+        }
+    }
+
+    @ViewBuilder private var tableInfoView: some View {
+        if let page = model.page {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    GroupBox("Table Information") {
+                        Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
+                            GridRow { Text("Name"); Text(page.structure.object.name) }
+                            GridRow { Text("Type"); Text(page.structure.object.kind == .view ? "View" : "Table") }
+                            GridRow { Text("Encoding"); Text(page.structure.encoding) }
+                            GridRow { Text("Rows"); Text(page.totalRows.formatted()) }
+                            GridRow { Text("Indexes"); Text(page.structure.indexes.rows.count.formatted()) }
+                        }
+                        .padding(10)
+                    }
+                    GroupBox("Create Syntax") {
+                        Text(page.structure.definition ?? "")
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                    }
+                    HStack {
+                        Button("Copy CREATE Syntax") {
+                            if let definition = page.structure.definition {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(definition, forType: .string)
+                            }
+                        }
+                        Button("Refresh") { model.reloadObjects() }.disabled(model.busy)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+            }
+        } else {
+            emptySelection
+        }
+    }
+
+    private func schemaFooter<Buttons: View>(@ViewBuilder _ buttons: () -> Buttons) -> some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 0) { buttons(); Spacer() }
+                .frame(height: 25)
+                .background(.bar)
         }
     }
 
     private var queryView: some View {
         VSplitView {
             VStack(spacing: 0) {
-                SASQLiteQueryEditor(sql: $model.sql, selection: $model.selectedSQL)
+                SASQLiteQueryEditor(model: model)
                     .frame(minHeight: 115)
                 Divider()
                 HStack {
-                    Button("Run Script") {
-                        resultOffset = 0
-                        model.runSQL(selectionOnly: false)
-                    }
-                        .keyboardShortcut(.return, modifiers: [.command, .shift])
+                    Button("Format SQL") { model.queryEditor?.formatSQLiteSQL(nil) }
+                        .keyboardShortcut("t", modifiers: [.control, .option, .command])
                         .disabled(model.busy || model.sql.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    Button("Run Selection") {
-                        resultOffset = 0
-                        model.runSQL(selectionOnly: true)
-                    }
-                        .keyboardShortcut(.return, modifiers: [.command])
-                        .disabled(model.busy || model.selectedSQL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     Spacer()
+                    queryMenus
+                    SASQLiteRunControl(model: model) { resultOffset = 0 }
+                        .frame(width: 200, height: 22)
                 }
-                .padding(10)
+                .padding(.horizontal, 6)
+                .frame(height: 28)
+                .background(.bar)
             }
             queryResults.frame(minHeight: 145)
         }
     }
 
+    private var queryMenus: some View {
+        HStack(spacing: 5) {
+            Menu {
+                Button("Save Query to Favorites") {
+                    favoriteName = ""
+                    showsFavoriteName = true
+                }
+                .disabled(model.sql.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if !model.queryFavorites.isEmpty { Divider() }
+                ForEach(model.queryFavorites.indices, id: \.self) { index in
+                    let favorite = model.queryFavorites[index]
+                    Button(favorite["name"] ?? "") { model.sql = favorite["query"] ?? "" }
+                }
+            } label: {
+                Image(systemName: "star")
+            }
+            .accessibilityLabel("Query Favorites")
+            .help("Query Favorites")
+
+            Menu {
+                Button("Clear History") { showsClearHistory = true }.disabled(model.queryHistory.isEmpty)
+                if !model.queryHistory.isEmpty { Divider() }
+                ForEach(model.queryHistory.indices, id: \.self) { index in
+                    let query = model.queryHistory[index]
+                    Button(String(query.prefix(80))) { model.sql = query }
+                }
+            } label: {
+                Image(systemName: "clock.arrow.circlepath")
+            }
+            .accessibilityLabel("Query History")
+            .help("Query History")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
+
+    private func sortedQueryRows(_ rows: [[SASQLiteValue]]) -> [[SASQLiteValue]] {
+        guard let column = querySortColumn else { return rows }
+        return rows.enumerated().sorted { left, right in
+            guard left.element.indices.contains(column), right.element.indices.contains(column) else { return left.offset < right.offset }
+            let comparison = left.element[column].compare(to: right.element[column])
+            if comparison == .orderedSame { return left.offset < right.offset }
+            return comparison == (querySortDescending ? .orderedDescending : .orderedAscending)
+        }.map(\.element)
+    }
+
     @ViewBuilder private var queryResults: some View {
         if let statement = model.queryResult {
+            let result = statement.result
+            let rows = Array(sortedQueryRows(result?.rows ?? []).dropFirst(resultOffset).prefix(model.pageSize))
             VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Picker("Statement", selection: $model.selectedResult) {
-                        ForEach(model.scriptResults.indices, id: \.self) { index in
-                            Text("Statement \(index + 1)").tag(index)
-                        }
-                    }
-                    .fixedSize()
-                    .task(id: model.selectedResult) { resultOffset = 0 }
-                    Spacer()
-                    if let result = statement.result {
-                        Text("Rows changed: \(result.changedRows)").foregroundStyle(.secondary)
-                    }
-                }
-                .padding(10)
                 if let error = statement.error {
                     ScrollView {
                         Text(error)
@@ -292,23 +631,62 @@ struct SASQLiteWorkspaceView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
                     }
-                } else if let result = statement.result, !result.columns.isEmpty {
-                    let rows = Array(result.rows.dropFirst(resultOffset).prefix(model.pageSize))
-                    SASQLiteGrid(columns: result.columns, rows: rows, selection: nil)
-                        .id(model.selectedResult)
-                    HStack {
-                        if result.truncated {
-                            Text("Results are limited to 1,000 rows per run.").foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        pager(offset: resultOffset, count: rows.count, hasMore: resultOffset + rows.count < result.rows.count) {
-                            resultOffset = $0
+                } else if let result, !result.columns.isEmpty {
+                    HSplitView {
+                        SASQLiteResultTable(columns: result.columns, types: result.columnTypes, rows: rows,
+                                            selection: $model.selectedQueryRow, isQueryResult: true,
+                                            sortColumn: querySortColumn, descending: querySortDescending, sort: { column in
+                            querySortDescending = querySortColumn == column ? !querySortDescending : false
+                            querySortColumn = column
+                            resultOffset = 0
+                            model.selectedQueryRow = nil
+                        })
+                        if model.showsRecord {
+                            SARecordView(model: model.recordModel).frame(minWidth: 240, idealWidth: 320, maxWidth: 410)
                         }
                     }
-                    .padding(10)
+                    .id(model.selectedResult)
+                    .task(id: model.selectedQueryRow) {
+                        let row = model.selectedQueryRow.flatMap { rows.indices.contains($0) ? rows[$0] : nil }
+                        model.showRecord(columns: result.columns, row: row)
+                    }
                 } else {
                     Spacer()
                 }
+
+                Divider()
+                HStack(spacing: 8) {
+                    if model.scriptResults.count > 1 {
+                        Picker("Statement", selection: $model.selectedResult) {
+                            ForEach(model.scriptResults.indices, id: \.self) { index in
+                                Text("Statement \(index + 1)").tag(index)
+                            }
+                        }
+                        .fixedSize()
+                        .task(id: model.selectedResult) {
+                            resultOffset = 0
+                            model.selectedQueryRow = nil
+                            querySortColumn = nil
+                        }
+                    }
+                    if let result, result.changedRows > 0 {
+                        Text("Rows changed: \(result.changedRows)").foregroundStyle(.secondary)
+                    }
+                    if result?.truncated == true {
+                        Text("Results are limited to 1,000 rows per run.").foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if let result, !result.columns.isEmpty {
+                        pager(offset: resultOffset, count: rows.count, hasMore: resultOffset + rows.count < result.rows.count) {
+                            resultOffset = $0
+                            model.selectedQueryRow = nil
+                        }
+                    }
+                }
+                .controlSize(.small)
+                .padding(.horizontal, 5)
+                .frame(height: 25)
+                .background(.bar)
             }
         } else {
             Text("Run SQLite SQL to see results.")
@@ -323,26 +701,52 @@ struct SASQLiteWorkspaceView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func resultGrid(_ result: SASQLiteResult) -> some View {
-        SASQLiteGrid(columns: result.columns, rows: result.rows, selection: nil)
-    }
-
     private func pager(offset: Int, count: Int, hasMore: Bool, select: @escaping (Int) -> Void) -> some View {
-        HStack {
-            Button("Previous") { select(max(0, offset - model.pageSize)) }.disabled(model.busy || offset == 0)
-            Text("Page \(offset / model.pageSize + 1) · \(count) rows").monospacedDigit()
-            Button("Next") { select(offset + model.pageSize) }.disabled(model.busy || !hasMore)
+        HStack(spacing: 0) {
+            tableAction(symbol: "chevron.left", name: "Previous", enabled: !model.busy && offset > 0) {
+                select(max(0, offset - model.pageSize))
+            }
+            Text("Page \(offset / model.pageSize + 1) · \(count) rows")
+                .font(.caption)
+                .monospacedDigit()
+            tableAction(symbol: "chevron.right", name: "Next", enabled: !model.busy && hasMore) {
+                select(offset + model.pageSize)
+            }
         }
     }
 
+    private func tableAction(_ template: NSImage.Name? = nil, symbol: String = "", name: LocalizedStringKey,
+                             enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Group {
+                if let template, let image = NSImage(named: template) {
+                    Image(nsImage: image)
+                } else {
+                    Image(systemName: symbol)
+                }
+            }
+            .frame(width: 25, height: 23)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(name)
+        .help(name)
+        .disabled(!enabled)
+    }
+
     private func selectedColumn(in structure: SASQLiteStructure) -> SASQLiteColumn? {
-        structure.visibleColumns.first { $0.id == model.selectedColumn }
+        guard let index = model.selectedColumn, structure.visibleColumns.indices.contains(index) else { return nil }
+        return structure.visibleColumns[index]
     }
 
     private func confirm(_ action: @escaping () -> Void) {
         guard model.canWrite else { return }
         deletion = action
         confirmsDeletion = true
+    }
+
+    private func submitSchema(_ change: SASQLiteSchemaChange) {
+        editor = nil
+        model.apply(change)
     }
 
     @ViewBuilder private func editorSheet(_ content: SASQLiteEditorRequest.Content) -> some View {
@@ -357,148 +761,26 @@ struct SASQLiteWorkspaceView: View {
                 editor = nil
                 model.save(values, row: row, in: structure)
             })
-        }
-    }
-}
-
-private struct SASQLiteGrid: View {
-    let columns: [String]
-    let rows: [[SASQLiteValue]]
-    let selection: Binding<Int?>?
-    let columnWidths: [CGFloat]
-
-    init(columns: [String], rows: [[SASQLiteValue]], selection: Binding<Int?>?) {
-        self.columns = columns
-        self.rows = rows
-        self.selection = selection
-        columnWidths = columns.indices.map { index in
-            let maxLength = rows.prefix(20).reduce(columns[index].count) { max($0, $1[index].preview.count) }
-            return CGFloat(min(270, max(85, 24 + 7 * maxLength)))
-        }
-    }
-
-    var body: some View {
-        GeometryReader { geometry in
-            ScrollView([.vertical, .horizontal]) {
-                rowsAndHeader.frame(minWidth: geometry.size.width, minHeight: geometry.size.height, alignment: .topLeading)
-            }
-        }
-    }
-
-    private var rowsAndHeader: some View {
-        LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-            Section {
-                ForEach(rows.indices, id: \.self) { index in
-                    if let selection {
-                        Button { selection.wrappedValue = index } label: {
-                            row(index, selected: selection.wrappedValue == index)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        row(index, selected: false).textSelection(.enabled)
-                    }
-                }
-            } header: {
-                HStack(spacing: 0) {
-                    ForEach(columns.indices, id: \.self) { index in
-                        cell(columns[index], column: index).fontWeight(.semibold)
-                    }
-                }
-                .background(.bar)
-            }
-        }
-    }
-
-    private func row(_ index: Int, selected: Bool) -> some View {
-        HStack(spacing: 0) {
-            ForEach(rows[index].indices, id: \.self) { column in
-                let value = rows[index][column]
-                cell(value.preview, column: column)
-                    .foregroundStyle(value == .null ? .secondary : .primary)
-            }
-        }
-        .background(selected ? Color.accentColor.opacity(0.24) : Color.secondary.opacity(index.isMultiple(of: 2) ? 0.05 : 0))
-        .contentShape(Rectangle())
-    }
-
-    private func cell(_ string: String, column: Int) -> some View {
-        Text(string)
-            .lineLimit(1)
-            .padding(.horizontal, 8)
-            .frame(width: columnWidths[column], height: 25, alignment: .leading)
-            .overlay(alignment: .trailing) { Divider() }
-            .help(string)
-    }
-}
-
-private struct SASQLiteColumnsView: View {
-    let structure: SASQLiteStructure
-    @Binding var selection: Int64?
-
-    var body: some View {
-        List(structure.visibleColumns, selection: $selection) { column in
-            HStack {
-                Text(column.name).frame(width: 150, alignment: .leading)
-                Text(column.type).frame(width: 100, alignment: .leading)
-                if column.primaryKeyPosition > 0 { Text("Primary Key") }
-                if column.notNull { Text("NOT NULL") }
-                if column.generated { Text("Generated") }
-                if let sql = column.defaultSQL { Text("Default: \(sql)") }
-                Spacer()
-            }
-            .tag(column.id)
-        }
-    }
-}
-
-private struct SASQLiteQueryEditor: NSViewRepresentable {
-    @Binding var sql: String
-    @Binding var selection: String
-
-    func makeNSView(context: Context) -> NSScrollView {
-        let scroll = NSTextView.scrollableTextView()
-        if let editor = scroll.documentView as? NSTextView {
-            editor.string = sql
-            editor.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
-            editor.isRichText = false
-            editor.allowsUndo = true
-            editor.isAutomaticQuoteSubstitutionEnabled = false
-            editor.isAutomaticDashSubstitutionEnabled = false
-            editor.isAutomaticTextReplacementEnabled = false
-            editor.textContainerInset = NSSize(width: 8, height: 8)
-            editor.setAccessibilityLabel(NSLocalizedString("SQLite Query Editor", comment: "Accessibility label for SQLite SQL editor"))
-            editor.delegate = context.coordinator
-        }
-        return scroll
-    }
-
-    func updateNSView(_ scroll: NSScrollView, context: Context) {
-        context.coordinator.parent = self
-        guard let editor = scroll.documentView as? NSTextView, !editor.string.utf8.elementsEqual(sql.utf8) else { return }
-        editor.string = sql
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    final class Coordinator: NSObject, NSTextViewDelegate {
-        var parent: SASQLiteQueryEditor
-
-        init(_ parent: SASQLiteQueryEditor) { self.parent = parent }
-
-        func textDidChange(_ notification: Notification) {
-            guard let editor = notification.object as? NSTextView else { return }
-            parent.sql = editor.string
-            updateSelection(editor)
-        }
-
-        func textViewDidChangeSelection(_ notification: Notification) {
-            if let editor = notification.object as? NSTextView { updateSelection(editor) }
-        }
-
-        private func updateSelection(_ editor: NSTextView) {
-            let text = editor.string as NSString
-            let range = editor.selectedRange()
-            parent.selection = range.length > 0 && NSMaxRange(range) <= text.length ? text.substring(with: range) : ""
+        case let .duplicateRow(structure, row):
+            SASQLiteRowEditor(structure: structure, row: row, duplicating: true, cancel: { editor = nil }, save: { values in
+                editor = nil
+                model.save(values, row: nil, in: structure)
+            })
+        case let .column(structure, column, declaration):
+            SASQLiteDeclarationEditor(title: "Edit Column", field: "Column Definition", cancel: { editor = nil }, save: { sql in
+                submitSchema(.redefineColumn(structure.object, column, sql))
+            }, declaration: declaration)
+        case let .index(structure):
+            SASQLiteIndexEditor(structure: structure, cancel: { editor = nil }, save: submitSchema)
+        case let .relation(structure):
+            SASQLiteRelationEditor(structure: structure, objects: model.objects, loadStructure: model.loadImportStructure,
+                                   cancel: { editor = nil }, save: submitSchema)
+        case let .trigger(object, name, sql):
+            let table = SASQLiteConnection.identifier(object.name)
+            let defaultSQL = "CREATE TRIGGER new_trigger \(object.kind == .view ? "INSTEAD OF" : "AFTER") INSERT ON \(table)\nBEGIN\n    SELECT 1;\nEND;"
+            SASQLiteDeclarationEditor(title: name == nil ? "Add Trigger" : "Edit Trigger", field: "Trigger Definition",
+                                       cancel: { editor = nil }, save: { submitSchema(.saveTrigger($0, replacing: name)) },
+                                       declaration: sql ?? defaultSQL)
         }
     }
 }

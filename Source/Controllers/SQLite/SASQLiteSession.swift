@@ -33,6 +33,10 @@ final class SASQLiteSession: @unchecked Sendable {
         connection = nil
     }
 
+    func reopened() -> SASQLiteSession {
+        SASQLiteSession(url: url, readOnly: readOnly, create: false, access: access)
+    }
+
     func perform<T: Sendable>(_ cancellation: SASQLiteCancellation,
                              _ operation: @escaping @Sendable (SASQLiteConnection) throws -> T) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in

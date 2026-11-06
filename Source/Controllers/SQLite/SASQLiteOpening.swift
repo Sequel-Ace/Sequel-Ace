@@ -8,13 +8,28 @@ enum SASQLiteFilePanels {
     static let sqliteType = UTType(filenameExtension: "sqlite") ?? .database
     static let sqlType = UTType(filenameExtension: "sql") ?? .plainText
 
-    static func open(types: [UTType] = [], in window: NSWindow?, completion: @escaping (URL) -> Void) {
+    static func importFile(in window: NSWindow?, completion: @escaping (URL, Bool) -> Void) {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = types
+        panel.allowedContentTypes = [.commaSeparatedText, sqlType]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
+        let format = NSPopUpButton(frame: .zero, pullsDown: false)
+        format.addItems(withTitles: [
+            NSLocalizedString("Automatic", comment: "Detect import format by filename"),
+            NSLocalizedString("SQL", comment: "SQL import format"),
+            NSLocalizedString("CSV", comment: "CSV import format")
+        ])
+        let label = NSTextField(labelWithString: NSLocalizedString("Format", comment: "Import file format"))
+        let stack = NSStackView(views: [label, format])
+        stack.spacing = 8
+        stack.edgeInsets = NSEdgeInsets(top: 6, left: 8, bottom: 6, right: 8)
+        panel.accessoryView = stack
+        panel.isAccessoryViewDisclosed = true
         present(panel, in: window) {
-            if let url = panel.url { completion(url) }
+            if let url = panel.url {
+                let csv = format.indexOfSelectedItem == 2 || format.indexOfSelectedItem == 0 && url.pathExtension.lowercased() == "csv"
+                completion(url, csv)
+            }
         }
     }
 
@@ -135,6 +150,21 @@ enum SASQLiteOpening {
                     open(url, readOnly: true, create: false, access: access, in: parent,
                          replaceConnection: replaceConnection, mayRequestReadAccess: false)
                 }
+            } catch {
+                present(error, in: parent)
+            }
+        }
+    }
+
+    static func openObject(_ object: SASQLiteObject, from workspace: SASQLiteWorkspaceModel, inNewWindow: Bool) {
+        let session = workspace.session.reopened()
+        let parent = workspace.window
+        Task {
+            guard let manager = (NSApp.delegate as? SPAppController)?.tabManager else { return }
+            do {
+                let objects = try await session.perform(SASQLiteCancellation()) { try $0.objects() }
+                let model = SASQLiteWorkspaceModel(session: session, objects: objects, initialObject: object.id)
+                manager.openSQLiteWorkspace(model, beside: inNewWindow ? nil : parent)
             } catch {
                 present(error, in: parent)
             }

@@ -1,6 +1,13 @@
 import Foundation
 import SQLite3
 
+struct SASQLiteSQLExportOptions: Sendable {
+    var objects: Set<Data>?
+    var structure = true
+    var content = true
+    var drop = false
+}
+
 enum SASQLiteCSVTarget: Sendable {
     case existing(SASQLiteStructure, mapping: [Int64?])
     case newTable(String, columns: [String])
@@ -187,40 +194,58 @@ extension SASQLiteConnection {
         }
     }
 
-    func exportSQL(to destination: URL, cancellation: SASQLiteCancellation) throws {
+    func exportSQL(to destination: URL, cancellation: SASQLiteCancellation, options: SASQLiteSQLExportOptions = .init()) throws {
         try readSnapshot {
-            let tables = try objects().filter { $0.kind != .view }
+            let objects = try objects().filter { options.objects?.contains($0.id) ?? true }
+            let tables = objects.filter { $0.kind != .view }
             guard !tables.contains(where: { $0.kind == .virtual }) else { throw SASQLiteError.virtualTableDump }
             try SASQLiteOutput.text(at: destination) { write in
                 try write("PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n")
                 let structures = try tables.map { try structure($0) }
-                for table in structures {
-                    try cancellation.check()
-                    if let sql = table.definition { try write(sql + ";\n") }
+                if options.drop {
+                    for object in objects.filter({ $0.kind == .view }) + tables {
+                        let kind = object.kind == .view ? "VIEW" : "TABLE"
+                        try write("DROP \(kind) IF EXISTS \(Self.identifier(object.name));\n")
+                    }
                 }
-                for table in structures {
-                    let rowID = table.accessibleRowID.map { [Self.identifier($0)] } ?? []
-                    let columns = (rowID + table.writableColumns.map(\.identifier)).joined(separator: ", ")
-                    let prefix = "INSERT INTO \(Self.identifier(table.object.name)) (\(columns)) VALUES ("
-                    try stream("SELECT \(columns) FROM \(table.object.reference)") { row in
+                if options.structure {
+                    for table in structures {
                         try cancellation.check()
-                        try write(prefix + row.map(\.sqlLiteral).joined(separator: ", ") + ");\n")
+                        if let sql = table.definition { try write(sql + ";\n") }
                     }
                 }
-                if try query("SELECT 1 FROM main.sqlite_schema WHERE name = 'sqlite_sequence'").rows.first != nil {
-                    try stream("SELECT name, seq FROM main.sqlite_sequence") { row in
-                        let name = row[0].sqlLiteral
-                        try write("DELETE FROM sqlite_sequence WHERE name = \(name);\n")
-                        try write("INSERT INTO sqlite_sequence VALUES(\(name),\(row[1].sqlLiteral));\n")
+                if options.content {
+                    for table in structures {
+                        let rowID = table.accessibleRowID.map { [Self.identifier($0)] } ?? []
+                        let columns = (rowID + table.writableColumns.map(\.identifier)).joined(separator: ", ")
+                        let prefix = "INSERT INTO \(Self.identifier(table.object.name)) (\(columns)) VALUES ("
+                        try stream("SELECT \(columns) FROM \(table.object.reference)") { row in
+                            try cancellation.check()
+                            try write(prefix + row.map(\.sqlLiteral).joined(separator: ", ") + ");\n")
+                        }
+                    }
+                    if try query("SELECT 1 FROM main.sqlite_schema WHERE name = 'sqlite_sequence'").rows.first != nil {
+                        let exported = Set(tables.map(\.id))
+                        try stream("SELECT name, seq FROM main.sqlite_sequence") { row in
+                            guard let table = row[0].string, exported.contains(Data(table.utf8)) else { return }
+                            let name = row[0].sqlLiteral
+                            try write("DELETE FROM sqlite_sequence WHERE name = \(name);\n")
+                            try write("INSERT INTO sqlite_sequence VALUES(\(name),\(row[1].sqlLiteral));\n")
+                        }
                     }
                 }
-                try stream("""
-                    SELECT sql FROM main.sqlite_schema
-                    WHERE type IN ('index', 'view', 'trigger') AND sql IS NOT NULL
-                    ORDER BY CASE type WHEN 'index' THEN 0 WHEN 'view' THEN 1 ELSE 2 END, rowid
-                    """) { row in
-                        if let sql = row[0].string { try write(sql + ";\n") }
-                    }
+                if options.structure {
+                    let exported = Set(objects.map(\.id))
+                    try stream("""
+                        SELECT tbl_name, sql FROM main.sqlite_schema
+                        WHERE type IN ('index', 'view', 'trigger') AND sql IS NOT NULL
+                        ORDER BY CASE type WHEN 'index' THEN 0 WHEN 'view' THEN 1 ELSE 2 END, rowid
+                        """) { row in
+                            if let table = row[0].string, exported.contains(Data(table.utf8)), let sql = row[1].string {
+                                try write(sql + ";\n")
+                            }
+                        }
+                }
                 try cancellation.check()
                 try write("COMMIT;\n")
             }

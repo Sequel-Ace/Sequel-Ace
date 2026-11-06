@@ -4,6 +4,11 @@ struct SASQLiteEditorRequest: Identifiable {
     enum Content {
         case schema(SASQLiteSchemaEditor.Request)
         case row(SASQLiteStructure, SASQLiteRow?)
+        case duplicateRow(SASQLiteStructure, SASQLiteRow)
+        case column(SASQLiteStructure, SASQLiteColumn, String)
+        case index(SASQLiteStructure)
+        case relation(SASQLiteStructure)
+        case trigger(SASQLiteObject, name: String?, sql: String?)
     }
 
     let id = UUID()
@@ -14,6 +19,7 @@ struct SASQLiteSchemaEditor: View {
     enum Request {
         case createTable
         case renameTable(SASQLiteObject)
+        case duplicateTable(SASQLiteObject)
         case addColumn(SASQLiteObject)
         case renameColumn(SASQLiteObject, SASQLiteColumn)
 
@@ -21,6 +27,7 @@ struct SASQLiteSchemaEditor: View {
             switch self {
             case .createTable: return "Create Table"
             case .renameTable: return "Rename Table"
+            case .duplicateTable: return "Duplicate Table"
             case .addColumn: return "Add Column"
             case .renameColumn: return "Rename Column"
             }
@@ -44,6 +51,7 @@ struct SASQLiteSchemaEditor: View {
     let save: (SASQLiteSchemaChange, String?) -> Void
     @State private var name: String
     @State private var columns = [Column()]
+    @State private var includeRows = true
 
     init(request: Request, cancel: @escaping () -> Void, save: @escaping (SASQLiteSchemaChange, String?) -> Void) {
         self.request = request
@@ -51,8 +59,12 @@ struct SASQLiteSchemaEditor: View {
         self.save = save
         switch request {
         case let .renameTable(object): _name = State(initialValue: object.name)
+        case let .duplicateTable(object): _name = State(initialValue: object.name + "_copy")
         case let .renameColumn(_, column): _name = State(initialValue: column.name)
         default: _name = State(initialValue: "")
+        }
+        if case .createTable = request {
+            _columns = State(initialValue: [Column(name: "id", type: .integer, notNull: true, primaryKey: true)])
         }
     }
 
@@ -84,6 +96,9 @@ struct SASQLiteSchemaEditor: View {
                 columnFields($columns[0], primaryKey: false)
             case .renameTable:
                 TextField("Table Name", text: $name)
+            case .duplicateTable:
+                TextField("Table Name", text: $name)
+                Toggle("Copy Table Content", isOn: $includeRows)
             case .renameColumn:
                 TextField("Column Name", text: $name)
             }
@@ -119,7 +134,7 @@ struct SASQLiteSchemaEditor: View {
             return validName(name) && columns.allSatisfy { validName($0.name) }
         case .addColumn:
             return validName(columns[0].name)
-        case .renameTable, .renameColumn:
+        case .renameTable, .duplicateTable, .renameColumn:
             return validName(name)
         }
     }
@@ -132,6 +147,7 @@ struct SASQLiteSchemaEditor: View {
         switch request {
         case .createTable: save(.createTable(name, columns.map(\.definition)), name)
         case let .renameTable(object): save(.renameTable(object, name), name)
+        case let .duplicateTable(object): save(.duplicateTable(object, name, includeRows: includeRows), name)
         case let .addColumn(object): save(.addColumn(object, columns[0].definition), nil)
         case let .renameColumn(object, column): save(.renameColumn(object, column, name), nil)
         }
@@ -215,24 +231,27 @@ struct SASQLiteRowEditor: View {
     }
 
     let row: SASQLiteRow?
+    let duplicating: Bool
     let cancel: () -> Void
     let save: ([Int64: SASQLiteValue]) -> Void
     @State private var fields: [Field]
 
-    init(structure: SASQLiteStructure, row: SASQLiteRow?, cancel: @escaping () -> Void,
+    init(structure: SASQLiteStructure, row: SASQLiteRow?, duplicating: Bool = false, cancel: @escaping () -> Void,
          save: @escaping ([Int64: SASQLiteValue]) -> Void) {
-        self.row = row
+        self.row = duplicating ? nil : row
+        self.duplicating = duplicating
         self.cancel = cancel
         self.save = save
         _fields = State(initialValue: structure.visibleColumns.enumerated().compactMap { index, column in
             guard column.hidden == 0 else { return nil }
-            return Field(column: column, original: row.map { $0.values[index] })
+            let value = duplicating && column.primaryKeyPosition > 0 ? nil : row.map { $0.values[index] }
+            return Field(column: column, original: value)
         })
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(row == nil ? "Add Row" : "Edit Row").font(.headline)
+            Text(duplicating ? "Duplicate Row" : row == nil ? "Add Row" : "Edit Row").font(.headline)
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach($fields) { $field in
@@ -393,6 +412,277 @@ struct SASQLiteCSVImportView: View {
         fields.enumerated().map { index, field in
             if header, let field, !field.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return field }
             return "column_\(index + 1)"
+        }
+    }
+}
+
+struct SASQLiteDeclarationEditor: View {
+    let title: LocalizedStringKey
+    let field: LocalizedStringKey
+    let cancel: () -> Void
+    let save: (String) -> Void
+    @State var declaration: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title).font(.headline)
+            Text(field).foregroundStyle(.secondary)
+            TextEditor(text: $declaration)
+                .font(.system(.body, design: .monospaced))
+                .frame(minHeight: 95, maxHeight: 160)
+                .border(.separator)
+            HStack {
+                Spacer()
+                Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
+                Button("Save") { save(declaration) }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(declaration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 540)
+    }
+}
+
+struct SASQLiteIndexEditor: View {
+    let structure: SASQLiteStructure
+    let cancel: () -> Void
+    let save: (SASQLiteSchemaChange) -> Void
+    @State private var name = ""
+    @State private var unique = false
+    @State private var columns: Set<Int64> = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Add Index").font(.headline)
+            TextField("Index Name", text: $name)
+            Picker("Type", selection: $unique) {
+                Text("INDEX").tag(false)
+                Text("UNIQUE").tag(true)
+            }
+            Text("Columns")
+            List(structure.visibleColumns, selection: $columns) { column in
+                Text(column.name).tag(column.id)
+            }
+            .frame(height: 135)
+            HStack {
+                Spacer()
+                Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
+                Button("Add") {
+                    save(.addIndex(structure.object, name: name, columns: structure.visibleColumns.filter { columns.contains($0.id) }, unique: unique))
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(columns.isEmpty || (try? SASQLiteConnection.validatedIdentifier(name)) == nil)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+    }
+}
+
+struct SASQLiteRelationEditor: View {
+    let structure: SASQLiteStructure
+    let objects: [SASQLiteObject]
+    let loadStructure: (SASQLiteObject) async throws -> SASQLiteStructure
+    let cancel: () -> Void
+    let save: (SASQLiteSchemaChange) -> Void
+
+    @State private var name = ""
+    @State private var source: String?
+    @State private var destination: Data?
+    @State private var destinationColumn: String?
+    @State private var targetColumns: [SASQLiteColumn] = []
+    @State private var schemaError: String?
+    @State private var onUpdate = SASQLiteForeignKey.Action.noAction
+    @State private var onDelete = SASQLiteForeignKey.Action.noAction
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Add Relation").font(.headline)
+            TextField("Name", text: $name)
+            columnPicker("Column", selection: $source, columns: structure.visibleColumns)
+            Picker("Reference Table", selection: $destination) {
+                Text("Choose Table").tag(nil as Data?)
+                ForEach(objects.filter { $0.kind == .table }) { object in Text(object.name).tag(Optional(object.id)) }
+            }
+            columnPicker("Reference Column", selection: $destinationColumn, columns: targetColumns)
+            actionPicker("On Update", selection: $onUpdate)
+            actionPicker("On Delete", selection: $onDelete)
+            if let schemaError { Text(schemaError).foregroundStyle(.red) }
+            HStack {
+                Spacer()
+                Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
+                Button("Add", action: submit).keyboardShortcut(.defaultAction)
+                    .disabled(source == nil || destination == nil || destinationColumn == nil)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+        .task(id: destination) {
+            targetColumns = []
+            destinationColumn = nil
+            schemaError = nil
+            guard let destination, let object = objects.first(where: { $0.id == destination }) else { return }
+            do {
+                let target = try await loadStructure(object)
+                guard !Task.isCancelled, self.destination == destination else { return }
+                targetColumns = target.visibleColumns
+                destinationColumn = target.primaryKey.first?.name ?? target.visibleColumns.first?.name
+            } catch {
+                if !Task.isCancelled { schemaError = error.localizedDescription }
+            }
+        }
+    }
+
+    private func columnPicker(_ title: LocalizedStringKey, selection: Binding<String?>, columns: [SASQLiteColumn]) -> some View {
+        Picker(title, selection: selection) {
+            Text("Choose Column").tag(nil as String?)
+            ForEach(columns) { column in Text(column.name).tag(Optional(column.name)) }
+        }
+    }
+
+    private func actionPicker(_ title: LocalizedStringKey, selection: Binding<SASQLiteForeignKey.Action>) -> some View {
+        Picker(title, selection: selection) {
+            ForEach(SASQLiteForeignKey.Action.allCases, id: \.self) { action in Text(action.rawValue).tag(action) }
+        }
+    }
+
+    private func submit() {
+        guard let source, let destination, let target = objects.first(where: { $0.id == destination }),
+              let destinationColumn else { return }
+        save(.addRelation(structure.object, SASQLiteForeignKey(name: name, from: source, referencedTable: target.name,
+                                                              referencedColumn: destinationColumn, onUpdate: onUpdate, onDelete: onDelete)))
+    }
+}
+
+struct SASQLiteExportPanel: View {
+    private enum Format { case sql, csv, backup }
+    private enum Source { case tables, query }
+
+    @ObservedObject var model: SASQLiteWorkspaceModel
+    let cancel: () -> Void
+    let export: (@escaping () -> Void) -> Void
+    @State private var format = Format.sql
+    @State private var source = Source.tables
+    private struct TableChoice: Identifiable {
+        let object: SASQLiteObject
+        var enabled: Bool
+        var id: Data { object.id }
+    }
+
+    @State private var tables: [TableChoice] = []
+    @State private var csvTable: Data?
+    @State private var includesStructure = true
+    @State private var includesContent = true
+    @State private var includesDrop = false
+    @State private var restore = false
+
+    var body: some View {
+        VStack(spacing: 10) {
+            TabView(selection: $format) {
+                sqlOptions.tabItem { Text("SQL") }.tag(Format.sql)
+                csvOptions.tabItem { Text("CSV") }.tag(Format.csv)
+                backupOptions.tabItem { Text("SQLite Backup") }.tag(Format.backup)
+            }
+            .frame(minHeight: 235)
+            HStack {
+                Spacer()
+                Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
+                Button("Export", action: submit).keyboardShortcut(.defaultAction).disabled(!canExport)
+            }
+        }
+        .padding(16)
+        .frame(width: 535)
+        .onAppear {
+            tables = model.objects.map { TableChoice(object: $0, enabled: $0.kind != .virtual) }
+            csvTable = model.currentObject?.id ?? model.objects.first?.id
+        }
+    }
+
+    private var sqlOptions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Include")
+                Toggle("Structure", isOn: $includesStructure)
+                Toggle("Content", isOn: $includesContent)
+                Toggle("DROP TABLE syntax", isOn: $includesDrop)
+            }
+            Divider()
+            HStack {
+                Text("Tables").font(.headline)
+                Spacer()
+                Button("Mark all tables") { setTables(true) }
+                Button("Unmark all tables") { setTables(false) }
+            }
+            List($tables) { $table in
+                Toggle(table.object.name, isOn: $table.enabled)
+                    .disabled(table.object.kind == .virtual)
+            }
+        }
+        .padding(10)
+    }
+
+    private var csvOptions: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Picker("Source", selection: $source) {
+                Text("Tables").tag(Source.tables)
+                Text("Query Results").tag(Source.query)
+                    .disabled(model.queryResult?.result?.columns.isEmpty != false)
+            }
+            if source == .tables {
+                List(model.objects, selection: $csvTable) { object in
+                    Label(object.name, image: object.kind == .view ? "table-view-small" : "table-small").tag(object.id)
+                }
+            } else {
+                Text("Loaded Query Results as CSV…").foregroundStyle(.secondary)
+                Spacer()
+            }
+        }
+        .padding(10)
+    }
+
+    private var backupOptions: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("SQLite Backup", selection: $restore) {
+                Text("Create SQLite Backup…").tag(false)
+                Text("Restore as New SQLite Database…").tag(true)
+            }
+            .pickerStyle(.radioGroup)
+            Spacer()
+        }
+        .padding(10)
+    }
+
+    private var selected: Set<Data> { Set(tables.filter(\.enabled).map(\.id)) }
+
+    private func setTables(_ enabled: Bool) {
+        for index in tables.indices where tables[index].object.kind != .virtual {
+            tables[index].enabled = enabled
+        }
+    }
+
+    private var canExport: Bool {
+        switch format {
+        case .sql: return !selected.isEmpty && (includesStructure || includesContent)
+        case .csv: return source == .tables ? csvTable != nil : model.queryResult?.result?.columns.isEmpty == false
+        case .backup: return true
+        }
+    }
+
+    private func submit() {
+        switch format {
+        case .sql:
+            let options = SASQLiteSQLExportOptions(objects: selected, structure: includesStructure,
+                                                   content: includesContent, drop: includesStructure && includesDrop)
+            export { model.exportSQL(options: options) }
+        case .csv where source == .tables:
+            if let object = model.objects.first(where: { $0.id == csvTable }) {
+                export { model.exportTable(object) }
+            }
+        case .csv:
+            export { model.exportResult() }
+        case .backup:
+            export { model.backup(restore: restore) }
         }
     }
 }

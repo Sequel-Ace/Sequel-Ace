@@ -1799,7 +1799,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [mItem setTag:1000000 + i++];
             [mItem setRepresentedObject:[NSDictionary dictionaryWithObjectsAndKeys:
                                          scope, @"scope",
-                                         ([item objectForKey:@"key"])?:@"", @"key", nil]];
+                                         ([item objectForKey:@"key"])?:@"", @"key",
+                                         item[SPBundleFileUUIDKey] ?: @"", SPBundleFileUUIDKey, nil]];
 
             if([item objectForKey:SPBundleFileCategoryKey]) {
                 [[categoryMenus objectAtIndex:[scopeBundleCategories indexOfObject:[item objectForKey:SPBundleFileCategoryKey]]] addItem:mItem];
