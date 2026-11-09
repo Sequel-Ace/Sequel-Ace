@@ -74,6 +74,8 @@ struct SAVimContext {
     /// a selection extended leftwards keeps the same anchor as one extended
     /// rightwards.
     var visualAnchor: Int
+    /// Set while handling `.exitToNormal` from an insert session.
+    var exitingInsert: Bool
 
     init(text: NSString,
          caret: Int,
@@ -82,11 +84,13 @@ struct SAVimContext {
          register: SAVimRegister? = nil,
          lastSearch: (pattern: String, forward: Bool)? = nil,
          desiredColumn: Int? = nil,
-         visualAnchor: Int? = nil) {
+         visualAnchor: Int? = nil,
+         exitingInsert: Bool = false) {
         self.text = text
         self.caret = caret
         self.selection = selection ?? NSRange(location: caret, length: 0)
         self.mode = mode
+        self.exitingInsert = exitingInsert
         self.register = register
         self.lastSearch = lastSearch
         self.desiredColumn = desiredColumn
@@ -151,8 +155,10 @@ enum SAVimTextEngine {
                                 visualAnchor: context.caret)
 
         case .exitToNormal:
-            return SAVimOutcome(caret: clampToNormal(context.caret, in: context.text),
-                                selection: NSRange(location: clampToNormal(context.caret, in: context.text), length: 0),
+            let caret = caretAfterLeavingInsert(context.caret, fromInsert: context.exitingInsert, in: context.text)
+            let normal = clampToNormal(caret, in: context.text)
+            return SAVimOutcome(caret: normal,
+                                selection: NSRange(location: normal, length: 0),
                                 mode: .normal)
 
         case .deleteChar(let forward, let count):
@@ -679,6 +685,34 @@ enum SAVimTextEngine {
             return .failed
         }
 
+        if context.mode.isVisual, context.selection.length > 0 {
+            let range = context.mode == .visualLine
+                ? lineSpan(covering: context.selection, in: text)
+                : clampRange(context.selection, in: text)
+            if register.isLinewise {
+                var payload = register.text
+                if !payload.hasSuffix("\n") {
+                    payload += "\n"
+                }
+                let body = String(repeating: payload, count: repeats)
+                let caretAfter = range.location + firstNonBlankOffset(in: body)
+                return SAVimOutcome(edit: SAVimEdit(range: range, text: body),
+                                    caret: caretAfter,
+                                    selection: NSRange(location: caretAfter, length: 0),
+                                    mode: .normal)
+            }
+
+            let body = String(repeating: register.text, count: repeats)
+            let pasted = body as NSString
+            let caretAfter = pasted.length > 0
+                ? range.location + pasted.rangeOfComposedCharacterSequence(at: pasted.length - 1).location
+                : range.location
+            return SAVimOutcome(edit: SAVimEdit(range: range, text: body),
+                                caret: caretAfter,
+                                selection: NSRange(location: caretAfter, length: 0),
+                                mode: .normal)
+        }
+
         if register.isLinewise {
             var payload = register.text
             if !payload.hasSuffix("\n") {
@@ -827,7 +861,13 @@ extension SAVimTextEngine {
     /// The line containing `location`, including its newline.
     static func lineRange(at location: Int, in text: NSString) -> NSRange {
         guard text.length > 0 else { return NSRange(location: 0, length: 0) }
-        return text.lineRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+        let bounded = max(0, min(location, text.length))
+        // A trailing newline leaves a valid caret on the final empty line at EOF.
+        if bounded == text.length, bounded > 0, isNewline(text.character(at: bounded - 1)) {
+            return NSRange(location: bounded, length: 0)
+        }
+        let index = bounded == text.length ? bounded - 1 : bounded
+        return text.lineRange(for: NSRange(location: index, length: 0))
     }
 
     static func lineStart(at location: Int, in text: NSString) -> Int {
@@ -929,6 +969,15 @@ extension SAVimTextEngine {
         let location = max(0, min(range.location, text.length))
         let length = max(0, min(range.length, text.length - location))
         return NSRange(location: location, length: length)
+    }
+
+    /// Insert mode leaves the caret past the last typed character; normal mode
+    /// sits on that character instead.
+    static func caretAfterLeavingInsert(_ location: Int, fromInsert: Bool, in text: NSString) -> Int {
+        guard fromInsert else { return location }
+        let start = lineStart(at: location, in: text)
+        guard location > start else { return location }
+        return characterBefore(location, notBefore: start, in: text)
     }
 
     /// In normal mode the caret sits *on* a character, never past the last one

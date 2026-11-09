@@ -146,6 +146,7 @@ import AppKit
         switch parser.handle(stroke) {
         case .passthrough:
             super.keyDown(with: event)
+            syncVisualHeadFromNativeCaret()
 
         case .pending(let display):
             refreshBadge(pending: display)
@@ -192,13 +193,18 @@ import AppKit
                                                     comment: "Query editor : vim mode : badge text for a key this layer does not implement"))
 
         default:
+            var exitingInsert = false
             if case .exitToNormal = command {
+                exitingInsert = insertSessionStart != nil || insertSessionCommand != nil
                 leaveInsertMode(applyingRepeat: true)
+            }
+            if case .enterVisual = command {
+                syncVisualHeadFromNativeCaret()
             }
             // Stamp the live visual extent before the edit clears it, so `.`
             // can replay the same span from a later caret.
             let recorded = commandWithRepeatableVisualSpan(command)
-            let outcome = SAVimTextEngine.run(command, context: makeContext())
+            let outcome = SAVimTextEngine.run(command, context: makeContext(exitingInsert: exitingInsert))
             apply(outcome)
 
             // `n` and `N` repeat this pattern, whether or not it matched.
@@ -241,7 +247,7 @@ import AppKit
         return max(count, 1)
     }
 
-    private func makeContext() -> SAVimContext {
+    private func makeContext(exitingInsert: Bool = false) -> SAVimContext {
         SAVimContext(text: string as NSString,
                      caret: parser.mode.isVisual ? visualHead : selectedRange().location,
                      selection: selectedRange(),
@@ -249,7 +255,15 @@ import AppKit
                      register: register,
                      lastSearch: lastSearch,
                      desiredColumn: desiredColumn,
-                     visualAnchor: visualAnchor)
+                     visualAnchor: visualAnchor,
+                     exitingInsert: exitingInsert)
+    }
+
+    private func syncVisualHeadFromNativeCaret() {
+        guard isVimActive, parser.mode == .normal else { return }
+        let caret = selectedRange().location
+        visualHead = caret
+        visualAnchor = caret
     }
 
     private func apply(_ outcome: SAVimOutcome) {
@@ -429,23 +443,22 @@ import AppKit
                                 for: change.command,
                                 copies: max(change.command.insertRepeatCount - 1, 0))
 
-        for _ in 0..<max(count, 1) {
-            let outcome = SAVimTextEngine.run(change.command, context: makeContext())
-            if outcome.beep {
-                NSSound.beep()
-                return
-            }
-            apply(outcome)
-
-            // Whatever happens next, the replay must not leave the editor in
-            // insert mode with an undo group still open.
-            if !payload.isEmpty {
-                insert(payload)
-            }
-            parser.setMode(.normal)
-            leaveInsertMode()
-            setSelectedRange(NSRange(location: normalisedCaret(selectedRange().location), length: 0))
+        let replayCommand = count > 1 ? change.command.withReplayCount(count) : change.command
+        let outcome = SAVimTextEngine.run(replayCommand, context: makeContext())
+        if outcome.beep {
+            NSSound.beep()
+            return
         }
+        apply(outcome)
+
+        // Whatever happens next, the replay must not leave the editor in
+        // insert mode with an undo group still open.
+        if !payload.isEmpty {
+            insert(payload)
+        }
+        parser.setMode(.normal)
+        leaveInsertMode()
+        setSelectedRange(NSRange(location: normalisedCaret(selectedRange().location), length: 0))
     }
 
     /// Inserts literal text at the caret as one undo step, leaving the caret

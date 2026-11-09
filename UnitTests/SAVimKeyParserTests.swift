@@ -59,6 +59,16 @@ final class SAVimKeyParserTests: XCTestCase {
         XCTAssertEqual(type("2gg"), .command(.move(.goToLine(2), count: 1)))
     }
 
+    func testAwaitedCommandSuffixesUseTheUSCommandCharacter() {
+        XCTAssertEqual(type("g"), .pending(display: "g"))
+        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "g", layoutCharacter: "п", keyCode: 5)),
+                       .command(.move(.fileStart, count: 1)))
+
+        XCTAssertEqual(type("di"), .pending(display: "di"))
+        XCTAssertEqual(parser.handle(SAVimKeyStroke(character: "w", layoutCharacter: "ц", keyCode: 13)),
+                       .command(.operate(.delete, .textObject(.word(big: false, around: false)), count: 1)))
+    }
+
     func testDeleteToGGWithACountUsesThatLine() {
         XCTAssertEqual(type("d2gg"), .command(.operate(.delete, .motion(.goToLine(2)), count: 1)))
     }

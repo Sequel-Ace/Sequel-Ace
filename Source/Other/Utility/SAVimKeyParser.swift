@@ -116,6 +116,34 @@ enum SAVimCommand: Equatable {
     case unsupported(String)
 }
 
+extension SAVimCommand {
+
+    /// A counted `.` replaces the stored command count rather than repeating it.
+    func withReplayCount(_ count: Int) -> SAVimCommand {
+        let repeats = max(count, 1)
+        switch self {
+        case .move(let motion, _):
+            return .move(motion, count: repeats)
+        case .operate(let op, let target, _):
+            return .operate(op, target, count: repeats)
+        case .deleteChar(let forward, _):
+            return .deleteChar(forward: forward, count: repeats)
+        case .substituteChar:
+            return .substituteChar(count: repeats)
+        case .replaceChar(let character, _):
+            return .replaceChar(character, count: repeats)
+        case .paste(let after, _):
+            return .paste(after: after, count: repeats)
+        case .joinLines:
+            return .joinLines(count: repeats)
+        case .toggleCase:
+            return .toggleCase(count: repeats)
+        default:
+            return self
+        }
+    }
+}
+
 enum SAVimParseResult: Equatable {
     /// The sequence is incomplete; `display` is what the mode badge should show.
     case pending(display: String)
@@ -542,21 +570,30 @@ final class SAVimKeyParser {
     // MARK: - Awaited second keys
 
     private func handleAwaited(_ awaiting: Awaiting, _ stroke: SAVimKeyStroke) -> SAVimParseResult {
-        guard let character = stroke.layoutCharacter ?? stroke.character, !stroke.control else {
+        if stroke.control {
             return reject()
         }
 
         switch awaiting {
         case .findChar(let forward, let till):
+            guard let character = stroke.layoutCharacter ?? stroke.character else {
+                return reject()
+            }
             lastFind = (character: character, forward: forward, till: till)
             self.awaiting = nil
             return motion(.findChar(character, forward: forward, till: till))
 
         case .replaceChar:
+            guard let character = stroke.layoutCharacter ?? stroke.character else {
+                return reject()
+            }
             self.awaiting = nil
             return edit(.replaceChar(character, count: takeCount()))
 
         case .textObject(let around):
+            guard let character = stroke.character else {
+                return reject()
+            }
             self.awaiting = nil
             guard let object = SAVimKeyParser.textObject(for: character, around: around) else {
                 return reject()
@@ -568,6 +605,9 @@ final class SAVimKeyParser {
             return .command(.selectTextObject(object))
 
         case .gPrefix:
+            guard let character = stroke.character else {
+                return reject()
+            }
             self.awaiting = nil
             switch character {
             case "g":

@@ -681,4 +681,33 @@ final class SAVimTextEngineTests: XCTestCase {
         XCTAssertNil(run(.redo(count: 1), sql, caret: 0).edit)
         XCTAssertFalse(run(.repeatLastChange(count: 1), sql, caret: 0).beep)
     }
+
+    func testTrailingNewlineExposesTheEmptyLineAtEOF() {
+        let text = "SELECT 1;\n" as NSString
+        XCTAssertEqual(SAVimTextEngine.lineRange(at: text.length, in: text),
+                       NSRange(location: text.length, length: 0))
+    }
+
+    func testExitToNormalFromInsertStepsBackOntoTheLastTypedCharacter() {
+        let outcome = SAVimTextEngine.run(
+            .exitToNormal,
+            context: SAVimContext(text: "Xabc" as NSString, caret: 1, mode: .insert, exitingInsert: true))
+        XCTAssertEqual(outcome.caret, 0)
+    }
+
+    func testVisualPasteReplacesTheSelection() {
+        let text = "foo bar"
+        let register = SAVimRegister(text: "baz", isLinewise: false)
+        let outcome = run(.paste(after: true, count: 1), text,
+                          caret: 0, mode: .visual, selection: NSRange(location: 0, length: 3),
+                          register: register)
+        XCTAssertEqual(applied(outcome, to: text), "baz bar")
+        XCTAssertEqual(outcome.mode, .normal)
+    }
+
+    func testReplayCountReplacesTheStoredCommandCount() {
+        let doubled = SAVimCommand.deleteChar(forward: true, count: 2).withReplayCount(3)
+        let outcome = SAVimTextEngine.run(doubled, context: SAVimContext(text: "abcdef" as NSString, caret: 0))
+        XCTAssertEqual(applied(outcome, to: "abcdef"), "def")
+    }
 }
