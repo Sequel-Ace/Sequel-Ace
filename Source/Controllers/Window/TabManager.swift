@@ -64,12 +64,22 @@ import AppKit
 
     // MARK: - Public properties
 
+    var activeWorkspaceController: SPWindowController? {
+        managedWindows.first { $0.window.isMainWindow }?.windowController
+    }
+
+    /// Legacy connection actions are scoped to the frontmost MySQL document.
     @objc var activeWindowController: SPWindowController? {
-        return managedWindows.first { $0.window.isMainWindow }?.windowController
+        guard let controller = activeWorkspaceController, !controller.isSQLiteWorkspace else { return nil }
+        return controller
     }
 
     @objc var windowControllers: [SPWindowController] {
         return managedWindows.compactMap { $0.windowController}
+    }
+
+    @objc var mysqlWindowControllers: [SPWindowController] {
+        windowControllers.filter { !$0.isSQLiteWorkspace }
     }
 
     @objc var windows: Set<NSWindow> {
@@ -89,11 +99,11 @@ import AppKit
     // MARK: - Public API
 
     @objc func switchToPreviousTab() {
-        activeWindowController?.window!.selectPreviousTab(nil)
+        activeWorkspaceController?.window?.selectPreviousTab(nil)
     }
 
     @objc func switchToNextTab() {
-        activeWindowController?.window!.selectNextTab(nil)
+        activeWorkspaceController?.window?.selectNextTab(nil)
     }
 
     @discardableResult
@@ -122,16 +132,26 @@ import AppKit
         return windowController
     }
 
+    @MainActor func openSQLiteWorkspace(_ model: SASQLiteWorkspaceModel, beside sibling: NSWindow?) {
+        let controller = createNewWindowController(sqliteWorkspace: model)
+        if let sibling, managedWindows.contains(where: { $0.window === sibling }) {
+            createTab(newWindowController: controller, inWindow: sibling, ordered: .above)
+        } else {
+            createWindow(newWindowController: controller, inWindow: SPWindow(), ordered: .above)
+        }
+    }
+
     @objc func windowControllerWithDocument(processID: String) -> SPWindowController? {
-        return managedWindows.first(where: { $0.windowController.databaseDocument.processID == processID })?.windowController
+        mysqlWindowControllers.first { $0.databaseDocument.processID == processID }
     }
 }
 
 // MARK: - Private API
 
 private extension TabManager {
-    func createNewWindowController() -> SPWindowController {
+    func createNewWindowController(sqliteWorkspace: SASQLiteWorkspaceModel? = nil) -> SPWindowController {
         let windowController = SPWindowController(windowNibName: "MainWindow")
+        windowController.sqliteWorkspace = sqliteWorkspace
         windowController.window?.delegate = windowController
         return windowController
     }

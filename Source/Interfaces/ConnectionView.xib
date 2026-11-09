@@ -25,6 +25,7 @@
                 <outlet property="connectionDetailsScrollView" destination="5588" id="5592"/>
                 <outlet property="connectionInstructionsTextField" destination="5154" id="5800"/>
                 <outlet property="connectionResizeContainer" destination="4888" id="5164"/>
+                <outlet property="connectionTypeTabs" destination="4980" id="saC-db-tab"/>
                 <outlet property="connectionSplitView" destination="5741" id="5745"/>
                 <outlet property="connectionView" destination="5739" id="5740"/>
                 <outlet property="editButtonsView" destination="5862" id="5882"/>
@@ -2670,7 +2671,6 @@ DQ
                                                                     </tabViewItem>
                                                                 </tabViewItems>
                                                                 <connections>
-                                                                    <binding destination="-2" name="selectedIndex" keyPath="type" id="4992"/>
                                                                     <outlet property="delegate" destination="-2" id="5165"/>
                                                                 </connections>
                                                             </tabView>

@@ -53,14 +53,18 @@ struct SAConnectionFormView: View {
     var body: some View {
         Form {
             typeSection
-            identitySection
-            detailsSection
-            timeZoneSection
-            securitySection
-            if model.showsSSLFileOptions {
-                sslFileSection
+            if model.showsSQLite {
+                Section { SASQLiteConnectionPane() }
+            } else {
+                identitySection
+                detailsSection
+                timeZoneSection
+                securitySection
+                if model.showsSSLFileOptions {
+                    sslFileSection
+                }
+                connectSection
             }
-            connectSection
         }
         .formStyle(.grouped)
         .alert(
@@ -84,12 +88,13 @@ struct SAConnectionFormView: View {
     /// fields below rather than a whole tab view.
     private var typeSection: some View {
         Section {
-            Picker(selection: $model.info.type) {
-                Text("TCP/IP", comment: "connection type : tcp/ip").tag(SAConnectionType.tcpIP)
-                Text("Socket", comment: "connection type : socket").tag(SAConnectionType.socket)
-                Text("SSH Tunnel", comment: "connection type : ssh tunnel").tag(SAConnectionType.sshTunnel)
-                Text("AWS IAM", comment: "connection type : aws iam").tag(SAConnectionType.awsIAM)
-                Text("Vault", comment: "connection type : vault").tag(SAConnectionType.vault)
+            Picker(selection: $model.selectedType) {
+                Text("TCP/IP", comment: "connection type : tcp/ip").tag(Optional(SAConnectionType.tcpIP))
+                Text("Socket", comment: "connection type : socket").tag(Optional(SAConnectionType.socket))
+                Text("SSH Tunnel", comment: "connection type : ssh tunnel").tag(Optional(SAConnectionType.sshTunnel))
+                Text("AWS IAM", comment: "connection type : aws iam").tag(Optional(SAConnectionType.awsIAM))
+                Text("Vault", comment: "connection type : vault").tag(Optional(SAConnectionType.vault))
+                Text("SQLite").tag(nil as SAConnectionType?)
             } label: {
                 Text("Type", comment: "connection view : field label")
             }

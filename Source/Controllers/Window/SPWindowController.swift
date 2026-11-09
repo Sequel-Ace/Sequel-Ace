@@ -30,10 +30,19 @@
 
 import Cocoa
 import SnapKit
+import SwiftUI
 
 @objc final class SPWindowController: NSWindowController {
 
     @objc lazy var databaseDocument: SPDatabaseDocument = SPDatabaseDocument(windowController: self)
+
+    var sqliteWorkspace: SASQLiteWorkspaceModel?
+
+    @objc var isSQLiteWorkspace: Bool { sqliteWorkspace != nil }
+
+    @objc var mysqlDocument: SPDatabaseDocument? {
+        isSQLiteWorkspace ? nil : databaseDocument
+    }
 
     @objc let uniqueID: UUID = UUID()
 
@@ -110,16 +119,27 @@ private extension SPWindowController {
     /// document view: it is the backstop for the tinted window background (see
     /// `applyTitlebarTint`), not part of the document's own chrome.
     func setupAppearance() {
-        databaseDocument.updateWindowTitle(self)
-
         if let contentView = window?.contentView {
             contentBackground.frame = contentView.bounds
             contentBackground.autoresizingMask = [.width, .height]
             contentView.addSubview(contentBackground)
-        }
 
-        window?.contentView?.addSubview(databaseDocument.databaseView())
-        databaseDocument.databaseView().frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
+            let workspaceView: NSView
+            if let sqliteWorkspace, let window {
+                sqliteWorkspace.window = window
+                window.toolbar = sqliteWorkspace.makeToolbar()
+                window.representedURL = sqliteWorkspace.session.url
+                let fileName = sqliteWorkspace.session.url.lastPathComponent
+                updateWindow(title: fileName + " — SQLite", tabTitle: fileName)
+                workspaceView = NSHostingView(rootView: SASQLiteWorkspaceView(model: sqliteWorkspace))
+                workspaceView.autoresizingMask = [.width, .height]
+            } else {
+                databaseDocument.updateWindowTitle(self)
+                workspaceView = databaseDocument.databaseView()
+            }
+            workspaceView.frame = contentView.bounds
+            contentView.addSubview(workspaceView)
+        }
 
         if #available(macOS 10.13, *) {
             window?.tab.accessoryView = tabAccessoryView
@@ -200,7 +220,7 @@ private extension SPWindowController {
 
 extension SPWindowController: NSWindowDelegate {
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if !databaseDocument.parentTabShouldClose() {
+        if let mysqlDocument, !mysqlDocument.parentTabShouldClose() {
             return false
         }
 
@@ -217,7 +237,10 @@ extension SPWindowController: NSWindowDelegate {
         window?.saveFrame(usingName: Self.frameAutosaveName)
 
         // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
-        NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)
+        if let mysqlDocument {
+            NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: mysqlDocument)
+        }
+        sqliteWorkspace?.operation?.cancel()
     }
 
     // AppKit only auto-persists moves and resizes for the single window that owns the
