@@ -99,6 +99,79 @@ final class SASQLiteTests: XCTestCase {
         XCTAssertTrue(try database.objects().isEmpty)
     }
 
+    func testDuplicateTablePreservesExplicitIndexesWithAndWithoutRows() throws {
+        let sourceName = "source \" ü"
+        let sourceSQL = SASQLiteConnection.identifier(sourceName)
+        try database.query("CREATE TABLE \(sourceSQL) (email TEXT, tenant TEXT, active INTEGER, note TEXT, alias TEXT UNIQUE)")
+        let indexes = [
+            (name: "email_unique", unique: true, sql: "(email COLLATE BINARY DESC)"),
+            (name: "normalized \" email", unique: true,
+             sql: "((lower(trim(email))) COLLATE NOCASE) WHERE active = 1 AND note <> 'source \" ü'"),
+            (name: "lookup ON ü", unique: false,
+             sql: "(substr(email, 1, 3) DESC, tenant COLLATE NOCASE) WHERE active IN (0, 1)")
+        ]
+        for index in indexes {
+            let nameSQL = SASQLiteConnection.identifier(index.name)
+            try database.query("CREATE \(index.unique ? "UNIQUE " : "")INDEX \(nameSQL) ON \(sourceSQL) \(index.sql)")
+        }
+        try database.query("INSERT INTO \(sourceSQL) VALUES ('Alice@example.org', 'tenant', 1, 'seed', 'original alias')")
+        let source = try XCTUnwrap(database.objects().first { $0.name == sourceName })
+
+        for includeRows in [false, true] {
+            let copyName = includeRows ? "copy with \" rows" : "empty ' copy"
+            let copySQL = SASQLiteConnection.identifier(copyName)
+            try database.apply(.duplicateTable(source, copyName, includeRows: includeRows))
+            let copy = try XCTUnwrap(database.objects().first { $0.name == copyName })
+            let copiedIndexes = try database.structure(copy).indexes.rows
+            XCTAssertEqual(copiedIndexes.count, indexes.count + 1, "Table UNIQUE constraints must also survive")
+            for index in indexes {
+                let copiedIndex = try XCTUnwrap(copiedIndexes.first { $0.last?.string?.hasSuffix(index.sql) == true })
+                let copiedName = try XCTUnwrap(copiedIndex.first?.string)
+                XCTAssertNotEqual(copiedName, index.name)
+                XCTAssertEqual(copiedIndex[1], .integer(index.unique ? 1 : 0))
+                XCTAssertEqual(try database.query("SELECT * FROM pragma_index_xinfo(?, 'main')", bindings: [.init(copiedName)]).rows,
+                               try database.query("SELECT * FROM pragma_index_xinfo(?, 'main')", bindings: [.init(index.name)]).rows)
+            }
+            XCTAssertEqual(try database.query("SELECT count(*) FROM \(copySQL)").rows, [[.integer(includeRows ? 1 : 0)]])
+            if !includeRows {
+                try database.query("INSERT INTO \(copySQL) SELECT * FROM \(sourceSQL)")
+            }
+            let insert = "INSERT INTO \(copySQL)(email, tenant, active, note) VALUES (?, 'tenant', ?, 'seed')"
+            XCTAssertThrowsError(try database.query(insert, bindings: [.init("Alice@example.org"), .integer(0)]))
+            XCTAssertThrowsError(try database.query(insert, bindings: [.init("  ALICE@example.org  "), .integer(1)]))
+            try database.query(insert, bindings: [.init(" ALICE@example.org "), .integer(0)])
+            XCTAssertThrowsError(try database.query("INSERT INTO \(copySQL)(email, alias) VALUES ('other@example.org', 'original alias')"))
+        }
+        XCTAssertEqual(try database.query("SELECT count(*) FROM \(sourceSQL)").rows, [[.integer(1)]])
+    }
+
+    func testDuplicateTableAvoidsIndexNameCollisionsAcrossSchemaObjects() throws {
+        try run("""
+            CREATE TABLE source(a);
+            CREATE INDEX lookup ON source(a);
+            CREATE TABLE copy_lookup(a);
+            CREATE INDEX COPY_LOOKUP_2 ON copy_lookup(a);
+            """)
+        let source = try XCTUnwrap(database.objects().first { $0.name == "source" })
+        try database.apply(.duplicateTable(source, "copy", includeRows: false))
+        let copy = try XCTUnwrap(database.objects().first { $0.name == "copy" })
+        XCTAssertEqual(try database.structure(copy).indexes.rows.first?.first, .init("copy_lookup_3"))
+        XCTAssertEqual(try database.query("SELECT tbl_name FROM sqlite_schema WHERE name = 'COPY_LOOKUP_2'").rows, [[.init("copy_lookup")]])
+    }
+
+    func testDuplicateTableRollsBackWhenIndexCreationFails() throws {
+        try run("CREATE TABLE source(a); INSERT INTO source VALUES(1); CREATE INDEX lookup ON source(a);")
+        let source = try XCTUnwrap(database.objects().first)
+        sqlite3_set_authorizer(database.handle, { _, action, _, _, _, _ in
+            action == SQLITE_CREATE_INDEX ? SQLITE_DENY : SQLITE_OK
+        }, nil)
+        defer { database.setAuthorization(.workspace) }
+        XCTAssertThrowsError(try database.apply(.duplicateTable(source, "copy", includeRows: true)))
+        XCTAssertFalse(database.inTransaction)
+        XCTAssertEqual(try database.objects().map(\.name), ["source"])
+        XCTAssertEqual(try database.query("SELECT a FROM source").rows, [[.integer(1)]])
+    }
+
     func testScriptReturnsResultsBeforeErrorAndFinishesReturningWrites() throws {
         let results = try database.runScript("""
             CREATE TABLE t(a);

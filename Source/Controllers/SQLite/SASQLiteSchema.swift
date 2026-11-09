@@ -282,10 +282,38 @@ extension SASQLiteConnection {
             guard tokens.indices.contains(nameIndex) else { throw SASQLiteError.invalidInput }
             let definition = (original as NSString).replacingCharacters(in: tokens[nameIndex].range, with: "main." + nameSQL)
             try query(definition)
+            try duplicateIndexes(structure.indexes, into: name)
             if includeRows {
                 let columns = structure.writableColumns.map(\.identifier).joined(separator: ", ")
                 try query("INSERT INTO main.\(nameSQL) (\(columns)) SELECT \(columns) FROM \(object.reference)")
             }
+        }
+    }
+
+    private func duplicateIndexes(_ indexes: SASQLiteResult, into tableName: String) throws {
+        for row in indexes.rows {
+            // Inline PRIMARY KEY and UNIQUE constraints recreate their own autoindexes.
+            guard let sql = row.last?.string else { continue }
+            guard let originalName = row.first?.string else { throw SASQLiteError.invalidInput }
+            let tokens = SASQLiteTableDefinition.tokens(sql)
+            guard let index = tokens.firstIndex(where: { $0.kind == .keyword && $0.text.uppercased() == "INDEX" }),
+                  let on = tokens.indices.dropFirst(index + 1).first(where: { tokens[$0].kind == .keyword && tokens[$0].text.uppercased() == "ON" }),
+                  tokens.indices.contains(on + 1) else { throw SASQLiteError.invalidInput }
+
+            let baseName = tableName + "_" + originalName
+            var name = baseName
+            var suffix = 2
+            while try !query("SELECT 1 FROM main.sqlite_schema WHERE name = ? COLLATE NOCASE", bindings: [.init(name)]).rows.isEmpty {
+                name = baseName + "_" + String(suffix)
+                suffix += 1
+            }
+
+            // Rewrite only the index and table names. Keep UNIQUE, expressions,
+            // collations, sort directions, and any partial predicate intact.
+            let original = sql as NSString
+            let prefix = original.substring(to: NSMaxRange(tokens[index].range))
+            let definition = original.substring(from: NSMaxRange(tokens[on + 1].range))
+            try query("\(prefix) main.\(Self.identifier(name)) ON \(Self.identifier(tableName))\(definition)")
         }
     }
 
