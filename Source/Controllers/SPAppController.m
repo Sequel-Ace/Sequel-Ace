@@ -1229,7 +1229,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     id firstResponder = [[NSApp keyWindow] firstResponder];
     if([firstResponder respondsToSelector:@selector(executeBundleItemForInputField:)]) {
-        BOOL selfIsQueryEditor = ([[[firstResponder class] description] isEqualToString:@"SPTextView"] && [[firstResponder delegate] respondsToSelector:@selector(currentQueryRange)]);
+        BOOL selfIsQueryEditor = ([firstResponder isKindOfClass:[SPTextView class]] && [[firstResponder delegate] respondsToSelector:@selector(currentQueryRange)]);
         NSRange currentWordRange, currentSelectionRange, currentLineRange, currentQueryRange;
         currentSelectionRange = [firstResponder selectedRange];
         currentWordRange = [firstResponder getRangeForCurrentWord];

@@ -1363,7 +1363,7 @@
                                                                                             <rect key="frame" x="1" y="1" width="695" height="142"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                             <subviews>
-                                                                                                <textView focusRingType="none" importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" usesFontPanel="YES" findStyle="panel" allowsDocumentBackgroundColorChange="YES" allowsUndo="YES" usesRuler="YES" id="8254" customClass="SPTextView">
+                                                                                                <textView focusRingType="none" importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" usesFontPanel="YES" findStyle="panel" allowsDocumentBackgroundColorChange="YES" allowsUndo="YES" usesRuler="YES" id="8254" customClass="SAQueryTextView">
                                                                                                     <rect key="frame" x="0.0" y="0.0" width="695" height="142"/>
                                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -1534,6 +1534,12 @@ Gw
                                                                                                                 <connections>
                                                                                                                     <action selector="gearMenuItemSelected:" target="134" id="7318"/>
                                                                                                                     <binding destination="1907" name="value" keyPath="values.CustomQueryUpdateAutoHelp" id="7293"/>
+                                                                                                                </connections>
+                                                                                                            </menuItem>
+                                                                                                            <menuItem title="Vim Mode" id="7260">
+                                                                                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                                                                                                <connections>
+                                                                                                                    <binding destination="1907" name="value" keyPath="values.CustomQueryVimMode" id="7296"/>
                                                                                                                 </connections>
                                                                                                             </menuItem>
                                                                                                         </items>
