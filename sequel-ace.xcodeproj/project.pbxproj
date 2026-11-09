@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F05BAAE3B39623C9354BBE0 /* SAFieldPickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A5E919815BD0CE10B6D64FA /* SAFieldPickerButton.swift */; };
+		9835EF19C18B1148017CBA4B /* SAFieldPickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A5E919815BD0CE10B6D64FA /* SAFieldPickerButton.swift */; };
+		14B5AA41D7864F171CB40FEA /* SAFieldPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3D3164DC901AD15EA417AA /* SAFieldPickerTests.swift */; };
 		EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
 		7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */; };
 		55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */; };
@@ -786,6 +789,16 @@
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 		FE96153A16ECBA48C12BCA09 /* SAFieldEditorCommitPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BCCC96AB0752412886E41B0 /* SAFieldEditorCommitPolicy.swift */; };
 		FEA466FB9F9F757D557F334B /* SATypeAheadSelectionLoadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0002BD43DA307433795D7EBA /* SATypeAheadSelectionLoadTests.swift */; };
+		0E101B8639A9D372500A794F /* SAFieldPickerSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB363257205DB2A36245964A /* SAFieldPickerSelection.swift */; };
+		222490FE1BBA3296DA12C693 /* SASQLExportData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166E912B0D3B079439B1D75E /* SASQLExportData.swift */; };
+		5A11BEF02FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A11BEEF2FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift */; };
+		B8D6C0CCB0FA36DFC60A6AC2 /* SASQLExportData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166E912B0D3B079439B1D75E /* SASQLExportData.swift */; };
+		BA87366BFBEFA0424135242B /* SASQLExportDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEF99FB5CFC7CB4FFB946BD /* SASQLExportDataTests.swift */; };
+		F70B8870EA708D016AE137B5 /* SAFieldPickerSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB363257205DB2A36245964A /* SAFieldPickerSelection.swift */; };
+		516E068F308F3B01007B81AA /* SADialogAuthPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */; };
+		516E0690308F3B01007B81AA /* SADialogAuthPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */; };
+		516E0695308F3B24007B81AA /* SADialogAuthPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E0694308F3B24007B81AA /* SADialogAuthPromptTests.swift */; };
+		516E073A308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516E0738308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -898,6 +911,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3A5E919815BD0CE10B6D64FA /* SAFieldPickerButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAFieldPickerButton.swift; sourceTree = "<group>"; };
+		4B3D3164DC901AD15EA417AA /* SAFieldPickerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAFieldPickerTests.swift; sourceTree = "<group>"; };
 		D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePopUpButton.swift; sourceTree = "<group>"; };
 		6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePicker.swift; sourceTree = "<group>"; };
 		4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabasePickerModelTests.swift; sourceTree = "<group>"; };
@@ -1727,6 +1742,13 @@
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
 		FF6309469C1A3C6742516C1B /* SAVimTextEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAVimTextEngine.swift; sourceTree = "<group>"; };
+		166E912B0D3B079439B1D75E /* SASQLExportData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASQLExportData.swift; sourceTree = "<group>"; };
+		5A11BEEF2FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPMySQLConnectionServerInfoTests.swift; sourceTree = "<group>"; };
+		CB363257205DB2A36245964A /* SAFieldPickerSelection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAFieldPickerSelection.swift; sourceTree = "<group>"; };
+		FCEF99FB5CFC7CB4FFB946BD /* SASQLExportDataTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASQLExportDataTests.swift; sourceTree = "<group>"; };
+		516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADialogAuthPrompt.swift; sourceTree = "<group>"; };
+		516E0694308F3B24007B81AA /* SADialogAuthPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADialogAuthPromptTests.swift; sourceTree = "<group>"; };
+		516E0738308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SADialogAuthPrompt+MySQL.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2500,7 +2522,9 @@
 				5A1EC0A12FF0000100000012 /* SARecordView.swift */,
 				78188A794F98B11F4756900C /* SAOverlayBadge.swift */,
 				6A534747C53B2FE32663AC7E /* SADatabasePicker.swift */,
+				3A5E919815BD0CE10B6D64FA /* SAFieldPickerButton.swift */,
 				D713CABC2DE3C890C228D22E /* SADatabasePopUpButton.swift */,
+				CB363257205DB2A36245964A /* SAFieldPickerSelection.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2714,6 +2738,7 @@
 				17F90E451210B41100274C98 /* Model */,
 				173C836C11AAD24300B8B084 /* Exporters */,
 				519788CB30502FBB00C5D23D /* SAExportOutputEncoding.swift */,
+				166E912B0D3B079439B1D75E /* SASQLExportData.swift */,
 			);
 			name = "Data Export";
 			path = DataExport;
@@ -2881,6 +2906,8 @@
 				519788D030502FC700C5D23D /* SAExportOutputEncodingTests.swift */,
 				7D0944C02A631A81C9D0850C /* SAVimKeyParserTests.swift */,
 				91D43323AD4B38B2A3C6700B /* SAVimTextEngineTests.swift */,
+				516E0694308F3B24007B81AA /* SADialogAuthPromptTests.swift */,
+				FCEF99FB5CFC7CB4FFB946BD /* SASQLExportDataTests.swift */,
 			);
 			name = "Unit Tests";
 			path = UnitTests;
@@ -2918,6 +2945,8 @@
 				3EDCC01965F2A0E35B9547D8 /* SATypeAheadSelectionLoad.swift */,
 				1638A42B332B516B48FA740D /* SAVimKeyParser.swift */,
 				FF6309469C1A3C6742516C1B /* SAVimTextEngine.swift */,
+				516E068E308F3B01007B81AA /* SADialogAuthPrompt.swift */,
+				516E0738308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -2944,6 +2973,7 @@
 				C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */,
 				B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */,
 				51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */,
+				5A11BEEF2FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift */,
 				C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 				5A1EC0A12FF0000100000002 /* SARecordViewTests.swift */,
 				6F1A0C2E8B3D4A5F90172C04 /* SAFavoritesListKeysTests.swift */,
@@ -3009,6 +3039,7 @@
 				7430E44A2179FB112E3CEB83 /* SACodePointLengthAndMySQLDateTests.swift */,
 				619373C347EA990F09910DB0 /* SASessionTimeZoneReconnectTests.swift */,
 				4EE829C7C9508068FC885123 /* SADatabasePickerModelTests.swift */,
+				4B3D3164DC901AD15EA417AA /* SAFieldPickerTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3624,6 +3655,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F05BAAE3B39623C9354BBE0 /* SAFieldPickerButton.swift in Sources */,
 				51AC3B7430475ED600BCE2B9 /* SASSHTunnelAuthServiceTests.swift in Sources */,
 				1196D9FED5B52DE6CD6B0C76 /* SASSHTunnelAuthSource.swift in Sources */,
 				EDDD0AB23E0A1F4A5AE67091 /* SASSHTunnelAuthService.swift in Sources */,
@@ -3741,6 +3773,7 @@
 				961210D6302E7269009A9A2A /* GitHub.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */,
 				51CC84042FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift in Sources */,
+				5A11BEF02FDE001100C4C14A /* SPMySQLConnectionServerInfoTests.swift in Sources */,
 				C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
 				A19A2000000000000000E004 /* SQLiteDisplayFormatManager.swift in Sources */,
 				A19A2000000000000000E003 /* SQLitePinnedTableManager.swift in Sources */,
@@ -3771,6 +3804,7 @@
 				CF0000312F8C000600C4C14A /* SARuleFilterRootConjunction.swift in Sources */,
 				CF0000122F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000252F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */,
+				516E0695308F3B24007B81AA /* SADialogAuthPromptTests.swift in Sources */,
 				CF0000362F8C000600C4C14A /* SADatabaseRenamePlan.swift in Sources */,
 				CF0000012F8C000600C4C14A /* SACellFilterOperatorTests.swift in Sources */,
 				51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */,
@@ -3816,6 +3850,7 @@
 				519788CD30502FBB00C5D23D /* SAExportOutputEncoding.swift in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
+				516E068F308F3B01007B81AA /* SADialogAuthPrompt.swift in Sources */,
 				794358DD6B1C4070943C021B /* SAEditorTokensTests.swift in Sources */,
 				51AC3B993047629E00BCE2B9 /* SASSHTunnelSocketTransportTests.swift in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
@@ -3876,6 +3911,10 @@
 				F422732EDA2D3786B6B7D54C /* SAVimTextEngineTests.swift in Sources */,
 				7E6031025486C1BA2E936DD4 /* SADatabasePicker.swift in Sources */,
 				55C6E0792F15065C4B409CD3 /* SADatabasePickerModelTests.swift in Sources */,
+				14B5AA41D7864F171CB40FEA /* SAFieldPickerTests.swift in Sources */,
+				222490FE1BBA3296DA12C693 /* SASQLExportData.swift in Sources */,
+				BA87366BFBEFA0424135242B /* SASQLExportDataTests.swift in Sources */,
+				0E101B8639A9D372500A794F /* SAFieldPickerSelection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3908,6 +3947,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9835EF19C18B1148017CBA4B /* SAFieldPickerButton.swift in Sources */,
 				11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */,
 				17E641460EF01EB5001BC333 /* main.m in Sources */,
 				1A19962A257A624200F5B0F1 /* BundleExtension.swift in Sources */,
@@ -3939,6 +3979,7 @@
 				1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */,
 				50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */,
 				AA000001000000000000001B /* SAAboutView.swift in Sources */,
+				516E073A308F442C007B81AA /* SADialogAuthPrompt+MySQL.swift in Sources */,
 				17E641640EF01F15001BC333 /* SPTableInfo.m in Sources */,
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,
@@ -3979,6 +4020,7 @@
 				B52460D70F8EF92300171639 /* SPArrayAdditions.m in Sources */,
 				B52460D80F8EF92300171639 /* SPTextViewAdditions.m in Sources */,
 				6F0EA9242734ABE200514FF1 /* SABundleRunner.m in Sources */,
+				516E0690308F3B01007B81AA /* SADialogAuthPrompt.swift in Sources */,
 				296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */,
 				1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */,
 				51B09FDD2F767A4C003BAFFF /* SAConnectionDelegate.swift in Sources */,
@@ -4244,6 +4286,8 @@
 				5B524FDE6BCB3E0EDE415C35 /* SAQueryTextView.swift in Sources */,
 				EE58AACB71223A32C9A4BFA6 /* SADatabasePicker.swift in Sources */,
 				5451D541EF96D987B5E3AAE6 /* SADatabasePopUpButton.swift in Sources */,
+				B8D6C0CCB0FA36DFC60A6AC2 /* SASQLExportData.swift in Sources */,
+				F70B8870EA708D016AE137B5 /* SAFieldPickerSelection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

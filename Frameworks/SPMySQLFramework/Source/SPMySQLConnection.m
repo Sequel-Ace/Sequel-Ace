@@ -28,6 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import "Server Info.h"
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLKeepAliveTimer.h"
 #include <arpa/inet.h>
@@ -38,6 +39,9 @@
 #import "SPMySQLArrayAdditions.h"
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
+
+@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost>
+@end
 
 @interface SPMySQLConnection ()
 
@@ -123,6 +127,235 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		if (cancelled) [self.sessionAccess recordQueryCancellation];
 		lastQueryWasCancelled = cancelled;
 	}
+}
+
+#pragma mark -
+#pragma mark What the cancellation logic asks of the connection
+
+/**
+ * Asks the server over a second connection to kill the query in this server session.
+ */
+- (BOOL)killQueryOnServerThread:(NSUInteger)serverThread
+{
+	return [self _killQueryOverSideConnectionOnServerThread:serverThread];
+}
+
+/**
+ * Whether the session last reported an open transaction. A plain value: no handle is read, which
+ * the query's own thread may be using or closing.
+ */
+- (BOOL)sessionHasOpenTransaction
+{
+	return [valueEscaper sessionReportedOpenTransaction];
+}
+
+/**
+ * Marks the query that holds the connection as cancelled, where callers look for it. The record
+ * alone: recording the stop with the lease is the cancellation logic's own first step.
+ */
+- (void)markRunningQueryCancelled
+{
+	lastQueryWasCancelled = YES;
+}
+
+#pragma mark -
+#pragma mark What the session gate asks of the connection
+
+/**
+ * Takes the connection lock for the gate, waiting for it.
+ */
+- (void)lockConnectionForGate
+{
+	[self _lockConnection];
+}
+
+/**
+ * Releases the connection lock for the gate.
+ */
+- (void)unlockConnectionForGate
+{
+	[self _unlockConnection];
+}
+
+/**
+ * Takes the connection lock for the gate if it is free, without waiting.
+ */
+- (BOOL)tryLockConnectionForGate
+{
+	return [self _tryLockConnection];
+}
+
+/**
+ * Which session a value escaped now is escaped for, asked of the gate. Asked here, where this
+ * connection is known to be the gate's host.
+ */
+- (SAEscapingSession)sessionForEscaping
+{
+	return [SASessionGate sessionForEscapingOnHost:self];
+}
+
+/**
+ * Closes a session marked to be replaced, for the gate, while the connection is held.
+ */
+- (void)closeMarkedSessionForGate
+{
+	[self _closeSessionMarkedForReplacement];
+}
+
+/**
+ * Restores a session that was closed or lost, for the gate, through the ordinary check.
+ */
+- (BOOL)checkConnectionForGate
+{
+	return [self checkConnectionIfNecessary];
+}
+
+/**
+ * Whether there is a session to use: connected, and not lost in the background.
+ */
+- (BOOL)hasSessionToUse
+{
+	return mySQLConnection != NULL && state != SPMySQLConnectionLostInBackground;
+}
+
+/**
+ * How the session is to be replaced before its next use. One word, read once and atomically: the
+ * keepalive writes it from its own thread, and escaping reads it without the connection lock.
+ */
+- (SASessionReplacementMark)sessionReplacementMark
+{
+	return (SASessionReplacementMark)__atomic_load_n(&sessionReplacement, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * Marks how the session is to be replaced before its next use, atomically, so that every reader
+ * sees the whole mark or the one before it.
+ */
+- (void)markSessionReplacement:(SASessionReplacementMark)mark
+{
+	__atomic_store_n(&sessionReplacement, (NSInteger)mark, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * Whether the session reports a transaction open now. Read from the handle, so only while the
+ * connection is held - which is when the gate asks.
+ */
+- (BOOL)sessionReportsOpenTransaction
+{
+	return mySQLConnection != NULL && (mySQLConnection->server_status & SERVER_STATUS_IN_TRANS) != 0;
+}
+
+#pragma mark -
+#pragma mark Session replacement host
+
+/**
+ * Closes a session marked to be replaced, while the connection is held so nothing can use it in
+ * between: SASessionReplacement takes the steps, this connection being its host. The next use
+ * reconnects and restores the connection's record on the new session.
+ */
+- (void)_closeSessionMarkedForReplacement
+{
+	[SASessionReplacement closeMarkedSessionOnHost:self];
+}
+
+/**
+ * Whether a tunnel, or another proxy, carries the connection.
+ */
+- (BOOL)hasProxy
+{
+	return proxy != nil;
+}
+
+/**
+ * Whether the native handle's net layer reports a read or write in progress; NO with no handle.
+ */
+- (BOOL)nativeHandleIsReadingOrWriting
+{
+	return mySQLConnection != NULL && mySQLConnection->net.reading_or_writing != 0;
+}
+
+/**
+ * Whether the native handle still has its transport; NO with no handle.
+ */
+- (BOOL)nativeHandleHasTransport
+{
+	return mySQLConnection != NULL && mySQLConnection->net.vio != NULL;
+}
+
+/**
+ * Whether the native handle still has its net buffer; NO with no handle.
+ */
+- (BOOL)nativeHandleHasBuffer
+{
+	return mySQLConnection != NULL && mySQLConnection->net.buff != NULL;
+}
+
+/**
+ * Retires the lease's own handle on the session's socket.
+ */
+- (void)retireSessionLease
+{
+	[self.sessionAccess clearSocket];
+}
+
+/**
+ * Closes the native handle and forgets it.
+ */
+- (void)closeNativeHandle
+{
+	if (mySQLConnection) mysql_close(mySQLConnection);
+	mySQLConnection = NULL;
+}
+
+/**
+ * Forgets the native handle without closing it - a small leak, as the connection's own disconnect
+ * has always accepted for a handle it must not close.
+ */
+- (void)leaveNativeHandleBehind
+{
+	mySQLConnection = NULL;
+}
+
+/**
+ * Records the session as lost in the background, and whether a failed check lost it.
+ */
+- (void)recordSessionLostAfterFailedCheck:(BOOL)afterFailedCheck
+{
+	state = SPMySQLConnectionLostInBackground;
+	sessionLostAfterFailedCheck = afterFailedCheck;
+}
+
+/**
+ * Records whether the proxy was left as it stands by the replacement.
+ */
+- (void)recordProxyUntouchedBySessionReplacement:(BOOL)untouched
+{
+	proxyUntouchedBySessionReplacement = untouched;
+}
+
+/**
+ * Forgets what the session reported about its server.
+ */
+- (void)forgetServerVersion
+{
+	serverVariableVersion = nil;
+	serverVersionNumber = 0;
+}
+
+/**
+ * Clears the mark.
+ */
+- (void)clearSessionReplacementMark
+{
+	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
+}
+
+/**
+ * Lets values follow the record again, until the next session reports its own character set.
+ */
+- (void)forgetEscapedSession
+{
+	[valueEscaper forgetSession];
 }
 
 - (void)addClientFlags:(SPMySQLClientFlags)opts
@@ -399,6 +632,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		delegateDecisionLock = [[NSLock alloc] init];
 		delegateDecisionGate = [[SAConnectionLostDecisionGate alloc] init];
 		valueEscaper = [[SAConnectionEscaper alloc] init];
+		connectionCancellation = [[SAConnectionCancellation alloc] initWithHost:self];
 
 		// Set up the connection lock
 		connectionLock = [[NSConditionLock alloc] initWithCondition:SPMySQLConnectionIdle];
@@ -505,6 +739,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 {
     SPLog(@"reconnect");
 	userTriggeredDisconnect = NO;
+	// The user asked for this one, so it is theirs to wait for: the plain form runs on the
+	// configured timeout, whatever lost the session before.
 	return [self _reconnectAllowingRetries:YES];
 }
 
@@ -531,7 +767,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// If the connection has been allowed to drop in the background, restore it if posslbe
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, reconnecting");
-		[self _reconnectAllowingRetries:YES];
+		[self _reconnectAfterSessionLossAllowingRetries:YES];
 	}
 
 	return (state == SPMySQLConnected || state == SPMySQLDisconnecting);
@@ -646,11 +882,32 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)checkConnectionIfNecessary
 {
+	// A session marked to go is not spoken on - a ping would read an answer still on its way as
+	// its own - and so is not pinged to find out whether it is alive: it goes here, before any
+	// other use, and is restored like a session lost in the background. Whether it goes is
+	// decided with the connection held, from the session's own answer about what is open in it:
+	// a statement that finished a moment ago can have opened a transaction the record does not
+	// show yet. A marked session something is using right now - the keepalive that has just
+	// marked it, or a statement - is not pinged on top of that either, which waiting for the
+	// lock and checking would do: it is left to the statement that next takes the connection.
+	if ([self sessionReplacementMark] != SASessionReplacementMarkNotMarked) {
+		if (![self _tryLockConnection]) {
+			return YES;
+		}
+		if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+		                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
+			[self _closeSessionMarkedForReplacement];
+			[self _unlockConnection];
+			return [self _reconnectAfterSessionLossAllowingRetries:YES];
+		}
+		[self _unlockConnection];
+	}
+
 	// If the connection has been dropped in the background, trigger a
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
-		return [self _reconnectAllowingRetries:YES];
+		return [self _reconnectAfterSessionLossAllowingRetries:YES];
 	}
 	
 	// If the connection was recently used, return success - unless its socket
@@ -690,26 +947,50 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 /**
  * Returns true if the connected server runs MariaDB > 10.2, false Otherwise
+ *
+ * Answered from the version string recorded at handshake time: the raw handle can be
+ * closed - and mySQLConnection set to NULL - by a disconnect on another thread while UI
+ * code is still asking (see -isMariaDB).
  */
 - (BOOL)isNotMariadb103
 {
-    serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
-    NSLog(@"%@", [serverVariableVersion lowercaseString]);
+    NSString *versionString = [[self serverVersionString] lowercaseString];
+
+    if (!versionString) {
+        return true;
+    }
+
     NSString *someRegexp = @"(.*)10(\\.[3-9]+[0-9]*(\\.[0-9]*))*-(mariadb)(.*)";
     NSPredicate *myTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", someRegexp];
-    
-    if ([myTest evaluateWithObject: [serverVariableVersion lowercaseString]]){
+
+    if ([myTest evaluateWithObject: versionString]){
         return false;
     }
     return true;
 }
 
+/**
+ * Returns true if the connected server is MariaDB, false otherwise.
+ *
+ * Answered from the version string recorded at handshake time rather than from the raw
+ * MYSQL handle: a disconnect frees that handle and sets mySQLConnection to NULL, and this
+ * is reached from UI code that can still be drawing while a tab's connection is torn down
+ * (closing a tab detaches a background disconnect thread, #2413).
+ */
 - (BOOL) isMariaDB
 {
-  serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
-  // See more: https://regex101.com/r/0QRlsG/1
-  NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-[mariadb].*"];
-  if ([predicate evaluateWithObject: [serverVariableVersion lowercaseString]]){
+  NSString *versionString = [[self serverVersionString] lowercaseString];
+
+  // No connection has been made, so nothing is known about the server yet
+  if (!versionString) {
+    return false;
+  }
+
+  // The vendor suffix follows the version number: "10.11.8-MariaDB", "5.5.5-10.11.8-MariaDB-ubu2204".
+  // Match it as a whole name — written as a character class, "-[mariadb]" also matches MySQL
+  // builds such as "8.0.33-debug", which then incorrectly skip MySQL 8.4 restrictions.
+  NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-mariadb.*"];
+  if ([predicate evaluateWithObject: versionString]){
     return true;
   }
   
@@ -789,6 +1070,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 @implementation SPMySQLConnection (PrivateAPI)
 
 /**
+ * Takes the connection for a statement, replacing a session that is marked to be replaced first.
+ * The gate itself is SASessionGate; this connection is its host.
+ * @return Whether the connection is held with a usable session; NO leaves it released.
+ */
+- (BOOL)_lockUsableConnectionForQuery
+{
+	return [SASessionGate lockHost:self];
+}
+
+/**
  * Handle a connection using previously set parameters, returning success or failure.
  */
 - (BOOL)_connect
@@ -865,6 +1156,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// Successfully connected - record connected state and reset tracking variables
 	state = SPMySQLConnected;
+	// A new session is in step with the record it was connected with, and nothing is on its way to it.
+	[self markSessionReplacement:SASessionReplacementMarkNotMarked];
+	// And whatever lost the session before is answered for; so is a proxy a replacement left
+	// alone, now that a session is up through it.
+	sessionLostAfterFailedCheck = NO;
+	proxyUntouchedBySessionReplacement = NO;
 	// What the new session reports is recorded for the escaper, which escapes from this rather
 	// than from the connection's own handle.
 	[valueEscaper recordSessionCharacterSet:[NSString stringWithUTF8String:mysql_character_set_name(mySQLConnection)]
@@ -1351,6 +1648,20 @@ asm(".desc ___crashreporter_info__, 0x10");
 }
 
 /**
+ * Reconnects after the session was lost - in the background, or closed for replacement - on the
+ * limits of the check that lost it, when one did. A session lost to a keepalive ping that was cut
+ * off is restored on the failed check's budget, as the check itself restores a session whose ping
+ * failed: whoever uses the connection next is waiting for the interface, and must not wait out
+ * the configured timeout - or, with none configured, wait with no limit at all - before the
+ * question about the lost connection can reach them. A session let go for any other reason is
+ * restored on the configured timeout, as it always was.
+ */
+- (BOOL)_reconnectAfterSessionLossAllowingRetries:(BOOL)canRetry
+{
+	return [self _reconnectAllowingRetries:canRetry afterFailedCheck:sessionLostAfterFailedCheck];
+}
+
+/**
  * Re-establish the connection, on the time budget the attempt is entitled to, under the
  * session's reconnect lease.
  * An attempt that follows a failed connection check runs on the check's limits instead of the
@@ -1428,8 +1739,20 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		if ([self _abortCancelledReconnectWhileLocked]) return NO;
 
+		// A proxy that only had the MySQL session over it replaced, and still reports a
+		// connection, is used as it stands: nothing was asked of it, so there is nothing to wait
+		// for, and the wait for it to go idle would otherwise run the attempt's budget out. That
+		// holds for the retry after a handshake that failed as well - nothing has asked the proxy
+		// to go in between either - so the record stays until a disconnect does ask it, or a
+		// session comes up through it.
+		BOOL reconnectsThroughTheProxyAsItStands = proxy && [_proxyReconnectCoordinator reconnectsThroughProxyInState:[proxy state] untouchedBySessionReplacement:proxyUntouchedBySessionReplacement];
+		if (reconnectsThroughTheProxyAsItStands) {
+			port = [proxy localPort];
+			previousProxyState = [proxy state];
+			proxyStateChangeNotificationsIgnored = NO;
+
 		// If there is a proxy, attempt to reconnect it in blocking fashion
-		if (proxy) {
+		} else if (proxy) {
 
             SPLog(@"we have a proxy");
 
@@ -1630,7 +1953,7 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAfterBackgroundConnectionLoss
 {
-	if (![self _reconnectAllowingRetries:NO]) {
+	if (![self _reconnectAfterSessionLossAllowingRetries:NO]) {
 		state = SPMySQLConnectionLostInBackground;
 	}
 
@@ -1713,6 +2036,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// SSH attempt queued behind cleanup. Internal reconnect teardown keeps
 		// the existing inactive-state behavior and preserves that queued attempt.
 		if (!preserveProxyReconnect && proxy) {
+			proxyUntouchedBySessionReplacement = NO;
 			[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:NO];
 		}
 		return;
@@ -1754,6 +2078,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If using a connection proxy, disconnect that too
 	if (proxy) {
+		proxyUntouchedBySessionReplacement = NO;
 		[_proxyReconnectCoordinator disconnectProxy:proxy preservingReconnect:preserveProxyReconnect];
 	}
 }
