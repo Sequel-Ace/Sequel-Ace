@@ -83,7 +83,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
-        uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
