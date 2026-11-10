@@ -37,6 +37,11 @@ private final class SASearchAllTablesRunner {
     private let lock = NSLock()
     private var isCancelled = false
     private var isQuerying = false
+    /// The thread that makes the search's queries, so Stop cancels only them.
+    private var queryThread: Thread?
+    /// Held while Stop is sent. The search thread cannot end its query meanwhile, and so
+    /// it cannot take up other work on the connection that Stop would cancel instead.
+    private let stopLock = NSLock()
 
     init(connection: SPMySQLConnection, database: String) {
         self.connection = connection
@@ -107,19 +112,19 @@ private final class SASearchAllTablesRunner {
     func cancel() {
         lock.lock()
         isCancelled = true
-        let interrupt = isQuerying
+        let thread = isQuerying ? queryThread : nil
         lock.unlock()
-        guard interrupt else { return }
-        // cancelCurrentQuery opens a short-lived connection to run KILL QUERY,
-        // so keep it off the main thread. KILL QUERY stops whatever the
-        // connection is running, so check again once there that it is still
-        // the search's query: if that has finished meanwhile, the connection
-        // may already be running other work (an MCP request, a menu action).
-        // A query finishing while the KILL itself is being sent stays exposed;
-        // that window is cancelCurrentQuery's, for every caller.
+        guard let thread else { return }
+        // Cancelling can open a short-lived connection to run KILL QUERY, so
+        // keep it off the main thread. It is tied to the search's own call:
+        // when that call still waits behind other work on the connection (an
+        // MCP request, a menu action), the other work runs on, and the search's
+        // statement is not sent.
         DispatchQueue.global(qos: .userInitiated).async { [self] in
+            stopLock.lock()
+            defer { stopLock.unlock() }
             guard isSearchQueryRunning else { return }
-            connection.cancelCurrentQuery()
+            connection.cancelQuery(on: thread)
         }
     }
 
@@ -140,11 +145,14 @@ private final class SASearchAllTablesRunner {
         lock.lock()
         defer { lock.unlock() }
         isQuerying = !isCancelled
+        queryThread = Thread.current
         return isQuerying
     }
 
     /// Marks the query as done; `false` when the search was cancelled meanwhile.
     private func endQuery() -> Bool {
+        stopLock.lock()
+        defer { stopLock.unlock() }
         lock.lock()
         defer { lock.unlock() }
         isQuerying = false

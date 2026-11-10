@@ -743,7 +743,22 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
     SPLog(@"cancelCurrentQuery");
 	// If not connected, no action is required
 	if (state != SPMySQLConnected && state != SPMySQLDisconnecting) return;
-    [self.sessionAccess cancelQueryUsingKill:^BOOL(NSUInteger connectionThreadId) {
+    [self.sessionAccess cancelQueryUsingKill:[self _killQueryBlock]];
+}
+
+- (void)cancelQueryOnThread:(NSThread *)thread
+{
+	// No state check: a call waiting through a reconnect must still be marked as stopped.
+	// The session access sends no KILL without a tracked socket and server thread.
+    [self.sessionAccess cancelQueryOnThread:thread usingKill:[self _killQueryBlock]];
+}
+
+/**
+ * Runs KILL QUERY for the given server thread through a short-lived second connection.
+ */
+- (BOOL (^)(NSUInteger))_killQueryBlock
+{
+    return ^BOOL(NSUInteger connectionThreadId) {
         lastQueryWasCancelled = YES;
 
         // The query cancellation cannot occur on the connection actively running a query
@@ -788,7 +803,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
             SPLog(@"SPMySQL Framework: query cancellation failed because connection failed - %lu", connectionThreadId);
         }
         return NO;
-    }];
+    };
 }
 
 @end

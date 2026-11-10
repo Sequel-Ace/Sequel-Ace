@@ -340,3 +340,165 @@ final class SASessionLeaseQuestionTests: XCTestCase {
     }
 
 }
+
+/// Cancelling one caller's call must not cancel the work of another caller on the same session.
+///
+/// Search in All Tables runs its queries on a background thread, and an MCP request can hold
+/// the session while the search waits for it. A plain cancel stops whatever the session runs,
+/// which there is the MCP request. These pin down that a cancel tied to the search's thread
+/// leaves that request alone.
+final class SACallerCancellationTests: XCTestCase {
+
+    private let serverThreadID: UInt = 42
+    private var sockets: [Int32] = [-1, -1]
+
+    override func setUpWithError() throws {
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+    }
+
+    override func tearDown() {
+        sockets.forEach { if $0 >= 0 { close($0) } }
+    }
+
+    private func makeAccess() throws -> SAConnectionSessionAccess {
+        let access = SAConnectionSessionAccess()
+        try access.trackSocket(sockets[0], serverThreadID: serverThreadID)
+        return access
+    }
+
+    /// Runs `work` as one native statement inside a query call, as `queryString` does.
+    /// - Returns: Whether the statement was let through.
+    @discardableResult
+    private func runStatement(on access: SAConnectionSessionAccess, _ work: () -> Void = {}) -> Bool {
+        var sent = false
+        _ = access.performQuery {
+            sent = access.beginNativeQuery()
+            if sent { work() }
+            access.endNativeQuery()
+            return nil
+        }
+        return sent
+    }
+
+    /// Stop pressed while the search still waits behind another caller's statement.
+    func testStoppingACallThatWaitsForTheSessionLeavesTheCallAheadOfItAlone() throws {
+        let access = try makeAccess()
+        let theOtherCallRuns = DispatchSemaphore(value: 0)
+        let letTheOtherCallFinish = DispatchSemaphore(value: 0)
+        let theSearchIsAboutToWait = DispatchSemaphore(value: 0)
+        let bothHaveEnded = DispatchGroup()
+        var theOtherCallWasCancelled = true
+        var theSearchStatementWasSent = true
+        var theSearchWasReportedCancelled = false
+        var searchThread: Thread?
+
+        bothHaveEnded.enter()
+        Thread.detachNewThread {
+            self.runStatement(on: access) {
+                theOtherCallRuns.signal()
+                _ = letTheOtherCallFinish.wait(timeout: .now() + 10)
+                theOtherCallWasCancelled = access.currentQueryWasCancelled
+            }
+            bothHaveEnded.leave()
+        }
+        XCTAssertEqual(theOtherCallRuns.wait(timeout: .now() + 5), .success)
+
+        bothHaveEnded.enter()
+        Thread.detachNewThread {
+            searchThread = Thread.current
+            theSearchIsAboutToWait.signal()
+            _ = access.performQuery {
+                theSearchStatementWasSent = access.beginNativeQuery()
+                theSearchWasReportedCancelled = access.currentQueryWasCancelled
+                access.endNativeQuery()
+                return nil
+            }
+            bothHaveEnded.leave()
+        }
+        XCTAssertEqual(theSearchIsAboutToWait.wait(timeout: .now() + 5), .success)
+        // Give the search time to enter its wait for the session.
+        Thread.sleep(forTimeInterval: 0.2)
+
+        var killed = false
+        access.cancelQuery(on: try XCTUnwrap(searchThread)) { _ in
+            killed = true
+            return true
+        }
+        letTheOtherCallFinish.signal()
+        XCTAssertEqual(bothHaveEnded.wait(timeout: .now() + 10), .success)
+
+        XCTAssertFalse(killed, "the statement running was the other caller's")
+        XCTAssertFalse(theOtherCallWasCancelled)
+        XCTAssertFalse(theSearchStatementWasSent)
+        XCTAssertTrue(theSearchWasReportedCancelled)
+    }
+
+    /// Stop pressed while the search's own statement runs kills that statement.
+    func testStoppingACallWhoseStatementRunsKillsIt() throws {
+        let access = try makeAccess()
+        let theSearchRuns = DispatchSemaphore(value: 0)
+        let letTheSearchFinish = DispatchSemaphore(value: 0)
+        let theSearchHasEnded = expectation(description: "the search ended")
+        var searchThread: Thread?
+
+        Thread.detachNewThread {
+            searchThread = Thread.current
+            self.runStatement(on: access) {
+                theSearchRuns.signal()
+                _ = letTheSearchFinish.wait(timeout: .now() + 10)
+            }
+            theSearchHasEnded.fulfill()
+        }
+        XCTAssertEqual(theSearchRuns.wait(timeout: .now() + 5), .success)
+
+        var killedServerThread: UInt?
+        access.cancelQuery(on: try XCTUnwrap(searchThread)) { thread in
+            killedServerThread = thread
+            return true
+        }
+        letTheSearchFinish.signal()
+        wait(for: [theSearchHasEnded], timeout: 10)
+
+        XCTAssertEqual(killedServerThread, serverThreadID)
+    }
+
+    /// A stop that arrives after the search's call has ended does not reach the next caller,
+    /// even one on the same thread.
+    func testStoppingACallThatHasEndedDoesNothing() throws {
+        let access = try makeAccess()
+        let theOtherCallRuns = DispatchSemaphore(value: 0)
+        let letTheOtherCallFinish = DispatchSemaphore(value: 0)
+        let theOtherCallHasEnded = expectation(description: "the other call ended")
+        var theOtherCallWasCancelled = true
+        var nextStatementWasSent = false
+
+        let ended = Thread {
+            self.runStatement(on: access)
+        }
+        ended.start()
+        while !ended.isFinished { Thread.sleep(forTimeInterval: 0.01) }
+
+        Thread.detachNewThread {
+            self.runStatement(on: access) {
+                theOtherCallRuns.signal()
+                _ = letTheOtherCallFinish.wait(timeout: .now() + 10)
+                theOtherCallWasCancelled = access.currentQueryWasCancelled
+            }
+            theOtherCallHasEnded.fulfill()
+        }
+        XCTAssertEqual(theOtherCallRuns.wait(timeout: .now() + 5), .success)
+
+        var killed = false
+        access.cancelQuery(on: ended) { _ in
+            killed = true
+            return true
+        }
+        letTheOtherCallFinish.signal()
+        wait(for: [theOtherCallHasEnded], timeout: 10)
+        nextStatementWasSent = runStatement(on: access)
+
+        XCTAssertFalse(killed)
+        XCTAssertFalse(theOtherCallWasCancelled)
+        XCTAssertTrue(nextStatementWasSent)
+    }
+}

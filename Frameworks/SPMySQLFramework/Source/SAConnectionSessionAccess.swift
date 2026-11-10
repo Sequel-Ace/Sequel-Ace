@@ -27,6 +27,12 @@ import Darwin
     private var nativeOnlyCancellationThreads: Set<ObjectIdentifier> = []
     private var queryCancellationGeneration: UInt = 0
     private var queryCancellationTokens: [UInt] = []
+    /// Threads inside `performQuery`, waiting for the session or holding it, nesting counted.
+    private var callersInQuery: [ObjectIdentifier: Int] = [:]
+    /// The thread whose `performQuery` holds the session.
+    private var sessionHolder: ObjectIdentifier?
+    /// Callers stopped while they waited for the session. Each is admitted already cancelled.
+    private var stoppedCallers: Set<ObjectIdentifier> = []
     private var questionsAwaitingTheMainThread = 0
 
     /// Remember cancellation across setup queries run by the interrupted query's
@@ -129,7 +135,31 @@ import Darwin
     /// interrupts the socket: the next use recovers after the native result is done.
     @objc(cancelQueryUsingKill:)
     public func cancelQuery(usingKill kill: (UInt) -> Bool) {
+        cancelQuery(of: nil, usingKill: kill)
+    }
+
+    /// Cancel only the call made on `thread`, and leave every other caller's work alone.
+    ///
+    /// The plain cancel stops whatever the session is doing. A caller still waiting for the
+    /// session would stop the caller ahead of it instead. Here, a call that holds the session is
+    /// cancelled as by the plain cancel. A call still waiting is marked, and is let in already
+    /// cancelled, so its statement is not sent. A call that has ended is left alone: its thread
+    /// may already be doing unrelated work.
+    @objc(cancelQueryOnThread:usingKill:)
+    public func cancelQuery(on thread: Thread, usingKill kill: (UInt) -> Bool) {
+        cancelQuery(of: ObjectIdentifier(thread), usingKill: kill)
+    }
+
+    private func cancelQuery(of caller: ObjectIdentifier?, usingKill kill: (UInt) -> Bool) {
         let target = socketLock.withLock { () -> (query: UInt, socket: UInt, thread: UInt)? in
+            if let caller {
+                guard callersInQuery[caller] != nil else { return nil }
+                // Only the holder runs statements, so the active one, if any, is this call's.
+                guard sessionHolder == caller else {
+                    stoppedCallers.insert(caller)
+                    return nil
+                }
+            }
             guard cancellingQuery == nil else { return nil }
             guard let query = activeNativeQuery,
                   cancellationSocket >= 0, serverThreadID != 0 else {
@@ -211,15 +241,35 @@ import Darwin
 
     @objc(performQuery:recover:)
     public func performQuery(_ operation: () -> Any?, recover: () -> Bool) -> Any? {
+        let caller = ObjectIdentifier(Thread.current)
+        socketLock.withLock { callersInQuery[caller, default: 0] += 1 }
+        defer {
+            socketLock.withLock {
+                let depth = (callersInQuery[caller] ?? 1) - 1
+                callersInQuery[caller] = depth > 0 ? depth : nil
+                if depth == 0 { stoppedCallers.remove(caller) }
+            }
+        }
         guard acquire() else { return nil }
         // Anything refused while this call waited was somebody else's call, delivered by the
         // run loop this one pumped. It has been reported where it happened.
         forgetAnyRefusal()
-        socketLock.withLock { queryCancellationTokens.append(queryCancellationGeneration) }
+        let previousHolder = socketLock.withLock { () -> ObjectIdentifier? in
+            // A call stopped while it waited takes a token that is already out of date, so it
+            // is cancelled the same way as a call stopped during connection setup.
+            let stopped = stoppedCallers.remove(caller) != nil
+            queryCancellationTokens.append(stopped ? queryCancellationGeneration &- 1 : queryCancellationGeneration)
+            let previous = sessionHolder
+            sessionHolder = caller
+            return previous
+        }
         defer {
             // And anything refused inside the work answers for itself, not for this call.
             forgetAnyRefusal()
-            socketLock.withLock { _ = queryCancellationTokens.popLast() }
+            socketLock.withLock {
+                _ = queryCancellationTokens.popLast()
+                sessionHolder = previousHolder
+            }
             sessionLock.unlock()
         }
         let needsRecovery = takeRecoveryRequirement()
