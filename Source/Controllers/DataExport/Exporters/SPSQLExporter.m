@@ -37,6 +37,7 @@
 #import "RegexKitLite.h"
 #import "SPExportController.h"
 #import "SPFunctions.h"
+#import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
 #include <stdlib.h>
@@ -560,28 +561,17 @@
                                 [sqlString appendString:@"''"];
                             }
 
-                            // Add other data types as hex data
+                            // Decode textual data where appropriate; otherwise preserve the bytes as hex.
                             else if ([object isKindOfClass:[NSData class]]) {
-
-                                if ([self sqlOutputEncodeBLOBasHex]) {
+                                NSString *data = [SASQLExportData textFromData:object
+                                                                  fieldType:[fieldDetails objectForKey:@"type"]
+                                                            encodeBLOBAsHex:[self sqlOutputEncodeBLOBasHex]
+                                                        connectionEncoding:[connection stringEncoding]];
+                                if (data == nil) {
                                     [sqlString appendString:[connection escapeAndQuoteData:object]];
                                 }
                                 else {
-                                    // Raw bytes arrive in the connection encoding (utf8mb4, set above), which is
-                                    // independent of the file's output encoding. Text with a binary collation decodes
-                                    // and is written as a string; anything that is not valid in that encoding (real
-                                    // BLOB / VARBINARY content) keeps every byte through the hex form instead of a
-                                    // lossy re-decode.
-                                    NSString *data = [[NSString alloc] initWithData:object encoding:[connection stringEncoding]];
-
-                                    if (data == nil) {
-                                        [sqlString appendString:[connection escapeAndQuoteData:object]];
-                                    }
-                                    else {
-                                        // Whatever the column type, the decoded value is a string literal
-                                        // in the dump and has to be escaped like one.
-                                        [sqlString appendStringOrNil:[connection escapeAndQuoteString:data]];
-                                    }
+                                    [sqlString appendStringOrNil:[connection escapeAndQuoteString:data]];
                                 }
                             }
 

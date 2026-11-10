@@ -30,6 +30,7 @@
 
 #import "Ping & KeepAlive.h"
 #import "SPMySQL Private APIs.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import "Locking.h"
 #import <pthread.h>
 #include <stdio.h>
@@ -120,6 +121,17 @@ typedef struct {
 			goto end_cleanup;
 		}
 
+		// A session that is replaced before its next use is not kept alive either: a ping would
+		// only hold the connection, on a route that may have gone. A marked session that is kept,
+		// though, stays in normal use - the mark does not mean it goes, and one with a transaction
+		// open in it is deliberately kept rather than closed. Leaving that one unpinged is how the
+		// server's interactive_timeout, or a NAT's idle timeout, takes the uncommitted work that
+		// keeping it was for.
+		if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+		                                                 openTransaction:[self sessionHasOpenTransaction]]) {
+			goto end_cleanup;
+		}
+
 		// Otherwise, perform a background ping.
 		BOOL pingResult = [self _pingConnectionUsingLoopDelay:10000];
 		if (pingResult) {
@@ -149,6 +161,23 @@ end_cleanup:
  */
 - (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay
 {
+	// A ping cut off before its answer costs the session, and any transaction it has open, so a
+	// very short configured timeout does not shorten it further - SAConnectionCheckBudget keeps a
+	// minimum. Without a configured timeout it is thirty seconds, as before.
+	NSUInteger pingTimeout = timeout > 0
+		? [SAConnectionCheckBudget keepAlivePingTimeoutForConfiguredTimeout:timeout]
+		: 30;
+	return [self _pingConnectionUsingLoopDelay:loopDelay timeout:pingTimeout];
+}
+
+/**
+ * Pings the connection, waiting at most pingTimeout seconds for the answer.
+ *
+ * A check that only asks whether the connection still answers does not have to wait out the
+ * connection's full timeout; SAConnectionCheckBudget decides what it may spend.
+ */
+- (BOOL)_pingConnectionUsingLoopDelay:(NSUInteger)loopDelay timeout:(NSUInteger)pingTimeout
+{
     SPLog(@"_pingConnectionUsingLoopDelay");
 
 	if (state != SPMySQLConnected) return NO;
@@ -166,13 +195,20 @@ end_cleanup:
 		return NO;
 	}
 
+	// Asked again with the connection held: a ping that waited behind another, which was cut
+	// off and marked the session, must not speak on it - the answer to that other ping may still
+	// be on its way. The session goes here, under the lock, and this ping reports it as gone; the
+	// next use restores it.
+	if ([SAConnectionCancellation sessionIsReplacedBeforeUseWithMark:[self sessionReplacementMark]
+	                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
+		[self _closeSessionMarkedForReplacement];
+		[self _unlockConnection];
+		return NO;
+	}
+
 	volatile BOOL keepAliveLastPingSuccess = NO;
 	keepAliveLastPingBlocked = NO;
 	keepAlivePingThreadActive = YES;
-
-	// Use a ping timeout defaulting to thirty seconds, but using the connection timeout if set
-	NSUInteger pingTimeout = 30;
-	if (timeout > 0) pingTimeout = timeout;
 
 	// Set up a struct containing details the ping task will need
 	// we can do this on the stack since this method makes sure to outlive the ping thread
@@ -230,6 +266,17 @@ end_cleanup:
 	// Clean up
 	keepAlivePingThread_t = NULL;
 	pthread_attr_destroy(&attr);
+
+	// A ping cut off before its answer came may still get that answer, and the next statement
+	// would read it as its own. The session is replaced before it is used again; a transaction
+	// lost with it is reported like any other.
+	if ([SAConnectionCancellation replacesSessionAfterPingCutOff:(threadCancelled || keepAliveLastPingBlocked)
+	                                               pingSucceeded:keepAliveLastPingSuccess]) {
+		// Not merely better not reused: the answer to that ping may still arrive, so this session
+		// cannot be spoken on at all and goes even if a transaction is open in it. One word, so no
+		// reader sees the session marked and the reason not yet.
+		[self markSessionReplacement:SASessionReplacementMarkRegardless];
+	}
 
 	// Unlock the connection
 	[self _unlockConnection];

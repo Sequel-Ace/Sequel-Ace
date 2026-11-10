@@ -1,3 +1,36 @@
+## [6.1.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.1.0+%28*%29%22&expanded=true)
+
+### Added
+- Add missing English strings for the key and certificate chooser alerts ([b4824c605](https://github.com/Sequel-Ace/Sequel-Ace/commit/b4824c605ae8f3ead8b99f785118ef607def98ac), [#2763](https://github.com/Sequel-Ace/Sequel-Ace/pull/2763))
+
+### Fixed
+- Fix connection buttons alignment ([21e53c832](https://github.com/Sequel-Ace/Sequel-Ace/commit/21e53c832c4f8d700f2a50b39edd9133bf0275b9), [#2751](https://github.com/Sequel-Ace/Sequel-Ace/pull/2751))
+- Prevent crash when a lost connection is closed ([d529c5bf7](https://github.com/Sequel-Ace/Sequel-Ace/commit/d529c5bf7be2959a4347c4f97a5a55e026fee7e4), [#2753](https://github.com/Sequel-Ace/Sequel-Ace/pull/2753))
+
+### Changed
+- Bound connection-loss detection and recovery checks ([1b0bb5b94](https://github.com/Sequel-Ace/Sequel-Ace/commit/1b0bb5b94e7359859160556f742c9ae28ea706b7), [#2723](https://github.com/Sequel-Ace/Sequel-Ace/pull/2723))
+- Only show INET column types for compatible MariaDB version ([215d63bc3](https://github.com/Sequel-Ace/Sequel-Ace/commit/215d63bc31a99d73fd29ebdf582142ed05494a95), [#2772](https://github.com/Sequel-Ace/Sequel-Ace/pull/2772))
+- Searchable database selector ([424e86ad7](https://github.com/Sequel-Ace/Sequel-Ace/commit/424e86ad7b978372f4e21030bd2133c003487e07), [#2762](https://github.com/Sequel-Ace/Sequel-Ace/pull/2762))
+- Restore Sphinx queries with no selected database ([c4cd337f4](https://github.com/Sequel-Ace/Sequel-Ace/commit/c4cd337f4dfa2b81984f47e3a8e8b2aad0fd5d6b), [#2768](https://github.com/Sequel-Ace/Sequel-Ace/pull/2768))
+- New Crowdin updates ([a82ae6c30](https://github.com/Sequel-Ace/Sequel-Ace/commit/a82ae6c3059e1c0df3ae767602f25e7e823d666b), [#2766](https://github.com/Sequel-Ace/Sequel-Ace/pull/2766))
+- Stop the filter drop zone's endless layout passes while tables load ([02c910932](https://github.com/Sequel-Ace/Sequel-Ace/commit/02c91093279f8369da6d82fe62762de7ae078840), [#2750](https://github.com/Sequel-Ace/Sequel-Ace/pull/2750))
+- Tahoe layout improvements ([7c8232586](https://github.com/Sequel-Ace/Sequel-Ace/commit/7c8232586f9d6c979b30d1bf22f7f271f11e7392), [#2754](https://github.com/Sequel-Ace/Sequel-Ace/pull/2754))
+- Validate automatic Cloud tag triggers before releasing ([1f2798da9](https://github.com/Sequel-Ace/Sequel-Ace/commit/1f2798da98d7cd8eef5cb5be97ce23de06733202), [#2748](https://github.com/Sequel-Ace/Sequel-Ace/pull/2748))
+
+### Removed
+
+
+### Infra
+- Bump actions/create-github-app-token from 3.2.0 to 3.3.0 ([8f7a08869](https://github.com/Sequel-Ace/Sequel-Ace/commit/8f7a088698ac900fcca93d9787d07ae2fcec81c0), [#2769](https://github.com/Sequel-Ace/Sequel-Ace/pull/2769))
+- Bump jekyll-relative-links from 0.6.1 to 0.9.1 in /docs ([9a0d6c9b6](https://github.com/Sequel-Ace/Sequel-Ace/commit/9a0d6c9b6ced20fab8bb015d1652a67dd338fb4d), [#2770](https://github.com/Sequel-Ace/Sequel-Ace/pull/2770))
+- Bump ruby/setup-ruby from 1.328.0 to 1.329.0 ([c606ccd13](https://github.com/Sequel-Ace/Sequel-Ace/commit/c606ccd1340617c0372a252d7fd769ab27c7e858), [#2771](https://github.com/Sequel-Ace/Sequel-Ace/pull/2771))
+- Bump jekyll-default-layout from 0.1.5 to 0.2.1 in /docs ([76035d743](https://github.com/Sequel-Ace/Sequel-Ace/commit/76035d743c6774ac319b0a6b6d95de92804fc256), [#2761](https://github.com/Sequel-Ace/Sequel-Ace/pull/2761))
+- Bump jekyll-optional-front-matter from 0.3.2 to 0.3.4 in /docs ([cf32ac176](https://github.com/Sequel-Ace/Sequel-Ace/commit/cf32ac176699ad661fabdfa3faa8a63218af6f72), [#2760](https://github.com/Sequel-Ace/Sequel-Ace/pull/2760))
+- Bump jekyll-readme-index from 0.3.0 to 0.5.1 in /docs ([2d0f5f1ce](https://github.com/Sequel-Ace/Sequel-Ace/commit/2d0f5f1ced398330322d6c03f2bc76daa7c91019), [#2758](https://github.com/Sequel-Ace/Sequel-Ace/pull/2758))
+- Bump jekyll-titles-from-headings from 0.5.3 to 0.5.7 in /docs ([dcca600ca](https://github.com/Sequel-Ace/Sequel-Ace/commit/dcca600ca861a495fbcaf32215e5cec09f3b4a9d), [#2756](https://github.com/Sequel-Ace/Sequel-Ace/pull/2756))
+- Bump ruby/setup-ruby from 1.327.0 to 1.328.0 ([92e5b625b](https://github.com/Sequel-Ace/Sequel-Ace/commit/92e5b625b1b43f0e643b2bfc56e0e2b02f2a4a53), [#2757](https://github.com/Sequel-Ace/Sequel-Ace/pull/2757))
+- Bump actions/upload-artifact from 7.0.1 to 7.0.2 ([8dd642c9b](https://github.com/Sequel-Ace/Sequel-Ace/commit/8dd642c9bfb93e75c2e3ae39efb8eb31238dc926), [#2755](https://github.com/Sequel-Ace/Sequel-Ace/pull/2755))
+
 ## [6.0.3](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%226.0.3+%28*%29%22&expanded=true)
 
 ### Added
