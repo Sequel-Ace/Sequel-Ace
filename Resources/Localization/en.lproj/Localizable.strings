@@ -232,6 +232,12 @@
 /* Search in All Tables sheet : status when the connection is busy */
 "Sequel Ace is busy. Try again when the current task has finished." = "Sequel Ace is busy. Try again when the current task has finished.";
 
+/* Search in All Tables sheet : alert title when a result cannot be shown as a filter ($1 = table name) */
+"Show all rows of “%@”?" = "Show all rows of “%@”?";
+
+/* Search in All Tables sheet : alert button to open the table without a filter */
+"Show Table" = "Show Table";
+
 /* Search in All Tables sheet : table name filter label */
 "Tables:" = "Tables:";
 
@@ -240,6 +246,9 @@
 
 /* Search in All Tables sheet : status when the column list could not be read ($1 = MySQL error) */
 "The search failed: %@" = "The search failed: %@";
+
+/* Search in All Tables sheet : alert message when a result cannot be shown as a filter */
+"This search cannot be shown as a content filter, so the table opens without a filter and shows every row, not only the matching ones." = "This search cannot be shown as a content filter, so the table opens without a filter and shows every row, not only the matching ones.";
 
 /* Search in All Tables sheet : search text placeholder */
 "Value to search for" = "Value to search for";

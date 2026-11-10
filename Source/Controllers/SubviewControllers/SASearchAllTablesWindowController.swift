@@ -521,8 +521,23 @@ private struct SASearchAllTablesResultsView: View, Equatable {
         guard !model.isSearching, let row = model.results.first(where: { $0.id == id }), let match = row.match else { return }
         let filter = SASearchAllTablesFilterBuilder.serializedFilter(for: match, table: row.table, text: model.searchedText,
                                                                      mode: model.searchedMode, backslashEscapes: model.searchedBackslashEscapes)
-        dismissSheet()
-        showContent(of: row.table.name, filter: filter)
+        guard filter == nil else {
+            dismissSheet()
+            showContent(of: row.table.name, filter: filter)
+            return
+        }
+        // The content filter cannot express this search, so the table opens
+        // with all its rows. Say so, rather than going from a count of matching
+        // rows to every row with no explanation.
+        NSAlert.createDefaultAlert(
+            title: String(format: NSLocalizedString("Show all rows of “%@”?", comment: "Search in All Tables sheet : alert title when a result cannot be shown as a filter ($1 = table name)"), row.table.name),
+            message: NSLocalizedString("This search cannot be shown as a content filter, so the table opens without a filter and shows every row, not only the matching ones.", comment: "Search in All Tables sheet : alert message when a result cannot be shown as a filter"),
+            primaryButtonTitle: NSLocalizedString("Show Table", comment: "Search in All Tables sheet : alert button to open the table without a filter"),
+            primaryButtonHandler: { [weak self] in
+                self?.dismissSheet()
+                self?.showContent(of: row.table.name, filter: nil)
+            }
+        )
     }
 
     private func dismissSheet() {
