@@ -833,6 +833,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	[connectionCancellation requestCancellationSynchronously:YES];
 }
 
+- (void)cancelQueryOnThread:(NSThread *)thread
+{
+	// As cancelCurrentQuery, for one caller only: a query still waiting for the session behind
+	// another caller's statement is stopped before it is sent, and that statement runs on.
+	[connectionCancellation requestCancellationOfThread:thread synchronously:YES];
+}
+
 @end
 
 #pragma mark -

@@ -30,6 +30,13 @@ import Darwin
     /// on any thread - waiting for the session included. A stop recorded while one of them waits
     /// reaches it; one recorded while none is pending reaches nothing.
     private var pendingOperations = 0
+    /// The same count for each thread, which is how deep that thread's operations are nested.
+    private var pendingOperationsByThread: [ObjectIdentifier: Int] = [:]
+    /// For a thread stopped on its own, how many of its operations, outermost first, the stop
+    /// reaches. An operation it nests later is not reached, like one begun after any other stop.
+    private var stoppedDepthByThread: [ObjectIdentifier: Int] = [:]
+    /// The thread whose operation holds the session. Only it runs native statements.
+    private var sessionHolder: ObjectIdentifier?
     /// The native query the server already accepted a request to kill, while it is still running.
     private var queryWithAcceptedKill: UInt?
     private var questionsAwaitingTheMainThread = 0
@@ -51,8 +58,10 @@ import Darwin
     /// it stands now. A stop recorded from here on - while the operation waits for the session,
     /// or runs - moves the generation past it; one recorded before it began does not.
     private func enterOperation() {
+        let thread = ObjectIdentifier(Thread.current)
         let token = socketLock.withLock { () -> UInt in
             pendingOperations += 1
+            pendingOperationsByThread[thread, default: 0] += 1
             return queryCancellationGeneration
         }
         operationTokensOfThisThread.append(token)
@@ -60,7 +69,15 @@ import Darwin
 
     /// Ends the operation this thread entered last.
     private func leaveOperation() {
-        socketLock.withLock { pendingOperations -= 1 }
+        let thread = ObjectIdentifier(Thread.current)
+        socketLock.withLock {
+            pendingOperations -= 1
+            let depth = (pendingOperationsByThread[thread] ?? 1) - 1
+            pendingOperationsByThread[thread] = depth > 0 ? depth : nil
+            if let stopped = stoppedDepthByThread[thread], stopped > depth {
+                stoppedDepthByThread[thread] = depth > 0 ? depth : nil
+            }
+        }
         var tokens = operationTokensOfThisThread
         _ = tokens.popLast()
         operationTokensOfThisThread = tokens
@@ -73,10 +90,17 @@ import Darwin
     }
 
     @objc public var currentQueryWasCancelled: Bool {
-        guard let token = operationTokensOfThisThread.last else {
+        let tokens = operationTokensOfThisThread
+        guard let token = tokens.last else {
             return false
         }
-        return socketLock.withLock { token != queryCancellationGeneration }
+        return socketLock.withLock { token != queryCancellationGeneration || threadStopReaches(depth: tokens.count) }
+    }
+
+    /// Whether a stop for this thread alone reaches its operation at `depth`. Called under the
+    /// socket lock.
+    private func threadStopReaches(depth: Int) -> Bool {
+        (stoppedDepthByThread[ObjectIdentifier(Thread.current)] ?? 0) >= depth
     }
 
     deinit {
@@ -126,11 +150,12 @@ import Darwin
     /// The socket and server ID were published together from the same MYSQL handle.
     @discardableResult
     @objc public func beginNativeQuery() -> Bool {
-        let token = operationTokensOfThisThread.last
+        let tokens = operationTokensOfThisThread
         return socketLock.withLock {
             nativeQueryGeneration &+= 1
             activeNativeQuery = nativeQueryGeneration
-            return token.map { $0 == queryCancellationGeneration } ?? true
+            guard let token = tokens.last else { return true }
+            return token == queryCancellationGeneration && !threadStopReaches(depth: tokens.count)
         }
     }
 
@@ -213,6 +238,47 @@ import Darwin
             cancellingQuery = query
             cancellingSocketGeneration = socketGeneration
             queryCancellationGeneration &+= 1
+            return SACancellationHold(query: query, session: socketGeneration, serverThread: serverThreadID,
+                                      holdsTheQuery: true, killWasAlreadyAccepted: false)
+        }
+    }
+
+    /// Reserves the cancellation of the operations one thread is in, and of nobody else's.
+    ///
+    /// ``reserveCancellation()`` stops whatever is pending, on every thread, and kills whatever
+    /// statement runs. A caller still waiting for the session would so stop the caller ahead of
+    /// it, and every other caller waiting. Here, the stop reaches only the operations `thread` is
+    /// in now, and the statement is killed only when it is theirs: only the operation holding the
+    /// session runs one. A thread whose operations have all ended is not stopped at all - it may
+    /// already be doing unrelated work.
+    /// - Parameter thread: The thread the caller to stop is on.
+    /// - Returns: What this cancellation was given, as ``reserveCancellation()`` describes it.
+    @objc(reserveCancellationOfThread:)
+    public func reserveCancellation(of thread: Thread) -> SACancellationHold {
+        let caller = ObjectIdentifier(thread)
+        return socketLock.withLock {
+            let nothingToKill = SACancellationHold(query: 0, session: 0, serverThread: 0,
+                                                   holdsTheQuery: true, killWasAlreadyAccepted: false)
+            guard let depth = pendingOperationsByThread[caller] else {
+                return nothingToKill
+            }
+            stoppedDepthByThread[caller] = max(stoppedDepthByThread[caller] ?? 0, depth)
+            guard sessionHolder == caller, let query = activeNativeQuery,
+                  cancellationSocket >= 0, serverThreadID != 0 else {
+                // Still waiting for the session, or setting it up: the mark keeps the
+                // statement from being sent.
+                return nothingToKill
+            }
+            guard cancellingQuery == nil else {
+                return SACancellationHold(query: 0, session: 0, serverThread: 0,
+                                          holdsTheQuery: false, killWasAlreadyAccepted: false)
+            }
+            if queryWithAcceptedKill == query {
+                return SACancellationHold(query: query, session: socketGeneration, serverThread: 0,
+                                          holdsTheQuery: true, killWasAlreadyAccepted: true)
+            }
+            cancellingQuery = query
+            cancellingSocketGeneration = socketGeneration
             return SACancellationHold(query: query, session: socketGeneration, serverThread: serverThreadID,
                                       holdsTheQuery: true, killWasAlreadyAccepted: false)
         }
@@ -368,9 +434,15 @@ import Darwin
         // Anything refused while this call waited was somebody else's call, delivered by the
         // run loop this one pumped. It has been reported where it happened.
         forgetAnyRefusal()
+        let thread = ObjectIdentifier(Thread.current)
+        let previousHolder = socketLock.withLock { () -> ObjectIdentifier? in
+            defer { sessionHolder = thread }
+            return sessionHolder
+        }
         defer {
             // And anything refused inside the work answers for itself, not for this call.
             forgetAnyRefusal()
+            socketLock.withLock { sessionHolder = previousHolder }
             sessionLock.unlock()
         }
         let needsRecovery = takeRecoveryRequirement()
