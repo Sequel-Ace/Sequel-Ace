@@ -218,6 +218,7 @@
 // Accessors
 - (NSArray *)currentResult;
 - (NSArray *)currentDataResultWithNULLs:(BOOL)includeNULLs truncateDataFields:(BOOL)truncate;
+- (NSArray *)currentRawDataResult;
 - (NSUInteger)currentResultRowCount;
 - (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore;
 
@@ -226,6 +227,7 @@
 - (NSIndexSet *)resultSelectedRowIndexes;
 - (NSRect)resultViewport;
 - (NSArray *)dataColumnDefinitions;
+- (NSArray *)exportDataColumnDefinitions;
 - (void)setResultSelectedRowIndexesToRestore:(NSIndexSet *)theIndexSet;
 - (void)setResultViewportToRestore:(NSRect)theViewport;
 - (void)storeCurrentResultViewForRestoration;

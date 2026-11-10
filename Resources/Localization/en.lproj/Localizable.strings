@@ -146,6 +146,9 @@
 /* rename database refused because the connection could not be switched to a UTF-8 character set */
 "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed." = "The connection could not be switched to UTF-8, which Rename Database needs to move view definitions without loss. Nothing was changed.";
 
+/* JSON export : reason a table was not exported in full */
+"The connection to the server was lost." = "The connection to the server was lost.";
+
 /* rename database: the connection's settings could not be put back after the rename (or after refusing it) and reconnecting failed too; shown as a warning after a successful rename or appended to the failure */
 "The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries." = "The connection's character set, collation or SQL mode could not be restored after Rename Database, and re-establishing it failed; reconnect before running further queries.";
 
@@ -167,8 +170,14 @@
 /* error message if max_allowed_packet < query size */
 "The query length of %lu bytes is larger than max_allowed_packet size (%lu)." = "The query length of %lu bytes is larger than max_allowed_packet size (%lu).";
 
+/* JSON export : reason a table was not exported in full */
+"The server did not give a reason." = "The server did not give a reason.";
+
 /* Error for a statement refused because no usable session could be taken for it; the next statement reconnects */
 "The statement was not sent: the connection's session could not be used and is being replaced. Please try again." = "The statement was not sent: the connection's session could not be used and is being replaced. Please try again.";
+
+/* JSON export : error when a table could not be read ($1 = table name, $2 = reason) */
+"The table “%1$@” was not exported in full: %2$@" = "The table “%1$@” was not exported in full: %2$@";
 
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
 "The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
@@ -827,6 +836,9 @@
 
 /* quitting app informal alert body */
 "Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+
+/* table list and query result : context menu : Export submenu : export as JSON */
+"As JSON file..." = "As JSON file...";
 
 /* character set client: %@ */
 "character set client: %@" = "character set client: %@";
@@ -1896,6 +1908,9 @@
 /* items */
 "items" = "items";
 
+/* export : export dialog : tab label for the JSON export format */
+"JSON" = "JSON";
+
 /* javascript exception */
 "JavaScript Exception" = "JavaScript Exception";
 
@@ -2253,6 +2268,9 @@
 
 /* Please enter the password */
 "Please enter the password for ‘%@’:" = "Please enter the password for ‘%@’:";
+
+/* export : export dialog : JSON options : checkbox that indents the exported JSON */
+"Pretty print" = "Pretty print";
 
 /* print button */
 "Print" = "Print";
