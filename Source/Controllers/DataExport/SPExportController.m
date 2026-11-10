@@ -96,6 +96,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPExportController () <SPCSVExporterProtocol, SPSQLExporterProtocol, SPXMLExporterProtocol, SPDotExporterProtocol, SPPDFExporterProtocol, SPHTMLExporterProtocol, SAJSONExporterDelegate, NSMenuItemValidation, NSControlTextEditingDelegate>
 @property (readwrite, copy) NSString *exportDatabaseName;
+/// Errors of the JSON exporters of the running export, one per line, shown when it ends.
+@property (nonatomic, strong) NSMutableString *jsonExportErrors;
 
 - (void)_switchTab;
 - (void)_checkForDatabaseChanges;
@@ -1690,6 +1692,8 @@ set_input:
 	else if (exportType == SPJSONExport) {
 
 		SAJSONExporter *jsonExporter = nil;
+
+		self.jsonExportErrors = [NSMutableString string];
 
 		// If the user has selected to only export to a single file or this is a filtered or custom query
 		// export, create the single file now and assign it to all subsequently created exporters.
@@ -4100,6 +4104,10 @@ set_input:
 
 - (void)jsonExportProcessComplete:(SAJSONExporter *)exporter
 {
+	if ([exporter jsonExportError]) {
+		[self.jsonExportErrors appendFormat:@"%@\n", [exporter jsonExportError]];
+	}
+
 	// If required add the next exporter to the operation queue
 	if (([exporters count] > 0) && (exportSource == SPTableExport)) {
 
@@ -4120,6 +4128,11 @@ set_input:
 		[[exporter exportOutputFile] close];
 
 		[self exportEnded];
+
+		// A table that could not be read is still written as valid JSON, so say which ones
+		if ([self.jsonExportErrors length]) {
+			[self openExportErrorsSheetWithString:self.jsonExportErrors];
+		}
 	}
 }
 

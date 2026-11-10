@@ -233,6 +233,31 @@ final class SAJSONExportFormatter: NSObject {
         return text
     }
 
+    /// Why reading a table for export failed, or `nil` when every row was read.
+    ///
+    /// A table with no rows reads without an error, and is exported as an empty array. A query that
+    /// fails, whether before the first row or partway through the rows, is reported instead. It must
+    /// not pass as an empty table, or as a table with fewer rows.
+    ///
+    /// - Parameters:
+    ///   - tableName: The table being exported.
+    ///   - queryErrored: The connection's error state, once the query was sent or once the rows ended.
+    ///   - serverMessage: The connection's last error message.
+    ///   - isConnected: Whether the connection is still up. A dropped connection ends the rows too.
+    static func tableReadFailure(tableName: String, queryErrored: Bool, serverMessage: String?, isConnected: Bool) -> String? {
+        let reason: String
+        if queryErrored, let serverMessage, !serverMessage.isEmpty {
+            reason = serverMessage
+        } else if !isConnected {
+            reason = NSLocalizedString("The connection to the server was lost.", comment: "JSON export : reason a table was not exported in full")
+        } else if queryErrored {
+            reason = NSLocalizedString("The server did not give a reason.", comment: "JSON export : reason a table was not exported in full")
+        } else {
+            return nil
+        }
+        return String(format: NSLocalizedString("The table “%1$@” was not exported in full: %2$@", comment: "JSON export : error when a table could not be read ($1 = table name, $2 = reason)"), tableName, reason)
+    }
+
     /// Whether `string` is a number as the JSON grammar (RFC 8259 §6) defines it:
     /// `-? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?`
     static func isJSONNumber(_ string: String) -> Bool {

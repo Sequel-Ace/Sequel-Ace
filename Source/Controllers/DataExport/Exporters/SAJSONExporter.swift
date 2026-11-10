@@ -48,6 +48,10 @@ import Foundation
     var jsonIsFirstTableInFile = true
     var jsonIsLastTableInFile = true
 
+    /// Why the table could not be read in full, or `nil`. Set before `jsonExportProcessComplete`
+    /// is called. The file is still one valid JSON document, so the controller must show this.
+    private(set) var jsonExportError: String?
+
     init(delegate: SAJSONExporterDelegate) {
         self.delegate = delegate
         super.init()
@@ -88,6 +92,15 @@ import Foundation
             streamingResult = connection.streamingQueryString("SELECT * FROM \(quotedTableName)",
                                                               useLowMemoryBlockingStreaming: exportUsingLowMemoryBlockingStreaming,
                                                               assertingDatabase: databaseName) as? SPMySQLStreamingResult
+            if streamingResult == nil || connection.queryErrored() {
+                // Read the error before the result is let go: that unlocks the connection
+                jsonExportError = SAJSONExportFormatter.tableReadFailure(tableName: tableName,
+                                                                         queryErrored: true,
+                                                                         serverMessage: connection.lastErrorMessage(),
+                                                                         isConnected: connection.isConnected())
+                streamingResult?.cancelLoad()
+                streamingResult = nil
+            }
             guard let streamingResult else {
                 // Still write this table's empty array — a bare `[]` in a file of its own, or an
                 // empty member when tables share a file — so the file is one valid JSON document
@@ -173,6 +186,15 @@ import Foundation
             }
 
             notifyDelegate { $0.jsonExportProcessProgressUpdated(self) }
+        }
+
+        // The rows also end when a fetch fails or the connection drops. Report that, so a
+        // table cut short does not pass as a smaller one.
+        if streamingResult != nil {
+            jsonExportError = SAJSONExportFormatter.tableReadFailure(tableName: tableName,
+                                                                     queryErrored: connection.queryErrored(),
+                                                                     serverMessage: connection.lastErrorMessage(),
+                                                                     isConnected: connection.isConnected())
         }
 
         write(formatter.closing(rowCount: rowsWritten, isLastInFile: jsonIsLastTableInFile))

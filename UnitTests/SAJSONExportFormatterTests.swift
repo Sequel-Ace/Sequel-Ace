@@ -640,4 +640,39 @@ final class SAJSONExportFormatterTests: XCTestCase {
             XCTAssertEqual(parsed?[1]["note"] as? String, "")
         }
     }
+
+    // MARK: - Read failures
+
+    /// A table with no rows reads without an error. It is exported as an empty array, and is not
+    /// reported as a failure.
+    func testAnEmptyTableIsNotAFailure() {
+        XCTAssertNil(SAJSONExportFormatter.tableReadFailure(tableName: "t", queryErrored: false, serverMessage: "", isConnected: true))
+    }
+
+    /// A table that no longer exists fails before the first row. It must be reported, with the
+    /// server's reason, and not pass as an empty table.
+    func testATableThatCannotBeQueriedIsAFailureWithTheServersReason() throws {
+        let failure = try XCTUnwrap(SAJSONExportFormatter.tableReadFailure(tableName: "t", queryErrored: true,
+                                                                           serverMessage: "Table 'db.t' doesn't exist", isConnected: true))
+        XCTAssertTrue(failure.contains("“t”"))
+        XCTAssertTrue(failure.contains("Table 'db.t' doesn't exist"))
+    }
+
+    /// A fetch that fails partway through ends the rows, the same as the end of the table. The
+    /// error left on the connection is what tells the two apart.
+    func testAFetchThatFailsPartwayIsAFailure() throws {
+        let failure = try XCTUnwrap(SAJSONExportFormatter.tableReadFailure(tableName: "t", queryErrored: true,
+                                                                           serverMessage: "Lost connection to server during query", isConnected: true))
+        XCTAssertTrue(failure.contains("Lost connection to server during query"))
+    }
+
+    /// A dropped connection also ends the rows, sometimes with no error recorded.
+    func testADroppedConnectionIsAFailureEvenWithoutAnError() {
+        XCTAssertNotNil(SAJSONExportFormatter.tableReadFailure(tableName: "t", queryErrored: false, serverMessage: nil, isConnected: false))
+    }
+
+    /// An error without a message is still a failure.
+    func testAnErrorWithoutAMessageIsStillAFailure() {
+        XCTAssertNotNil(SAJSONExportFormatter.tableReadFailure(tableName: "t", queryErrored: true, serverMessage: "", isConnected: true))
+    }
 }
