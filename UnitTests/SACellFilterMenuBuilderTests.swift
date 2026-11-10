@@ -242,6 +242,21 @@ final class SACellValueCopyMenuBuilderTests: XCTestCase {
         ))
     }
 
+    func testColumnValueItemsGoBelowTheLastCopyCommandWhateverItsOrder() {
+        let copyTags: Set<Int> = [2001, 2003, 2004, 2005]
+        let other = 9_999
+
+        XCTAssertEqual(SACellValueCopyMenuBuilder.insertionIndex(
+            menuItemTags: [2001, 2003, 2004, 2005, other], copyCommandTags: copyTags
+        ), 4)
+        XCTAssertEqual(SACellValueCopyMenuBuilder.insertionIndex(
+            menuItemTags: [2005, 2004, other, other], copyCommandTags: copyTags
+        ), 2)
+        XCTAssertEqual(SACellValueCopyMenuBuilder.insertionIndex(
+            menuItemTags: [other, other], copyCommandTags: copyTags
+        ), 2)
+    }
+
     func testSQLCopyDefersTextGenerationUntilTheActionIsInvoked() {
         let items = SACellValueCopyMenuBuilder.deferredMenuItemDescriptors(
             columnName: "name",
