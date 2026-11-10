@@ -304,21 +304,11 @@ private struct SADatabasePickerSearchField: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSSearchField {
-        let searchField = FocusingSearchField()
+        let searchField = NSSearchField()
         searchField.placeholderString = placeholder
         searchField.delegate = context.coordinator
         searchField.focusRingType = .none
         return searchField
-    }
-
-    /// Takes focus as soon as it lands in the popover's window. The window
-    /// isn't attached when `makeNSView` runs, and a main-queue hop isn't
-    /// guaranteed to run after SwiftUI moves the view into it.
-    private final class FocusingSearchField: NSSearchField {
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            window?.makeFirstResponder(self)
-        }
     }
 
     func updateNSView(_ nsView: NSSearchField, context: Context) {
