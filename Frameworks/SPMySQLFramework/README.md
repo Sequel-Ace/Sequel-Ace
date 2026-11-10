@@ -35,6 +35,53 @@ To add as a subproject in Xcode:
 As a last resort jump onto IRC and join #sequel-pro on irc.freenode.net and any of the
 developers will be more than happy to help you out.
 
+## Framework tests in CI
+
+The PR Tests workflow runs the framework's own `SPMySQL.framework` scheme in a
+separate GitHub-hosted macOS job; the app's `Unit Tests` scheme does not include
+these tests. To run the same job locally on a Mac with full Xcode and Homebrew:
+
+```sh
+brew install mysql@8.4
+bash Scripts/test-spmysql-framework.sh # from the repository root
+```
+
+The job uses `macos-latest` and its selected full Xcode, rather than a versioned
+developer-directory path or a fixed processor architecture. Both app and framework
+test scripts share `Scripts/select-xcode.sh`. It honors a
+`DEVELOPER_DIR` override, rejects Command Line Tools-only installations, logs the
+actual Xcode version and checks for the xcresult API it needs before starting a
+database. MySQL stays on the **8.4 LTS series**, accepting Homebrew's patch updates
+without floating onto an incompatible Innovation/major release. GitHub Actions
+remain pinned by commit for supply-chain integrity.
+
+The script initializes a private MySQL 8.4 data directory under `/tmp`, binds TCP
+to loopback port 13306, and passes its private socket and port to XCTest using
+`TEST_RUNNER_SPMYSQL_TEST_*`. It never starts a Homebrew service or uses an existing
+database. Its passwordless root accounts exist only in this throwaway instance,
+which is stopped and removed on exit. Do not point this job at a shared server:
+the integration tests create users/databases and temporarily change global
+settings. Tests run serially so those settings cannot race between suites.
+
+Each invocation gets a fresh results directory under `build/spmysql-ci/`, so local
+reruns do not collide with an existing xcresult bundle. Logs are uploaded by CI, including
+on failure. The result verifier requires the escaping and database-assertion live
+suites to have test cases and rejects every non-passing live test except the
+explicit Sphinx-only skip (this job does not provision Sphinx).
+
+This CI change is independent of #2775. Its session-identity tests are not copied
+here; Xcode enumerates registered, compiled `*IntegrationTests` classes with the
+same scheme/settings used to run the tests. Comments and inactive conditional
+branches cannot invent suites, and source filenames do not affect discovery.
+Every enumerated live test must appear in the results, without skips. New tests
+must be registered in the framework's test target, as #2775's tests already are.
+Compiled cancellation, gate or statement-byte policy suites also require the live
+session-identity suite, so accidental unregistration of that suite fails coverage.
+The full framework scheme already
+includes its cancellation, gate and statement-byte tests once #2775 is merged.
+The verifier's synthetic positive/negative checks run before the native tests:
+`xcrun swift Scripts/verify-spmysql-results.swift --self-test`.
+
 ## License
 
 Copyright (c) 2018 Rowan Beentje (rowan.beent.je) & the Sequel Pro team. All rights reserved.

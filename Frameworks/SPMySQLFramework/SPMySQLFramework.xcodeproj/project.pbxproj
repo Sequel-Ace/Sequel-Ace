@@ -7,19 +7,40 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		09584614D4B176F7BE8DC59E /* SAConnectionSocketTimeouts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E051E89ACCA860F7CDF253C /* SAConnectionSocketTimeouts.swift */; };
+		869323BC9B5A7999A14CDC4B /* SAConnectionCancellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81C2F0D1FE3D98CA839210F7 /* SAConnectionCancellation.swift */; };
+		D7FE54D3215F8447D2875EB0 /* SASessionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A5C1E61A64D0997BA060E /* SASessionGate.swift */; };
+		4B7E3FF846A042568FAD1C8F /* SAStatementBytes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F66DA8226C4DAC964868C7 /* SAStatementBytes.swift */; };
+		915159842E3F0C69E7B6CB5D /* SAConnectionSetupDeadline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D654137BB531D4616C1CD48 /* SAConnectionSetupDeadline.swift */; };
+		146DA79A8767FB3D567B99A0 /* SAConnectionRetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C03AD50FA4D01E0368365E7 /* SAConnectionRetryPolicy.swift */; };
 		177916A21E88733000EE3043 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 177916A01E88733000EE3043 /* LICENSE */; };
 		17E3A57B1885A286009CF372 /* SPMySQLDataTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 17E3A5791885A286009CF372 /* SPMySQLDataTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		17E3A57C1885A286009CF372 /* SPMySQLDataTypes.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E3A57A1885A286009CF372 /* SPMySQLDataTypes.m */; };
+		1988710E90072A9C473B50E4 /* SAConnectionRetryPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B853351E518ECF22AC7C6C30 /* SAConnectionRetryPolicyTests.swift */; };
 		1A96314625B9CE6600BF2E91 /* SPMySQLArrayAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A96314425B9CE6600BF2E91 /* SPMySQLArrayAdditions.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		1A96314725B9CE6600BF2E91 /* SPMySQLArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A96314525B9CE6600BF2E91 /* SPMySQLArrayAdditions.m */; };
 		1A96314E25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A96314C25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m */; };
 		1A96314F25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A96314D25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		28022E61592AE06E0BB78334 /* SAConnectionSocketTimeoutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */; };
+		2E11BCC66E25F3F21E4112DB /* SASessionIdentityIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */; };
+		70DD928A0C23B6C3742ADB95 /* SAConnectionCancellationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */; };
+		DF7CBF53A66B46D8E00EEEBA /* SASessionGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F6642BBA102C26F382431E /* SASessionGateTests.swift */; };
+		C30E9959138A4967A49C4275 /* SAProxyReconnectCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429907AB69CC4DFE9E0082AC /* SAProxyReconnectCoordinatorTests.swift */; };
+		59B7D6511630ECE45D039188 /* SASessionReplacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C64C719BF9EBD9CEF7C7AE7C /* SASessionReplacementTests.swift */; };
+		A750A1BA77354E0DB1834284 /* SAStatementBytesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DFD0C60BB6745D3892CB599 /* SAStatementBytesTests.swift */; };
+		E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */; };
+		2CE0080756AA2FB1962B704B /* SAConnectionLostDecisionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C51430D21C59935315D346 /* SAConnectionLostDecisionGate.swift */; };
+		7F4C2A83E51D609B4A72C8D1 /* SAConnectionLostQuestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38B61E5C70A492F815DA6B4 /* SAConnectionLostQuestion.swift */; };
 		2395DA45BC7E8989834DB1DA /* SASessionLeaseQuestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */; };
 		4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */; };
+		F045A0DC21B8DB44EDBFEFD1 /* SASessionReplacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = B705C569B40B1DF509014AC9 /* SASessionReplacement.swift */; };
 		444079C96AC4FD43045605F3 /* SAByteStringDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */; };
+		4DB8FEEC2362161491CF53E8 /* SAConnectionLostDecisionGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30A620DCDAFB5D5B4E9C708C /* SAConnectionLostDecisionGateTests.swift */; };
+		5E91C47A2D8306B914FE7C25 /* SAConnectionLostQuestionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D2F83B51C7490E8273BA16 /* SAConnectionLostQuestionTests.swift */; };
 		507FF1E51BC0D82300104523 /* DataConversion_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1811BC0C64100104523 /* DataConversion_Tests.m */; };
 		507FF23B1BC0E8CA00104523 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* SPMySQL.framework */; };
 		507FF23D1BC157B500104523 /* SPMySQLStringAdditions_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF23C1BC157B500104523 /* SPMySQLStringAdditions_Tests.m */; };
+		560B354A529C7D79EEDDCCDE /* SAConnectionLivenessProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2406F7894BF4CAA66C192A0 /* SAConnectionLivenessProbe.swift */; };
 		580A331E14D75CF7000D6933 /* SPMySQLGeometryData.h in Headers */ = {isa = PBXBuildFile; fileRef = 580A331C14D75CF7000D6933 /* SPMySQLGeometryData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		580A331F14D75CF7000D6933 /* SPMySQLGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = 580A331D14D75CF7000D6933 /* SPMySQLGeometryData.m */; };
 		583C734A17A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 583C734917A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -74,7 +95,13 @@
 		58D2A4D116EDF1C6002EB401 /* SPMySQLEmptyResult.h in Headers */ = {isa = PBXBuildFile; fileRef = 58D2A4CF16EDF1C6002EB401 /* SPMySQLEmptyResult.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		58D2A4D216EDF1C6002EB401 /* SPMySQLEmptyResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */; };
 		8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7B1FEA5585E11CA2CBB /* Cocoa.framework */; };
+		93CCE91DFD96B5F2C96DCAA3 /* SAConnectionCheckBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464127511C53496503FB21A6 /* SAConnectionCheckBudget.swift */; };
 		8F1D23709992210921446FB2 /* SASessionTimeZoneRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 520C9C590EC8299AB14401A5 /* SASessionTimeZoneRestorer.swift */; };
+		2A77D3012D7F41A00095F55A /* dialog.so in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2A77D3002D7F41A00095F55A /* dialog.so */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A77D3032D7F41A00095F55A /* authentication_ldap_sasl_client.so in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2A77D3022D7F41A00095F55A /* authentication_ldap_sasl_client.so */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A77D3052D7F41A00095F55A /* authentication_oci_client.so in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2A77D3042D7F41A00095F55A /* authentication_oci_client.so */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A77D3072D7F41A00095F55A /* authentication_webauthn_client.so in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2A77D3062D7F41A00095F55A /* authentication_webauthn_client.so */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A77D3092D7F41A00095F55A /* libfido2.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2A77D3082D7F41A00095F55A /* libfido2.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9615D1592D4C18CB0095F55A /* libmysqlclient.24.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */; };
 		9615D15A2D4C18F80095F55A /* libmysqlclient.24.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9615D15D2D4C26DD0095F55A /* libcrypto.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */; };
@@ -95,6 +122,7 @@
 		9615D85B2D5EDF530095F55A /* mysql_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8462D5EDF530095F55A /* mysql_version.h */; };
 		9615D85C2D5EDF530095F55A /* mysqld_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8472D5EDF530095F55A /* mysqld_error.h */; };
 		96A5DDB32D63C8AE0079105E /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 96A5DDB22D63C89A0079105E /* libc++.tbd */; };
+		98824436C7570D3460069023 /* SAConnectionCheckBudgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC9E88A68BDCD93E64F9AA6 /* SAConnectionCheckBudgetTests.swift */; };
 		99FFE998C628789B5E2C3859 /* SAOfflineEscapingHandleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E4BA293FE174E85D1A15B4 /* SAOfflineEscapingHandleTests.swift */; };
 		C40B82A61D9E44E7B3F26A15 /* SAConnectionCharacterSetsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E55D1C38A47F0921BE4D370 /* SAConnectionCharacterSetsTests.swift */; };
 		D52A9E314C87B06FA3E19D48 /* SASessionStateTrackingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81B6D5042FA937C15BE8A26 /* SASessionStateTrackingTests.swift */; };
@@ -106,9 +134,11 @@
 		B7AC94D227A75501D3967BD6 /* SAConnectionCharacterSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */; };
 		A3E7C91D5B284F06A1D7E340 /* SASessionStateTracking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */; };
 		6A3F8D21C94E5B70821DA463 /* SASessionStartupPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C27E54B3F18A06D7B45C2E9 /* SASessionStartupPlan.swift */; };
+		2A77D3212D7F41A00095F55A /* SADialogAuthTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A77D3202D7F41A00095F55A /* SADialogAuthTransport.swift */; };
 		D10000312F8C000600C4C14A /* SACleartextAuthPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */; };
 		D10000332F8C000600C4C14A /* SACleartextAuthPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */; };
 		D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386B159A6D535F0686530898 /* SADatabaseAssertion.swift */; };
+		F59899EE16C3294A428A3B22 /* SAConnectionLivenessProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D553A721B45FDB1683B60A /* SAConnectionLivenessProbeTests.swift */; };
 		D98F5A539AA9F0D44CBC47D7 /* SAConnectionSessionAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E5A2DF9CE656661F40AD5F /* SAConnectionSessionAccess.swift */; };
 		FD4211952918779400941BFE /* SPMySQLGeometryDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */; };
 /* End PBXBuildFile section */
@@ -136,10 +166,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2A77D3112D7F41A00095F55A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2A77D3012D7F41A00095F55A /* dialog.so in CopyFiles */,
+				2A77D3032D7F41A00095F55A /* authentication_ldap_sasl_client.so in CopyFiles */,
+				2A77D3052D7F41A00095F55A /* authentication_oci_client.so in CopyFiles */,
+				2A77D3072D7F41A00095F55A /* authentication_webauthn_client.so in CopyFiles */,
+				2A77D3092D7F41A00095F55A /* libfido2.1.dylib in CopyFiles */,
+			);
+			name = "Copy MySQL Client Plugins";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAProxyReconnectCoordinator.swift; path = Source/SAProxyReconnectCoordinator.swift; sourceTree = "<group>"; };
+		B705C569B40B1DF509014AC9 /* SASessionReplacement.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SASessionReplacement.swift; path = Source/SASessionReplacement.swift; sourceTree = "<group>"; };
 		0867D69BFE84028FC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		0867D6A5FE840307C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		0EA5700AA759774A87FC447F /* SPMySQL.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; name = SPMySQL.modulemap; path = Source/SPMySQL.modulemap; sourceTree = "<group>"; };
@@ -154,8 +200,19 @@
 		1A96314D25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLMutableDictionaryAdditions.h; path = Source/SPMySQLMutableDictionaryAdditions.h; sourceTree = "<group>"; };
 		1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; name = MySQLClient.modulemap; path = Source/MySQLClient/module.modulemap; sourceTree = "<group>"; };
 		20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseAssertionTests.swift; sourceTree = "<group>"; };
+		30A620DCDAFB5D5B4E9C708C /* SAConnectionLostDecisionGateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionLostDecisionGateTests.swift; sourceTree = "<group>"; };
+		A6D2F83B51C7490E8273BA16 /* SAConnectionLostQuestionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionLostQuestionTests.swift; sourceTree = "<group>"; };
+		B177FE6ABE7EBC554A5905A4 /* SAByteStringDecoderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAByteStringDecoderTests.swift; sourceTree = "<group>"; };
+		D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SACleartextAuthPolicyTests.swift; sourceTree = "<group>"; };
+
 		32DBCF5E0370ADEE00C91783 /* SPMySQLFramework_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLFramework_Prefix.pch; path = Source/SPMySQLFramework_Prefix.pch; sourceTree = "<group>"; };
 		386B159A6D535F0686530898 /* SADatabaseAssertion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SADatabaseAssertion.swift; path = Source/SADatabaseAssertion.swift; sourceTree = "<group>"; };
+		3E051E89ACCA860F7CDF253C /* SAConnectionSocketTimeouts.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionSocketTimeouts.swift; path = Source/SAConnectionSocketTimeouts.swift; sourceTree = "<group>"; };
+		81C2F0D1FE3D98CA839210F7 /* SAConnectionCancellation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Source/SAConnectionCancellation.swift; sourceTree = "<group>"; };
+		5A6A5C1E61A64D0997BA060E /* SASessionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Source/SASessionGate.swift; sourceTree = "<group>"; };
+		C3F66DA8226C4DAC964868C7 /* SAStatementBytes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Source/SAStatementBytes.swift; sourceTree = "<group>"; };
+		7D654137BB531D4616C1CD48 /* SAConnectionSetupDeadline.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Source/SAConnectionSetupDeadline.swift; sourceTree = "<group>"; };
+		464127511C53496503FB21A6 /* SAConnectionCheckBudget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionCheckBudget.swift; path = Source/SAConnectionCheckBudget.swift; sourceTree = "<group>"; };
 		507FF1811BC0C64100104523 /* DataConversion_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DataConversion_Tests.m; sourceTree = "<group>"; };
 		507FF1D51BC0D7D300104523 /* SPMySQL Unit Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "SPMySQL Unit Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		507FF1D81BC0D7D300104523 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -215,6 +272,8 @@
 		58C7C1E714DB6E8600436315 /* Field Definitions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "Field Definitions.m"; path = "Source/SPMySQLResult Categories/Field Definitions.m"; sourceTree = "<group>"; };
 		58D2A4CF16EDF1C6002EB401 /* SPMySQLEmptyResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLEmptyResult.h; path = Source/SPMySQLEmptyResult.h; sourceTree = "<group>"; };
 		58D2A4D016EDF1C6002EB401 /* SPMySQLEmptyResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLEmptyResult.m; path = Source/SPMySQLEmptyResult.m; sourceTree = "<group>"; };
+		5C03AD50FA4D01E0368365E7 /* SAConnectionRetryPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionRetryPolicy.swift; path = Source/SAConnectionRetryPolicy.swift; sourceTree = "<group>"; };
+		70D553A721B45FDB1683B60A /* SAConnectionLivenessProbeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionLivenessProbeTests.swift; sourceTree = "<group>"; };
 		73E4BA293FE174E85D1A15B4 /* SAOfflineEscapingHandleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAOfflineEscapingHandleTests.swift; sourceTree = "<group>"; };
 		6E55D1C38A47F0921BE4D370 /* SAConnectionCharacterSetsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCharacterSetsTests.swift; sourceTree = "<group>"; };
 		E81B6D5042FA937C15BE8A26 /* SASessionStateTrackingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionStateTrackingTests.swift; sourceTree = "<group>"; };
@@ -223,6 +282,11 @@
 		7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionLeaseQuestionTests.swift; sourceTree = "<group>"; };
 		8DC2EF5A0486A6940098B216 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
 		8DC2EF5B0486A6940098B216 /* SPMySQL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SPMySQL.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2A77D3002D7F41A00095F55A /* dialog.so */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = dialog.so; sourceTree = "<group>"; };
+		2A77D3022D7F41A00095F55A /* authentication_ldap_sasl_client.so */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = authentication_ldap_sasl_client.so; sourceTree = "<group>"; };
+		2A77D3042D7F41A00095F55A /* authentication_oci_client.so */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = authentication_oci_client.so; sourceTree = "<group>"; };
+		2A77D3062D7F41A00095F55A /* authentication_webauthn_client.so */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = authentication_webauthn_client.so; sourceTree = "<group>"; };
+		2A77D3082D7F41A00095F55A /* libfido2.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libfido2.1.dylib; sourceTree = "<group>"; };
 		9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libmysqlclient.24.dylib; sourceTree = "<group>"; };
 		9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libcrypto.3.dylib; sourceTree = "<group>"; };
 		9615D15C2D4C26DD0095F55A /* libssl.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libssl.3.dylib; sourceTree = "<group>"; };
@@ -240,11 +304,23 @@
 		9615D8462D5EDF530095F55A /* mysql_version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql_version.h; sourceTree = "<group>"; };
 		9615D8472D5EDF530095F55A /* mysqld_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqld_error.h; sourceTree = "<group>"; };
 		96A5DDB22D63C89A0079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
+		B853351E518ECF22AC7C6C30 /* SAConnectionRetryPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionRetryPolicyTests.swift; sourceTree = "<group>"; };
+		CEC9E88A68BDCD93E64F9AA6 /* SAConnectionCheckBudgetTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCheckBudgetTests.swift; sourceTree = "<group>"; };
+		D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSocketTimeoutsTests.swift; sourceTree = "<group>"; };
+		31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionIdentityIntegrationTests.swift; sourceTree = "<group>"; };
+		EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionCancellationTests.swift; sourceTree = "<group>"; };
+		C3F6642BBA102C26F382431E /* SASessionGateTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionGateTests.swift; sourceTree = "<group>"; };
+		429907AB69CC4DFE9E0082AC /* SAProxyReconnectCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAProxyReconnectCoordinatorTests.swift; sourceTree = "<group>"; };
+		C64C719BF9EBD9CEF7C7AE7C /* SASessionReplacementTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SASessionReplacementTests.swift; sourceTree = "<group>"; };
+		6DFD0C60BB6745D3892CB599 /* SAStatementBytesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAStatementBytesTests.swift; sourceTree = "<group>"; };
+		DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAConnectionSetupDeadlineTests.swift; sourceTree = "<group>"; };
 		A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAByteStringDecoder.swift; path = Source/SAByteStringDecoder.swift; sourceTree = "<group>"; };
-		B177FE6ABE7EBC554A5905A4 /* SAByteStringDecoderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAByteStringDecoderTests.swift; sourceTree = "<group>"; };
+		2A77D3202D7F41A00095F55A /* SADialogAuthTransport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SADialogAuthTransport.swift; path = Source/SADialogAuthTransport.swift; sourceTree = "<group>"; };
 		D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SACleartextAuthPolicy.swift; path = Source/SACleartextAuthPolicy.swift; sourceTree = "<group>"; };
-		D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SACleartextAuthPolicyTests.swift; sourceTree = "<group>"; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
+		E6C51430D21C59935315D346 /* SAConnectionLostDecisionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionLostDecisionGate.swift; path = Source/SAConnectionLostDecisionGate.swift; sourceTree = "<group>"; };
+		D38B61E5C70A492F815DA6B4 /* SAConnectionLostQuestion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionLostQuestion.swift; path = Source/SAConnectionLostQuestion.swift; sourceTree = "<group>"; };
+		F2406F7894BF4CAA66C192A0 /* SAConnectionLivenessProbe.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionLivenessProbe.swift; path = Source/SAConnectionLivenessProbe.swift; sourceTree = "<group>"; };
 		DDCAA16AD297A2CC46770060 /* SAOfflineEscapingHandle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAOfflineEscapingHandle.swift; path = Source/SAOfflineEscapingHandle.swift; sourceTree = "<group>"; };
 		1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SAConnectionCharacterSets.swift; path = Source/SAConnectionCharacterSets.swift; sourceTree = "<group>"; };
 		7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SASessionStateTracking.swift; path = Source/SASessionStateTracking.swift; sourceTree = "<group>"; };
@@ -367,8 +443,20 @@
 				0EA5700AA759774A87FC447F /* SPMySQL.modulemap */,
 				1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */,
 				008C80E8220F48778123E2B7 /* SAProxyReconnectCoordinator.swift */,
+				B705C569B40B1DF509014AC9 /* SASessionReplacement.swift */,
+				2A77D3202D7F41A00095F55A /* SADialogAuthTransport.swift */,
 				D10000302F8C000600C4C14A /* SACleartextAuthPolicy.swift */,
 				A24479924A60A2B0D69DBBCD /* SAByteStringDecoder.swift */,
+				464127511C53496503FB21A6 /* SAConnectionCheckBudget.swift */,
+				F2406F7894BF4CAA66C192A0 /* SAConnectionLivenessProbe.swift */,
+				E6C51430D21C59935315D346 /* SAConnectionLostDecisionGate.swift */,
+				D38B61E5C70A492F815DA6B4 /* SAConnectionLostQuestion.swift */,
+				5C03AD50FA4D01E0368365E7 /* SAConnectionRetryPolicy.swift */,
+				3E051E89ACCA860F7CDF253C /* SAConnectionSocketTimeouts.swift */,
+				81C2F0D1FE3D98CA839210F7 /* SAConnectionCancellation.swift */,
+				5A6A5C1E61A64D0997BA060E /* SASessionGate.swift */,
+				C3F66DA8226C4DAC964868C7 /* SAStatementBytes.swift */,
+				7D654137BB531D4616C1CD48 /* SAConnectionSetupDeadline.swift */,
 				DDCAA16AD297A2CC46770060 /* SAOfflineEscapingHandle.swift */,
 				1915A43E04DC554169F58DB8 /* SAConnectionCharacterSets.swift */,
 				7C4F1A82E96D40B3985C2D71 /* SASessionStateTracking.swift */,
@@ -394,6 +482,19 @@
 				41E8A37C5D902B6F18CA7E53 /* SASessionStartupPlanTests.swift */,
 				3B9E74C1D05A28F6914BE7A3 /* SAEscapingBoundaryIntegrationTests.swift */,
 				D10000322F8C000600C4C14A /* SACleartextAuthPolicyTests.swift */,
+				CEC9E88A68BDCD93E64F9AA6 /* SAConnectionCheckBudgetTests.swift */,
+				70D553A721B45FDB1683B60A /* SAConnectionLivenessProbeTests.swift */,
+				30A620DCDAFB5D5B4E9C708C /* SAConnectionLostDecisionGateTests.swift */,
+				A6D2F83B51C7490E8273BA16 /* SAConnectionLostQuestionTests.swift */,
+				B853351E518ECF22AC7C6C30 /* SAConnectionRetryPolicyTests.swift */,
+				D1D7D3D7847109B6A7D27B82 /* SAConnectionSocketTimeoutsTests.swift */,
+				31D35214659B9B011995C583 /* SASessionIdentityIntegrationTests.swift */,
+				EF9200FD6D1F172A15A9D76E /* SAConnectionCancellationTests.swift */,
+				C3F6642BBA102C26F382431E /* SASessionGateTests.swift */,
+				429907AB69CC4DFE9E0082AC /* SAProxyReconnectCoordinatorTests.swift */,
+				C64C719BF9EBD9CEF7C7AE7C /* SASessionReplacementTests.swift */,
+				6DFD0C60BB6745D3892CB599 /* SAStatementBytesTests.swift */,
+				DB78BD644638FF966FAB265A /* SAConnectionSetupDeadlineTests.swift */,
 				7CD6A21ADF414B3CA84F6D32 /* SASessionLeaseQuestionTests.swift */,
 			);
 			name = "Unit Tests";
@@ -432,8 +533,21 @@
 				9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */,
 				9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */,
 				9615D15C2D4C26DD0095F55A /* libssl.3.dylib */,
+				2A77D3102D7F41A00095F55A /* mysqlplugins */,
 			);
 			path = lib;
+			sourceTree = "<group>";
+		};
+		2A77D3102D7F41A00095F55A /* mysqlplugins */ = {
+			isa = PBXGroup;
+			children = (
+				2A77D3002D7F41A00095F55A /* dialog.so */,
+				2A77D3022D7F41A00095F55A /* authentication_ldap_sasl_client.so */,
+				2A77D3042D7F41A00095F55A /* authentication_oci_client.so */,
+				2A77D3062D7F41A00095F55A /* authentication_webauthn_client.so */,
+				2A77D3082D7F41A00095F55A /* libfido2.1.dylib */,
+			);
+			path = mysqlplugins;
 			sourceTree = "<group>";
 		};
 		584294EB14CB8002000F8438 /* Connection Categories */ = {
@@ -635,6 +749,8 @@
 				8DC2EF520486A6940098B216 /* Resources */,
 				8DC2EF540486A6940098B216 /* Sources */,
 				26F0BF1024A0052100A43B20 /* CopyFiles */,
+				2A77D3112D7F41A00095F55A /* CopyFiles */,
+				2A77D3122D7F41A00095F55A /* ShellScript */,
 				26F0BF1424A0069300A43B20 /* ShellScript */,
 				8DC2EF560486A6940098B216 /* Frameworks */,
 				26F0BF1324A0053E00A43B20 /* ShellScript */,
@@ -740,6 +856,25 @@
 			shellPath = /bin/sh;
 			shellScript = "#!/usr/bin/env bash\n\n# always need to do this\n# Make it so the SPMySQL executable can find the dylibs it was compiled with\necho \"running install_name_tool\"\npwd\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/Current\" || exit 1;\npwd\notool -L SPMySQL\n\nCRYPTO=$(otool -L SPMySQL | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\nCRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  # remove leading whitespace characters\nCRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\"   # remove trailing whitespace characters\necho \"CRYPTO: $CRYPTO\"\necho \"Setting @loader_path/libcrypto.3.dylib in SPMySQL\"\ninstall_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib SPMySQL\notool -L SPMySQL\n\nSSL=$(otool -L SPMySQL | grep libssl.3.dylib | cut -d' ' -f1 | head -1)\nSSL=\"${SSL#\"${SSL%%[![:space:]]*}\"}\"  \nSSL=\"${SSL%\"${SSL##*[![:space:]]}\"}\"  \necho \"SSL: $SSL\"\necho \"Setting @loader_path/libssl.3.dylib in SPMySQL\"\ninstall_name_tool -change \"$SSL\" @loader_path/libssl.3.dylib SPMySQL\notool -L SPMySQL\n\nMSL=$(otool -L SPMySQL | grep libmysqlclient.24.dylib | cut -d' ' -f1 | head -1)\nMSL=\"${MSL#\"${MSL%%[![:space:]]*}\"}\"  \nMSL=\"${MSL%\"${MSL##*[![:space:]]}\"}\"  \necho \"MSL: $MSL\"\necho \"Setting @loader_path/libmysqlclient.24.dylib in SPMySQL\"\ninstall_name_tool -change \"$MSL\" @loader_path/libmysqlclient.24.dylib SPMySQL\notool -L SPMySQL\n\necho \"checking for new dylibs\"\ncd \"$SRCROOT\" || exit 1;\npwd\n\nNEW_LIBS=$(git diff --name-only --diff-filter=ACM -- *.dylib)\n\nif  [ -z \"$NEW_LIBS\" ]; then\n     echo \"no new dylibs, stopping\"\n     exit 0;\n fi\n\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/A\" || exit 1;\necho \"Setting libcrypto.3.dylib in libcrypto.3.dylib\"\n# libssl/libcrypto are re-exported by SPMySQL, and ld warns when a re-exported library's own\n# install name differs from the @loader_path one recorded in SPMySQL above, so the ids must match.\ninstall_name_tool -id \"@loader_path/libcrypto.3.dylib\" libcrypto.3.dylib\ninstall_name_tool -id \"@loader_path/libssl.3.dylib\" libssl.3.dylib\ninstall_name_tool -id \"@loader_path/libmysqlclient.24.dylib\" libmysqlclient.24.dylib\n\nwhile true; do\n    CRYPTO=$(otool -L libssl.3.dylib | grep -v \"@loader_path\" | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\n    CRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  \n    CRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\"     \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$CRYPTO\" ]]; then\n        break\n    fi\n\n    echo \"CRYPTO: $CRYPTO\"\n    echo \"Setting @loader_path/libcrypto.3.dylib in libssl.3.dylib (replacing $CRYPTO)\"\n    install_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib libssl.3.dylib\ndone;\n\notool -L lib*\n\nwhile true; do\n    SSL=$(otool -L libmysqlclient.24.dylib | grep -v \"@loader_path\" | grep libssl.3.dylib | cut -d' ' -f1 | head -1)\n    SSL=\"${SSL#\"${SSL%%[![:space:]]*}\"}\"  \n    SSL=\"${SSL%\"${SSL##*[![:space:]]}\"}\"   \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$SSL\" ]]; then\n        break\n    fi\n\n    echo \"Setting @loader_path/libssl.3.dylib in libmysqlclient.24.dylib (replacing $SSL)\"\n    install_name_tool -change \"$SSL\" @loader_path/libssl.3.dylib libmysqlclient.24.dylib\ndone;\n\nwhile true; do\n    CRYPTO=$(otool -L libmysqlclient.24.dylib | grep -v \"@loader_path\" | grep libcrypto.3.dylib | cut -d' ' -f1 | head -1)\n    CRYPTO=\"${CRYPTO#\"${CRYPTO%%[![:space:]]*}\"}\"  \n    CRYPTO=\"${CRYPTO%\"${CRYPTO##*[![:space:]]}\"}\" \n\n    # Exit the loop if CRYPTO is empty\n    if [[ -z \"$CRYPTO\" ]]; then\n        break\n    fi\n\n    echo \"Setting @loader_path/libcrypto.3.dylib in libmysqlclient.24.dylib (replacing $CRYPTO)\"\n    install_name_tool -change \"$CRYPTO\" @loader_path/libcrypto.3.dylib libmysqlclient.24.dylib  \ndone\n\n# no need for exit, if there are no new libs, we've already exited.\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME/Versions/Current\" || exit 1;\n\necho \"Codesigning libcrypto.3.dylib, libssl.3.dylib, and libmysqlclient.24.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libcrypto.3.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libssl.3.dylib\"\n/usr/bin/codesign --force --sign \"Apple Development\" -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags \"libmysqlclient.24.dylib\"\n\necho \"Copying libcrypto.3.dylib, libssl.3.dylib, and libmysqlclient.24.dylib to $SRCROOT/MySQL Client Libraries/lib\"\n# Publish each dylib atomically (copy to a unique temporary name, then rename): another build may\n# be reading this directory or publishing at the same time, and a plain cp exposes a half-written file.\nfor lib in libcrypto.3.dylib libssl.3.dylib libmysqlclient.24.dylib; do\n    staged=$(mktemp \"$SRCROOT/MySQL Client Libraries/lib/.$lib.XXXXXX\") || exit 1;\n    cp \"$lib\" \"$staged\" || exit 1;\n    mv -f \"$staged\" \"$SRCROOT/MySQL Client Libraries/lib/$lib\" || exit 1;\ndone\n";
 		};
+		2A77D3122D7F41A00095F55A /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Link PlugIns at the framework's top level";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# NSBundle resolves builtInPlugInsPath - what SPMySQLConnection hands\n# libmysqlclient as MYSQL_PLUGIN_DIR - to <bundle>/PlugIns and never to\n# Versions/Current/PlugIns, so a versioned framework needs the same top-level\n# symlink it already has for Resources and its executable; without it the\n# copied plugins are invisible at runtime.\ncd \"$CONFIGURATION_BUILD_DIR/$WRAPPER_NAME\" || exit 1\nln -sfn Versions/Current/PlugIns PlugIns\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -758,6 +893,19 @@
 				28C6B90F4A7D315E86F2D140 /* SASessionStartupPlanTests.swift in Sources */,
 				F21D5A8C6E4039B7AC185D62 /* SAEscapingBoundaryIntegrationTests.swift in Sources */,
 				D10000332F8C000600C4C14A /* SACleartextAuthPolicyTests.swift in Sources */,
+				98824436C7570D3460069023 /* SAConnectionCheckBudgetTests.swift in Sources */,
+				F59899EE16C3294A428A3B22 /* SAConnectionLivenessProbeTests.swift in Sources */,
+				4DB8FEEC2362161491CF53E8 /* SAConnectionLostDecisionGateTests.swift in Sources */,
+				5E91C47A2D8306B914FE7C25 /* SAConnectionLostQuestionTests.swift in Sources */,
+				1988710E90072A9C473B50E4 /* SAConnectionRetryPolicyTests.swift in Sources */,
+				28022E61592AE06E0BB78334 /* SAConnectionSocketTimeoutsTests.swift in Sources */,
+				2E11BCC66E25F3F21E4112DB /* SASessionIdentityIntegrationTests.swift in Sources */,
+				70DD928A0C23B6C3742ADB95 /* SAConnectionCancellationTests.swift in Sources */,
+				DF7CBF53A66B46D8E00EEEBA /* SASessionGateTests.swift in Sources */,
+				C30E9959138A4967A49C4275 /* SAProxyReconnectCoordinatorTests.swift in Sources */,
+				59B7D6511630ECE45D039188 /* SASessionReplacementTests.swift in Sources */,
+				A750A1BA77354E0DB1834284 /* SAStatementBytesTests.swift in Sources */,
+				E0C7D485396BD5C0EE01D05B /* SAConnectionSetupDeadlineTests.swift in Sources */,
 				2395DA45BC7E8989834DB1DA /* SASessionLeaseQuestionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -793,8 +941,20 @@
 				583C734E17B0778A0056B284 /* Data Conversion.m in Sources */,
 				D88652282912E88D23A56A1C /* SADatabaseAssertion.swift in Sources */,
 				4042B04787F88BF732CD28B9 /* SAProxyReconnectCoordinator.swift in Sources */,
+				F045A0DC21B8DB44EDBFEFD1 /* SASessionReplacement.swift in Sources */,
+				2A77D3212D7F41A00095F55A /* SADialogAuthTransport.swift in Sources */,
 				D10000312F8C000600C4C14A /* SACleartextAuthPolicy.swift in Sources */,
 				444079C96AC4FD43045605F3 /* SAByteStringDecoder.swift in Sources */,
+				93CCE91DFD96B5F2C96DCAA3 /* SAConnectionCheckBudget.swift in Sources */,
+				560B354A529C7D79EEDDCCDE /* SAConnectionLivenessProbe.swift in Sources */,
+				2CE0080756AA2FB1962B704B /* SAConnectionLostDecisionGate.swift in Sources */,
+				7F4C2A83E51D609B4A72C8D1 /* SAConnectionLostQuestion.swift in Sources */,
+				146DA79A8767FB3D567B99A0 /* SAConnectionRetryPolicy.swift in Sources */,
+				09584614D4B176F7BE8DC59E /* SAConnectionSocketTimeouts.swift in Sources */,
+				869323BC9B5A7999A14CDC4B /* SAConnectionCancellation.swift in Sources */,
+				D7FE54D3215F8447D2875EB0 /* SASessionGate.swift in Sources */,
+				4B7E3FF846A042568FAD1C8F /* SAStatementBytes.swift in Sources */,
+				915159842E3F0C69E7B6CB5D /* SAConnectionSetupDeadline.swift in Sources */,
 				B92F8A45F3BC77529ECDCB10 /* SAOfflineEscapingHandle.swift in Sources */,
 				B7AC94D227A75501D3967BD6 /* SAConnectionCharacterSets.swift in Sources */,
 				A3E7C91D5B284F06A1D7E340 /* SASessionStateTracking.swift in Sources */,
@@ -828,7 +988,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20116;
+				DYLIB_CURRENT_VERSION = 20117;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -869,7 +1029,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20116;
+				DYLIB_CURRENT_VERSION = 20117;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -919,7 +1079,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				ENABLE_TESTABILITY = YES;
@@ -973,7 +1133,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1125,7 +1285,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1168,7 +1328,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20116;
+				DYLIB_CURRENT_VERSION = 20117;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -1258,7 +1418,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1298,7 +1458,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20116;
+				DYLIB_CURRENT_VERSION = 20117;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1347,7 +1507,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20116;
+				CURRENT_PROJECT_VERSION = 20117;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1387,7 +1547,7 @@
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20116;
+				DYLIB_CURRENT_VERSION = 20117;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
