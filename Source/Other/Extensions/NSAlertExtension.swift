@@ -72,7 +72,42 @@ enum SABookmarkPathNormalizer {
     }
 }
 
+/// The text view of a long alert message. It declines to be a key view only while its window is not yet
+/// on screen, so it is never the alert's initial key view: the focus system scrolls that view into view,
+/// which centres a text view much taller than its scroll view and opens the message part-way down.
+/// Once the alert is showing it is an ordinary key view, so Tab, Full Keyboard Access and
+/// click-to-select work as usual.
+final class SAAlertDetailTextView: NSTextView {
+    override var canBecomeKeyView: Bool {
+        (window?.isVisible ?? false) && super.canBecomeKeyView
+    }
+}
+
 @objc extension NSAlert {
+    /// Use the standard alert layout, with a scrollable fallback for lengthy diagnostics.
+    @objc(setScrollableInformativeText:)
+    func setScrollableInformativeText(_ text: String) {
+        informativeText = text
+        layout()
+        let maximumHeight = min(600, (NSScreen.main?.visibleFrame.height ?? 800) * 0.7)
+        guard window.frame.height > maximumHeight else { return }
+
+        informativeText = ""
+        let scrollView = SAAlertDetailTextView.scrollableTextView()
+        scrollView.frame = NSRect(x: 0, y: 0, width: 400, height: 160)
+        scrollView.borderType = .noBorder
+        scrollView.drawsBackground = false
+        scrollView.autohidesScrollers = true
+        if let textView = scrollView.documentView as? NSTextView {
+            textView.string = text
+            textView.font = .preferredFont(forTextStyle: .body)
+            textView.textColor = .labelColor
+            textView.isEditable = false
+            textView.drawsBackground = false
+        }
+        accessoryView = scrollView
+    }
+
 	/// Creates an alert with primary colored button (also accepts "Enter" key) and cancel button (also accepts escape key), main title and informative subtitle message.
 	/// - Parameters:
 	///   - title: String for title of the alert
