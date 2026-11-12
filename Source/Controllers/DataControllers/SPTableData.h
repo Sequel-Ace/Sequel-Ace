@@ -39,6 +39,7 @@
 	NSMutableArray *columns;
 	NSMutableArray *columnNames;
 	NSMutableArray *constraints;
+	NSMutableArray *checkConstraints;
 	NSArray *triggers;
 	NSMutableDictionary *status;
 	NSMutableArray *primaryKeyColumns;
@@ -65,6 +66,7 @@
 - (NSArray *)columnNames;
 - (NSDictionary *) columnAtIndex:(NSInteger)index;
 - (NSArray *) getConstraints;
+- (NSArray *) getCheckConstraints;
 - (NSArray *) triggers;
 - (BOOL) columnIsBlobOrText:(NSString *)colName;
 - (BOOL) columnIsGeometry:(NSString *)colName;
