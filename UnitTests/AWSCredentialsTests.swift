@@ -284,6 +284,7 @@ final class AWSCredentialsTests: XCTestCase {
             // [default] wins; nothing is taken from [profile default]
             XCTAssertEqual(credentials.accessKeyId, "AKIADEFAULT0000000000")
             XCTAssertEqual(credentials.secretAccessKey, "defaultSecret")
+            XCTAssertNil(credentials.region)
         }
     }
 
