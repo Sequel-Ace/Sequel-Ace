@@ -246,6 +246,47 @@ final class AWSCredentialsTests: XCTestCase {
         }
     }
 
+    func testDefaultConfigSectionIsFoundAfterProfilePrefixedDefaultAndOtherSections() throws {
+        let configContents = """
+        [profile default]
+        region = eu-west-1
+
+        [profile other]
+        region = us-east-1
+
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "default")
+
+            XCTAssertEqual(credentials.accessKeyId, "AKIADEFAULT0000000000")
+            XCTAssertEqual(credentials.secretAccessKey, "defaultSecret")
+        }
+    }
+
+    func testDefaultConfigSectionsAreNotMergedWhenBothSpellingsArePresent() throws {
+        let configContents = """
+        [profile default]
+        aws_access_key_id = AKIAPROFILEPREFIXED0
+        region = eu-west-1
+
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "default")
+
+            // [default] wins; nothing is taken from [profile default]
+            XCTAssertEqual(credentials.accessKeyId, "AKIADEFAULT0000000000")
+            XCTAssertEqual(credentials.secretAccessKey, "defaultSecret")
+        }
+    }
+
     func testProfileLoadsLoginSession() throws {
         let configContents = """
         [default]
