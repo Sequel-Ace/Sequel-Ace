@@ -216,6 +216,10 @@ extension SPWindowController: NSWindowDelegate {
         // window wins, so the next new window restores the frame the user saw last (#1307).
         window?.saveFrame(usingName: Self.frameAutosaveName)
 
+        // ⌘W and the tab bar refuse a tab with a sheet up, but a direct -close (quit, scripted closes) doesn't:
+        // a sheet left attached keeps this window and the sheet alive after the tab is gone. End each as cancelled.
+        if let window { SASheetEnding.endAll(of: window) }
+
         // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
         NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)
     }

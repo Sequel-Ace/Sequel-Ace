@@ -54,7 +54,7 @@
 	NSString *observerKeyPath;
 	BOOL observingSelfSelectedTag;  // whether the self-observation from initWithFrame: is registered
 	
-	IBOutlet id delegate;
+	IBOutlet __weak id delegate; // weak: the delegate (the connection controller) owns this view
 	
 	NSArray *colorList;
 }

@@ -36,7 +36,7 @@
 	NSUInteger lineOffset;
 
 	SEL actionSelector;
-	id actionTarget;
+	__weak id actionTarget; // weak like NSControl.target: targets usually own their buttons
 }
 
 @property(readonly, assign) BOOL shouldDrawNonHighlightState;
