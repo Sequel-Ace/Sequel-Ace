@@ -5364,6 +5364,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (BOOL)control:(NSControl<NSControlTextEditingDelegate> *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)command
 {
+	// An input method composing in the field editor owns every editing command
+	// AppKit dispatches while its marked text is shown — Escape included, which
+	// a Pinyin input sends for the inline composition it gives up when moving
+	// to its candidate panel. Ending the session on it aborts the composition
+	// and the cell keeps only the text committed before it (#2688). Returning
+	// NO hands the command to the field editor's standard marked-text handling.
+	if ([SAFieldEditorCompositionPolicy editingCommandBelongsToCompositionInTextView:textView]) {
+		return NO;
+	}
+
 	// Check firstly if SPCopyTable can handle command
 	if ([control control:control textView:textView doCommandBySelector:command])
 		return YES;

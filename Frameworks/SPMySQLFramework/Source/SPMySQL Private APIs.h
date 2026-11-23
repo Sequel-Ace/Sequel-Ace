@@ -55,10 +55,20 @@
 
 /** Whether a recently used connection's socket already reports a lost peer. */
 - (BOOL)_shouldVerifyRecentlyUsedConnectionIdleFor:(double)idleTime;
+/** Whether the session last reported an open transaction; a plain value, no handle is read. */
+- (BOOL)sessionHasOpenTransaction;
+- (BOOL)sessionReportsOpenTransaction;
+- (SAEscapingSession)sessionForEscaping;
+- (SASessionReplacementMark)sessionReplacementMark;
+- (void)markSessionReplacement:(SASessionReplacementMark)mark;
+/** Closes a session marked to be replaced - SASessionReplacement takes the steps; the connection must be held. The next use reconnects. */
+- (void)_closeSessionMarkedForReplacement;
 
 @end
 
 @interface SPMySQLConnection (PrivateAPI)
+
+- (BOOL)_lockUsableConnectionForQuery;
 
 - (BOOL)_connect;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
@@ -66,6 +76,8 @@
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
 - (BOOL)_performReconnectAllowingRetries:(BOOL)canRetry afterFailedCheck:(BOOL)afterFailedCheck;
+/** Reconnects after the session was lost or closed for replacement, on the limits of the check that lost it when one did. */
+- (BOOL)_reconnectAfterSessionLossAllowingRetries:(BOOL)canRetry;
 - (BOOL)_connectUsingConnectTimeout:(NSUInteger)connectTimeoutOrZero;
 /** Sets the session up once the handshake is through, on a finite budget; whether the session is still up afterwards. */
 - (BOOL)_runSessionSetup;
@@ -122,6 +134,9 @@
 @end
 
 @interface SPMySQLConnection (Querying_and_Preparation_Private_API)
+
+/** Asks the server over a second connection to kill the query in this server session; whether it accepted. */
+- (BOOL)_killQueryOverSideConnectionOnServerThread:(NSUInteger)serverThread;
 
 - (id)_queryString:(NSString *)theQueryString
      usingEncoding:(NSStringEncoding)theEncoding
