@@ -157,6 +157,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 
 	IBOutlet NSView *connectionResizeContainer;
+	IBOutlet NSTabView *connectionTypeTabs;
 	IBOutlet NSView *standardConnectionFormContainer;
 	IBOutlet NSView *standardConnectionSSLDetailsContainer;
 	IBOutlet NSView *awsIAMConnectionFormContainer;

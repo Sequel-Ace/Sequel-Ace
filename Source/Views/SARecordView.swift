@@ -191,7 +191,7 @@ final class SARecordViewModel: ObservableObject {
     }
 }
 
-private struct SARecordView: View {
+struct SARecordView: View {
     @ObservedObject var model: SARecordViewModel
     @FocusState private var focusedFieldID: SARecordField.ID?
     @FocusState private var panelFocus: SARecordViewFocusTarget?

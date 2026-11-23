@@ -102,6 +102,16 @@ final class SAConnectionFormModel: ObservableObject {
     /// a change for the whole model, which is the granularity the form
     /// needs (the effective name and validation state depend on several
     /// fields at once).
+    @Published var showsSQLite = false
+
+    var selectedType: SAConnectionType? {
+        get { showsSQLite ? nil : info.type }
+        set {
+            showsSQLite = newValue == nil
+            if let newValue { info.type = newValue }
+        }
+    }
+
     @Published var info: SAConnectionInfo {
         didSet {
             resplitVaultCredentialsPathIfChangedExternally()

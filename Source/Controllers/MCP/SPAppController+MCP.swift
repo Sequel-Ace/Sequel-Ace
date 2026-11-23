@@ -214,7 +214,7 @@ extension SPAppController: SPMCPDataSource {
     private func mcpResolveConnection(_ connID: String) -> MCPResolvedConnection? {
         var info: MCPResolvedConnection?
         let resolve = {
-            let wcs = self.tabManager.windowControllers
+            let wcs = self.tabManager.mysqlWindowControllers
             var doc: SPDatabaseDocument?
             if !connID.isEmpty {
                 for wc in wcs where mcpDocumentID(wc.databaseDocument) == connID {
@@ -259,7 +259,7 @@ extension SPAppController: SPMCPDataSource {
         var result: [[String: Any]] = []
         let collect = {
             let front = self.frontDocument()
-            for wc in self.tabManager.windowControllers {
+            for wc in self.tabManager.mysqlWindowControllers {
                 let doc = wc.databaseDocument
                 let c = doc.isProcessing ? nil : doc.getConnection()
                 guard let conn = c, conn.isConnected() else { continue }

@@ -4469,3 +4469,465 @@
 
 /* Content filter: field selector accessibility label. */
 "Filter Field" = "Filter Field";
+
+/* SQLite control or view label */
+"Add Column" = "Add Column";
+
+/* SQLite command that opens a dialog */
+"Add Column…" = "Add Column…";
+
+/* SQLite control or view label */
+"Add Row" = "Add Row";
+
+/* SQLite command that opens a dialog */
+"Add Row…" = "Add Row…";
+
+/* SQLite control or view label */
+"BLOB (Hex)" = "BLOB (Hex)";
+
+/* SQLite message with a runtime value */
+"CSV Field %lld" = "CSV Field %lld";
+
+/* SQLite command that opens a dialog */
+"CSV…" = "CSV…";
+
+/* SQLite status, instruction, or error */
+"Choose a new file so that an existing database is not overwritten." = "Choose a new file so that an existing database is not overwritten.";
+
+/* SQLite status, instruction, or error */
+"Choose a regular SQLite database file." = "Choose a regular SQLite database file.";
+
+/* SQLite status, instruction, or error */
+"Choose an existing SQLite file or create a new database." = "Choose an existing SQLite file or create a new database.";
+
+/* SQLite status, instruction, or error */
+"Choose the containing folder so SQLite can access files next to the database." = "Choose the containing folder so SQLite can access files next to the database.";
+
+/* SQLite control or view label */
+"Column" = "Column";
+
+/* SQLite control or view label */
+"Column Name" = "Column Name";
+
+/* SQLite control or view label */
+"Columns" = "Columns";
+
+/* SQLite status, instruction, or error */
+"Commit or roll back the open SQL transaction first." = "Commit or roll back the open SQL transaction first.";
+
+/* SQLite control or view label */
+"Confirm Deletion" = "Confirm Deletion";
+
+/* SQLite command that opens a dialog */
+"Create SQLite Backup…" = "Create SQLite Backup…";
+
+/* SQLite control or view label */
+"Create Table" = "Create Table";
+
+/* SQLite command that opens a dialog */
+"Create Table…" = "Create Table…";
+
+/* SQLite control or view label */
+"Database Default" = "Database Default";
+
+/* SQLite command that opens a dialog */
+"Database as SQLite SQL…" = "Database as SQLite SQL…";
+
+/* SQLite command that opens a dialog */
+"Delete Column…" = "Delete Column…";
+
+/* SQLite command that opens a dialog */
+"Delete Row…" = "Delete Row…";
+
+/* SQLite command that opens a dialog */
+"Delete…" = "Delete…";
+
+/* SQLite control or view label */
+"Destination" = "Destination";
+
+/* SQLite control or view label */
+"Edit Row" = "Edit Row";
+
+/* SQLite command that opens a dialog */
+"Edit Row…" = "Edit Row…";
+
+/* SQLite status, instruction, or error */
+"Enter a valid SQLite name or value." = "Enter a valid SQLite name or value.";
+
+/* SQLite control or view label */
+"Export" = "Export";
+
+/* SQLite control or view label */
+"Export from SQLite" = "Export from SQLite";
+
+/* SQLite control or view label */
+"First Record Contains Column Names" = "First Record Contains Column Names";
+
+/* SQLite control or view label */
+"Generated" = "Generated";
+
+/* SQLite control or view label */
+"Grant Access" = "Grant Access";
+
+/* SQLite control or view label */
+"Import CSV into SQLite" = "Import CSV into SQLite";
+
+/* SQLite control or view label */
+"Import into SQLite" = "Import into SQLite";
+
+/* SQLite control or view label */
+"Indexes" = "Indexes";
+
+/* SQLite message with a runtime value */
+"Invalid CSV record %lld." = "Invalid CSV record %lld.";
+
+/* SQLite command that opens a dialog */
+"Loaded Query Results as CSV…" = "Loaded Query Results as CSV…";
+
+/* SQLite control or view label */
+"NOT NULL" = "NOT NULL";
+
+/* SQLite control or view label */
+"NULL" = "NULL";
+
+/* SQLite command that opens a dialog */
+"New SQLite Database…" = "New SQLite Database…";
+
+/* SQLite control or view label */
+"Next" = "Next";
+
+/* SQLite control or view label */
+"Open Read-Only" = "Open Read-Only";
+
+/* SQLite command that opens a dialog */
+"Open SQLite Database…" = "Open SQLite Database…";
+
+/* SQLite message with a runtime value */
+"Page %lld · %lld rows" = "Page %lld · %lld rows";
+
+/* SQLite control or view label */
+"Previous" = "Previous";
+
+/* SQLite control or view label */
+"Primary Key" = "Primary Key";
+
+/* SQLite control or view label */
+"Read-Only" = "Read-Only";
+
+/* SQLite control or view label */
+"Real" = "Real";
+
+/* SQLite control or view label */
+"Remove Column" = "Remove Column";
+
+/* SQLite control or view label */
+"Rename Column" = "Rename Column";
+
+/* SQLite command that opens a dialog */
+"Rename Column…" = "Rename Column…";
+
+/* SQLite control or view label */
+"Rename Table" = "Rename Table";
+
+/* SQLite command that opens a dialog */
+"Rename Table…" = "Rename Table…";
+
+/* SQLite command that opens a dialog */
+"Restore as New SQLite Database…" = "Restore as New SQLite Database…";
+
+/* SQLite status, instruction, or error */
+"Results are limited to 1,000 rows per run." = "Results are limited to 1,000 rows per run.";
+
+/* SQLite message with a runtime value */
+"Rows changed: %lld" = "Rows changed: %lld";
+
+/* SQLite status, instruction, or error */
+"Run SQLite SQL to see results." = "Run SQLite SQL to see results.";
+
+/* SQLite control or view label */
+"Run Script" = "Run Script";
+
+/* SQLite control or view label */
+"SQLite" = "SQLite";
+
+/* SQLite control or view label */
+"SQLite Database File" = "SQLite Database File";
+
+/* SQLite control or view label */
+"SQLite Query Editor" = "SQLite Query Editor";
+
+/* SQLite command that opens a dialog */
+"SQLite SQL…" = "SQLite SQL…";
+
+/* SQLite status, instruction, or error */
+"SQLite operation cancelled." = "SQLite operation cancelled.";
+
+/* SQLite status, instruction, or error */
+"Select a table or view." = "Select a table or view.";
+
+/* SQLite control or view label */
+"Statement" = "Statement";
+
+/* SQLite message with a runtime value */
+"Statement %lld" = "Statement %lld";
+
+/* SQLite control or view label */
+"Table Name" = "Table Name";
+
+/* SQLite command that opens a dialog */
+"Table or View as CSV…" = "Table or View as CSV…";
+
+/* SQLite control or view label */
+"Tables & Views" = "Tables & Views";
+
+/* SQLite status, instruction, or error */
+"The SQLite database could only be opened for reading." = "The SQLite database could only be opened for reading.";
+
+/* SQLite status, instruction, or error */
+"The import would leave foreign key violations." = "The import would leave foreign key violations.";
+
+/* SQLite status, instruction, or error */
+"The row changed since it was loaded. Refresh the table and try again." = "The row changed since it was loaded. Refresh the table and try again.";
+
+/* SQLite status, instruction, or error */
+"This SQL file contains a command that cannot be imported in a single transaction." = "This SQL file contains a command that cannot be imported in a single transaction.";
+
+/* SQLite status, instruction, or error */
+"This SQLite database has no tables or views." = "This SQLite database has no tables or views.";
+
+/* SQLite status, instruction, or error */
+"This change will be saved to the SQLite database." = "This change will be saved to the SQLite database.";
+
+/* SQLite status, instruction, or error */
+"This row cannot be uniquely identified for editing." = "This row cannot be uniquely identified for editing.";
+
+/* SQLite control or view label */
+"Untitled.sqlite" = "Untitled.sqlite";
+
+/* SQLite status, instruction, or error */
+"Use a SQLite backup to export a database containing virtual tables." = "Use a SQLite backup to export a database containing virtual tables.";
+
+/* SQLite control or view label */
+"Value Type" = "Value Type";
+
+/* Query editor command to format the current SQL statement or selection */
+"Format SQL" = "Format SQL";
+
+/* SQLite workspace label or command */
+"%lld rows in table" = "%lld rows in table";
+
+/* SQLite workspace label or command */
+"Add Index" = "Add Index";
+
+/* SQLite workspace label or command */
+"Add Relation" = "Add Relation";
+
+/* SQLite workspace label or command */
+"Add Trigger" = "Add Trigger";
+
+/* SQLite workspace label or command */
+"Add new table" = "Add new table";
+
+/* SQLite workspace label or command */
+"Allow Null" = "Allow Null";
+
+/* SQLite workspace label or command */
+"Automatic" = "Automatic";
+
+/* SQLite workspace label or command */
+"Begins With" = "Begins With";
+
+/* SQLite workspace label or command */
+"CSV" = "CSV";
+
+/* SQLite workspace label or command */
+"Choose Column" = "Choose Column";
+
+/* SQLite workspace label or command */
+"Choose Table" = "Choose Table";
+
+/* SQLite workspace label or command */
+"Clear History" = "Clear History";
+
+/* SQLite workspace label or command */
+"Column Definition" = "Column Definition";
+
+/* SQLite workspace label or command */
+"Contains" = "Contains";
+
+/* SQLite workspace label or command */
+"Copy CREATE Syntax" = "Copy CREATE Syntax";
+
+/* SQLite workspace label or command */
+"Copy Table Content" = "Copy Table Content";
+
+/* SQLite workspace label or command */
+"Create Syntax" = "Create Syntax";
+
+/* SQLite workspace label or command */
+"DROP TABLE syntax" = "DROP TABLE syntax";
+
+/* SQLite workspace label or command */
+"Does Not Equal" = "Does Not Equal";
+
+/* SQLite workspace label or command */
+"Duplicate Row" = "Duplicate Row";
+
+/* SQLite workspace label or command */
+"Duplicate Table" = "Duplicate Table";
+
+/* SQLite workspace label or command */
+"Duplicate Table…" = "Duplicate Table…";
+
+/* SQLite workspace label or command */
+"Edit Column" = "Edit Column";
+
+/* SQLite workspace label or command */
+"Edit Column…" = "Edit Column…";
+
+/* SQLite workspace label or command */
+"Edit Trigger" = "Edit Trigger";
+
+/* SQLite workspace label or command */
+"Ends With" = "Ends With";
+
+/* SQLite workspace label or command */
+"Equals" = "Equals";
+
+/* SQLite workspace label or command */
+"Event" = "Event";
+
+/* SQLite workspace label or command */
+"Export…" = "Export…";
+
+/* SQLite workspace label or command */
+"Filter Columns" = "Filter Columns";
+
+/* SQLite workspace label or command */
+"Format" = "Format";
+
+/* SQLite workspace label or command */
+"Greater Than" = "Greater Than";
+
+/* SQLite workspace label or command */
+"INDEX" = "INDEX";
+
+/* SQLite workspace label or command */
+"Include" = "Include";
+
+/* SQLite workspace label or command */
+"Index Name" = "Index Name";
+
+/* SQLite workspace label or command */
+"Is NULL" = "Is NULL";
+
+/* SQLite workspace label or command */
+"Is Not NULL" = "Is Not NULL";
+
+/* SQLite workspace label or command */
+"Key Name" = "Key Name";
+
+/* SQLite workspace label or command */
+"Less Than" = "Less Than";
+
+/* SQLite workspace label or command */
+"Mark all tables" = "Mark all tables";
+
+/* SQLite workspace label or command */
+"Name" = "Name";
+
+/* SQLite workspace label or command */
+"On Delete" = "On Delete";
+
+/* SQLite workspace label or command */
+"On Update" = "On Update";
+
+/* SQLite workspace label or command */
+"Operator" = "Operator";
+
+/* SQLite workspace label or command */
+"PINNED TABLES" = "PINNED TABLES";
+
+/* SQLite workspace label or command */
+"Query Favorites" = "Query Favorites";
+
+/* SQLite workspace label or command */
+"Query History" = "Query History";
+
+/* SQLite workspace label or command */
+"Query Results" = "Query Results";
+
+/* SQLite workspace label or command */
+"Reference Column" = "Reference Column";
+
+/* SQLite workspace label or command */
+"Reference Columns" = "Reference Columns";
+
+/* SQLite workspace label or command */
+"Reference Table" = "Reference Table";
+
+/* SQLite workspace label or command */
+"Remove Index" = "Remove Index";
+
+/* SQLite workspace label or command */
+"Remove Relation" = "Remove Relation";
+
+/* SQLite workspace label or command */
+"Remove Table…" = "Remove Table…";
+
+/* SQLite workspace label or command */
+"Remove Trigger" = "Remove Trigger";
+
+/* SQLite workspace label or command */
+"Rows" = "Rows";
+
+/* SQLite workspace label or command */
+"SQL" = "SQL";
+
+/* SQLite workspace label or command */
+"SQLite Backup" = "SQLite Backup";
+
+/* SQLite workspace label or command */
+"Save Query to Favorites" = "Save Query to Favorites";
+
+/* SQLite workspace label or command */
+"Source" = "Source";
+
+/* SQLite workspace label or command */
+"Switch Default" = "Switch Default";
+
+/* SQLite workspace label or command */
+"Timing" = "Timing";
+
+/* SQLite workspace label or command */
+"Toggle Pin Table" = "Toggle Pin Table";
+
+/* SQLite workspace label or command */
+"Toggle Record View" = "Toggle Record View";
+
+/* SQLite workspace label or command */
+"Toggle the visibility of the Information panel" = "Toggle the visibility of the Information panel";
+
+/* SQLite workspace label or command */
+"Trigger" = "Trigger";
+
+/* SQLite workspace label or command */
+"Trigger Definition" = "Trigger Definition";
+
+/* SQLite workspace label or command */
+"Truncate Table…" = "Truncate Table…";
+
+/* SQLite workspace label or command */
+"UNIQUE" = "UNIQUE";
+
+/* SQLite workspace label or command */
+"Unique" = "Unique";
+
+/* SQLite workspace label or command */
+"Unmark all tables" = "Unmark all tables";
+
+/* SQLite workspace label or command */
+"View" = "View";
+
+/* SQLite content status for a single row */
+"1 row in table" = "1 row in table";
