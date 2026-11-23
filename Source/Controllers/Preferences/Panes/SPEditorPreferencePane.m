@@ -50,11 +50,22 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 // categories; implementing them without it is deprecated. No behavior change.
 @interface SPEditorPreferencePane () <NSControlTextEditingDelegate, NSFontChanging>
 - (BOOL)_checkForUnsavedTheme;
+- (void)_refreshColorDisplay;
 - (NSArray *)_getAvailableThemes;
 - (void)_saveColorThemeAtPath:(NSString *)path;
 - (BOOL)_loadColorSchemeFromFile:(NSString *)filename;
 
 @property (readwrite, strong) NSFileManager *fileManager;
+
+/**
+ * The folder of saved .spTheme files (Application Support/Sequel Ace/Themes); empty when it can't be made.
+ */
+@property (readonly) NSString *themesDirectory;
+
+/**
+ * Asks before discarding unsaved ("User-defined") colors; YES to go ahead. Closes the color panel either way.
+ */
+- (BOOL)confirmDiscardUnsavedTheme;
 
 @end
 
@@ -151,6 +162,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	{
 		if (returnCode == NSModalResponseOK) {
 			[self _saveColorThemeAtPath:[[panel URL] path]];
+			[SAEditorAppearanceThemeSwitcher themeListDidChange];
 		}
 	}];
 }
@@ -171,6 +183,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	{
 		if (returnCode == NSModalResponseOK) {
 			if ([self _loadColorSchemeFromFile:[[[panel URLs] objectAtIndex:0] path] ]) {
+				[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 				[self->prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
 
 				[self updateDisplayColorThemeName];
@@ -184,6 +197,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![self _checkForUnsavedTheme]) return;
 	
 	if ([self _loadColorSchemeFromFile:[NSString stringWithFormat:@"%@/%@.%@", themePath, [sender title], SPColorThemeFileExtension]]) {
+		[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 		[prefs setObject:[sender title] forKey:SPCustomQueryEditorThemeName];
 		
 		[self updateDisplayColorThemeName];
@@ -209,6 +223,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 				}
 			}
 			[self _saveColorThemeAtPath:[NSString stringWithFormat:@"%@/%@.%@", self->themePath, [self->enterNameInputField stringValue], SPColorThemeFileExtension]];
+			[SAEditorAppearanceThemeSwitcher themeListDidChange];
 			[self updateColorSchemeSelectionMenu];
 			[self->prefs setObject:[self->enterNameInputField stringValue] forKey:SPCustomQueryEditorThemeName];
 			[self updateDisplayColorThemeName];
@@ -225,7 +240,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![fileManager fileExistsAtPath:selectedPath isDirectory:nil]) {
 		if ([fileManager copyItemAtPath:[NSString stringWithFormat:@"%@/%@.%@", themePath, [editThemeListItems objectAtIndex:[editThemeListTable selectedRow]], SPColorThemeFileExtension] toPath:selectedPath error:nil]) {
 			
-			
+			[SAEditorAppearanceThemeSwitcher themeListDidChange];
 			
 			editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 			
@@ -255,7 +270,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 				[prefs setObject:SPCustomColorSchemeName forKey:SPCustomQueryEditorThemeName];
 			}
 			
-			
+			[SAEditorAppearanceThemeSwitcher themeListDidChange];
 			
 			editThemeListItems = [NSArray arrayWithArray:[self _getAvailableThemes]];
 			
@@ -291,10 +306,23 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
 }
 
+/**
+ * The editor font's Reset: back to the default editor font, SF Mono 13.
+ */
 - (IBAction)resetSystemFont:(id)sender
 {
-  [prefs setObject:[SAArchiving archivedDataForFont:[NSUserDefaults getSystemFont]] forKey:SPCustomQueryEditorFont];
+  [SAEditorDefaults resetEditorFontIn:prefs];
   [self updateDisplayedEditorFontName];
+}
+
+- (NSString *)themesDirectory
+{
+	return themePath ?: @"";
+}
+
+- (BOOL)confirmDiscardUnsavedTheme
+{
+	return [self _checkForUnsavedTheme];
 }
 
 /**
@@ -305,6 +333,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (![self _checkForUnsavedTheme]) return;
 	
 	[[NSColorPanel sharedColorPanel] close];
+	[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 	
 	[prefs setObject:SPDefaultColorSchemeName forKey:SPCustomQueryEditorThemeName];
 	
@@ -417,6 +446,16 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 }
 
 /**
+ * Re-reads the editor colors after the appearance switcher loaded a theme.
+ */
+- (void)_refreshColorDisplay
+{
+	[colorSettingTableView setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+	[colorSettingTableView reloadData];
+	[self updateDisplayColorThemeName];
+}
+
+/**
  * Updates the currently selected colour scheme theme name.
  */
 - (void)updateDisplayColorThemeName
@@ -505,6 +544,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	if (colorData) {
 		[prefs setObject:colorData forKey:[editorColors objectAtIndex:colorRow]];
 	}
+	[[SAEditorAppearanceThemeSwitcher shared] userChoseThemeManually];
 
 	if ([[editorColors objectAtIndex:colorRow] isEqualTo:SPCustomQueryEditorBackgroundColor]) {
 		[colorSettingTableView setBackgroundColor:newColor];
@@ -583,6 +623,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 			return;
 		}
 		
+		[[SAEditorAppearanceThemeSwitcher shared] themeRenamedFrom:[editThemeListItems objectAtIndex:rowIndex] to:newName];
+		[SAEditorAppearanceThemeSwitcher themeListDidChange];
+
 		// Refresh current color theme setting name
 		if ([[[prefs objectForKey:SPCustomQueryEditorThemeName] lowercaseString] isEqualToString:[[editThemeListItems objectAtIndex:rowIndex] lowercaseString]]) {
 			[prefs setObject:newName forKey:SPCustomQueryEditorThemeName];
@@ -698,7 +741,12 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 - (NSView *)preferencePaneView
 {
-	return [self view];
+	// The XIB view with the Swift "Theme Appearance" section below it (built once, cached).
+	__weak SPEditorPreferencePane *weakSelf = self;
+	return [SAEditorThemeAppearanceSectionHost paneViewWrapping:[self view]
+	                                            themesDirectory:[self themesDirectory]
+	                                      confirmDiscardUnsaved:^BOOL{ return [weakSelf confirmDiscardUnsavedTheme]; }
+	                                             onThemeApplied:^{ [weakSelf _refreshColorDisplay]; }];
 }
 
 - (NSImage *)preferencePaneIcon
@@ -731,6 +779,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[self updateDisplayColorThemeName];
 	
 	[self updateDisplayedEditorFontName];
+
+	[SAEditorAppearanceThemeSwitcher themeListDidChange];
 }
 
 #pragma mark -
@@ -916,94 +966,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		}
 	}
 	
-	Class NSDictionaryClass = [NSDictionary class];
-	Class NSStringClass = [NSString class];
-	
-	NSUInteger actuallyLoaded = 0;
-	NSArray *themeElements;
-	if ([theme isKindOfClass:NSDictionaryClass]
-		&& (themeElements = [theme objectForKey:@"settings"])
-		&& [themeElements isKindOfClass:[NSArray class]]
-		&& [themeElements count]) {
-		
-		NSInteger counter = -1;
-		
-		NSDictionary *mainPairs = @{
-			@"background":    SPCustomQueryEditorBackgroundColor,
-			@"caret":         SPCustomQueryEditorCaretColor,
-			@"foreground":    SPCustomQueryEditorTextColor,
-			@"lineHighlight": SPCustomQueryEditorHighlightQueryColor,
-			@"selection":     SPCustomQueryEditorSelectionColor,
-		};
-		
-		NSDictionary *optPairs = @{
-			@"Comment":               SPCustomQueryEditorCommentColor,
-			@"String":                SPCustomQueryEditorQuoteColor,
-			@"Keyword":               SPCustomQueryEditorSQLKeywordColor,
-			@"User-defined constant": SPCustomQueryEditorBacktickColor,
-			@"Number":                SPCustomQueryEditorNumericColor,
-			@"Variable":              SPCustomQueryEditorVariableColor,
-		};
-		
-		for (NSDictionary *dict in themeElements)
-		{
-			counter++;
-			
-			if(![dict isKindOfClass:NSDictionaryClass]) {
-				SPLog(@"skipping unexpected object at settings[%ld]!",(long)counter);
-				continue;
-			}
-			
-			//the first item is special and contains all the main theme colors
-			if (counter == 0) {
-				NSDictionary *dic = [dict objectForKey:@"settings"];
-				if ([dic isKindOfClass:NSDictionaryClass]) {
-					for(NSString *key in mainPairs) {
-						NSString *rgbHex = [dic objectForKey:key];
-						NSColor *color;
-						if([rgbHex isKindOfClass:NSStringClass] && (color = [NSColor colorWithRGBHexString:rgbHex])) {
-							[prefs setObject:[SAArchiving archivedDataForColor:color] forKey:[mainPairs objectForKey:key]];
-							actuallyLoaded++;
-						}
-						else {
-							SPLog(@"Main color key '%@' is either missing in theme or failed parsing as hex color (at settings[0].settings)!", key);
-						}
-					}
-				}
-				else {
-					SPLog(@"Unexpected type for object main settings (at settings[0].settings)");
-				}
-			} 
-			else {
-				NSString *optName = [dict objectForKey:@"name"];
-				NSDictionary *optSettings = [dict objectForKey:@"settings"];
-				
-				if ([optName isKindOfClass:NSStringClass] && [optSettings isKindOfClass:NSDictionaryClass]) {
-					NSString *prefName = [optPairs objectForKey:optName];
-					if(prefName) {
-						NSString *rgbHex = [optSettings objectForKey:@"foreground"];
-						NSColor *color;
-						if([rgbHex isKindOfClass:NSStringClass] && (color = [NSColor colorWithRGBHexString:rgbHex])) {
-							[prefs setObject:[SAArchiving archivedDataForColor:color] forKey:prefName];
-							actuallyLoaded++;
-						}
-						else {
-							SPLog(@"Color for entry '%@' is either missing in theme or failed parsing as hex color (at settings[%ld].settings.foreground)!", optName, counter);
-						}
-					}
-					else {
-						SPLog(@"Skipping unknown color entry '%@' (at settings[%ld].name)", optName, counter);
-					}
-				}
-				else {
-					SPLog(@"Skipping invalid color entry: Either missing keys and/or unexpected objects (at settings[%ld])!", counter);
-				}
-			}
-		}
-	}
-	else {
-		SPLog(@"root key 'settings' is missing, has an unexpected type or is empty in theme file!");
-	}
+	// Theme parsing lives in Swift so the appearance switcher can share it.
+	NSUInteger actuallyLoaded = (NSUInteger)[SAEditorThemeLoader writeColorsFromThemePlist:theme intoDefaults:prefs];
 
 	if( actuallyLoaded > 0) {
 		[colorSettingTableView setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
