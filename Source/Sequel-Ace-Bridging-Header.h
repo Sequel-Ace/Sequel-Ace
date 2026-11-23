@@ -71,3 +71,7 @@
 // escapeAndQuoteString:, queryErrored, ...) needed by SPAppController+MCP.swift.
 #import <SPMySQL/SPMySQLConnection.h>
 #import "SPSSHTunnel.h"
+// Base class, output file and file handle for the Swift exporter SAJSONExporter.swift.
+#import "SPExporter.h"
+#import "SPExportFile.h"
+#import "SPFileHandle.h"

@@ -68,9 +68,10 @@ typedef NS_ENUM(NSUInteger, SPExportType) {
 	SPCSVExport   = 1,
 	SPXMLExport   = 2,
 	SPDotExport   = 3,
-	SPPDFExport   = 4,
-	SPHTMLExport  = 5,
-	SPExcelExport = 6,
+	SPJSONExport  = 4, // must match the tab order of the export dialog's type tab bar
+	SPPDFExport   = 5,
+	SPHTMLExport  = 6,
+	SPExcelExport = 7,
 	SPAnyExportType = NSUIntegerMax, // this is a transient type to indicate "no specific choice"
 };
 

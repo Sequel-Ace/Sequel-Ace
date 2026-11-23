@@ -367,6 +367,12 @@
                                                                     <action selector="exportSelectedTablesAs:" target="-2" id="7934"/>
                                                                 </connections>
                                                             </menuItem>
+                                                            <menuItem title="As JSON file..." tag="4" id="JSm-it-008">
+                                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                                                <connections>
+                                                                    <action selector="exportSelectedTablesAs:" target="-2" id="JSm-ac-009"/>
+                                                                </connections>
+                                                            </menuItem>
                                                         </items>
                                                     </menu>
                                                 </menuItem>
@@ -1313,6 +1319,12 @@
                                                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                                                     <connections>
                                                                                         <action selector="exportCustomQueryResultAsFormat:" target="5377" id="8010"/>
+                                                                                    </connections>
+                                                                                </menuItem>
+                                                                                <menuItem title="As JSON file..." tag="4" id="JSm-it-012">
+                                                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                                                    <connections>
+                                                                                        <action selector="exportCustomQueryResultAsFormat:" target="5377" id="JSm-ac-013"/>
                                                                                     </connections>
                                                                                 </menuItem>
                                                                             </items>
@@ -4658,6 +4670,12 @@ Gw
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="exportSelectedTablesAs:" target="-2" id="7059"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="As JSON file..." tag="4" id="JSm-it-010">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="exportSelectedTablesAs:" target="-2" id="JSm-ac-011"/>
                                 </connections>
                             </menuItem>
                         </items>

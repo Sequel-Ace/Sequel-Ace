@@ -47,6 +47,14 @@ final class SAExportOutputEncodingTests: XCTestCase {
         XCTAssertEqual(encoding(.xml, connection: shiftJIS), utf8)
     }
 
+    // MARK: - JSON text is UTF-8 by definition (RFC 8259)
+
+    func testJSONIsUTF8RegardlessOfConnection() {
+        XCTAssertEqual(encoding(.json, connection: utf8), utf8)
+        XCTAssertEqual(encoding(.json, connection: latin1), utf8)
+        XCTAssertEqual(encoding(.json, connection: shiftJIS), utf8)
+    }
+
     // MARK: - CSV has no declaration and follows the connection
 
     func testCSVFollowsTheConnectionEncoding() {
