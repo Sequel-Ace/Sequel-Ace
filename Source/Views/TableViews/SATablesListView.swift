@@ -20,6 +20,7 @@ import AppKit
 @objc(SATablesListView) final class SATablesListView: SPTableView, NSTextInputClient {
 
     private static let typeAheadResetInterval: TimeInterval = 0.3
+    private static let feedbackVisibleInterval: TimeInterval = 1.2
 
     private let typeAhead = SATypeAheadMatcher(resetInterval: SATablesListView.typeAheadResetInterval)
 
@@ -69,12 +70,7 @@ import AppKit
     // restored after a composition ends without a commit.
     private var lastSearchMatched = false
 
-    private var feedbackOverlay: NSVisualEffectView?
-    private var feedbackLabel: NSTextField?
-    private var feedbackHideTimer: Timer?
-    // Bumped on every show so a fade-out finishing late can tell its hide is
-    // stale and must not conceal feedback that was re-shown mid-animation.
-    private var feedbackVisibilityGeneration = 0
+    private let searchBadge = SAOverlayBadge(symbolName: "magnifyingglass")
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -102,7 +98,7 @@ import AppKit
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         cancelTypeAhead()
-        removeFeedbackOverlay()
+        searchBadge.remove()
         windowDeactivationSubscription = nil
         menuTrackingSubscription = nil
         removeWindowMouseDownMonitor()
@@ -166,7 +162,7 @@ import AppKit
     }
 
     deinit {
-        removeFeedbackOverlay()
+        searchBadge.remove()
         removeWindowMouseDownMonitor()
     }
 
@@ -275,8 +271,8 @@ import AppKit
         suspendPendingCommit()
         pendingSelection = nil
         pendingSelectionRetryDocument = nil
-        feedbackHideTimer?.invalidate()
-        hideSearchFeedback()
+        searchBadge.cancelPendingHide()
+        searchBadge.hide()
     }
 
     /// Ends the current search immediately, committing the row it matched.
@@ -286,8 +282,8 @@ import AppKit
 
         typeAhead.reset()
         discardComposition()
-        feedbackHideTimer?.invalidate()
-        hideSearchFeedback()
+        searchBadge.cancelPendingHide()
+        searchBadge.hide()
         return loadingDocument
     }
 
@@ -641,7 +637,7 @@ import AppKit
             schedulePendingCommit()
 
             if typeAhead.currentSearchString.isEmpty {
-                hideSearchFeedback()
+                searchBadge.hide()
             }
             else {
                 showSearchFeedback(typeAhead.currentSearchString, matched: lastSearchMatched)
@@ -714,14 +710,11 @@ import AppKit
     func firstRect(forCharacterRange range: NSRange, actualRange: NSRangePointer?) -> NSRect {
         actualRange?.pointee = range
 
-        let rectInWindow: NSRect
-        if let overlay = feedbackOverlay, !overlay.isHidden, let host = overlay.superview {
-            rectInWindow = host.convert(overlay.frame, to: nil)
-        }
-        else {
-            rectInWindow = convert(NSRect(x: visibleRect.minX, y: visibleRect.maxY, width: 1, height: 1), to: nil)
+        if let badgeFrame = searchBadge.screenFrame {
+            return badgeFrame
         }
 
+        let rectInWindow = convert(NSRect(x: visibleRect.minX, y: visibleRect.maxY, width: 1, height: 1), to: nil)
         return window?.convertToScreen(rectInWindow) ?? rectInWindow
     }
 
@@ -729,109 +722,16 @@ import AppKit
         NSNotFound
     }
 
-    // MARK: - Search feedback overlay
+    // MARK: - Search feedback badge
 
-    /// Shows the accumulated search string in a translucent badge pinned to
-    /// the bottom of the list; it fades out shortly after typing stops. An
-    /// unmatched search string is shown in red.
+    /// Shows the accumulated search string in the badge over the list; it
+    /// fades out shortly after typing stops, and an unmatched search string is
+    /// shown in red.
     private func showSearchFeedback(_ text: String, matched: Bool) {
-        guard let overlay = ensureFeedbackOverlay(), let label = feedbackLabel else {
-            return
-        }
-
-        feedbackVisibilityGeneration += 1
-
-        label.stringValue = text
-        label.textColor = matched ? .labelColor : .systemRed
-
-        overlay.isHidden = false
-        overlay.alphaValue = 1
-
-        feedbackHideTimer?.invalidate()
-        feedbackHideTimer = Timer.scheduledTimer(withTimeInterval: 1.2, repeats: false) { [weak self] _ in
-            self?.hideSearchFeedback()
-        }
-    }
-
-    private func hideSearchFeedback() {
-        guard let overlay = feedbackOverlay, !overlay.isHidden else {
-            return
-        }
-
-        let visibilityGeneration = feedbackVisibilityGeneration
-
-        NSAnimationContext.runAnimationGroup({ context in
-            context.duration = 0.25
-            overlay.animator().alphaValue = 0
-        }, completionHandler: { [weak self, weak overlay] in
-            guard let self, self.feedbackVisibilityGeneration == visibilityGeneration else {
-                return
-            }
-            overlay?.isHidden = true
-        })
-    }
-
-    private func removeFeedbackOverlay() {
-        feedbackHideTimer?.invalidate()
-        feedbackHideTimer = nil
-        feedbackVisibilityGeneration += 1
-        feedbackOverlay?.removeFromSuperview()
-        feedbackOverlay = nil
-        feedbackLabel = nil
-    }
-
-    /// Builds the badge lazily and pins it over the bottom edge of the
-    /// enclosing scroll view, so it stays put while the list scrolls.
-    private func ensureFeedbackOverlay() -> NSVisualEffectView? {
-        if let feedbackOverlay {
-            return feedbackOverlay
-        }
-
-        guard let scrollView = enclosingScrollView, let host = scrollView.superview else {
-            return nil
-        }
-
-        let overlay = SAClickThroughVisualEffectView()
-        overlay.translatesAutoresizingMaskIntoConstraints = false
-        overlay.material = .hudWindow
-        overlay.blendingMode = .withinWindow
-        overlay.state = .active
-        overlay.wantsLayer = true
-        overlay.layer?.cornerRadius = 6
-        overlay.layer?.masksToBounds = true
-        overlay.alphaValue = 0
-        overlay.isHidden = true
-
-        let icon = NSImageView()
-        icon.translatesAutoresizingMaskIntoConstraints = false
-        icon.image = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil)
-        icon.contentTintColor = .secondaryLabelColor
-
-        let label = NSTextField(labelWithString: "")
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: NSFont.systemFontSize(for: .small), weight: .medium)
-        label.lineBreakMode = .byTruncatingHead
-
-        overlay.addSubview(icon)
-        overlay.addSubview(label)
-        host.addSubview(overlay, positioned: .above, relativeTo: scrollView)
-
-        NSLayoutConstraint.activate([
-            icon.leadingAnchor.constraint(equalTo: overlay.leadingAnchor, constant: 8),
-            icon.centerYAnchor.constraint(equalTo: overlay.centerYAnchor),
-            label.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 4),
-            label.trailingAnchor.constraint(equalTo: overlay.trailingAnchor, constant: -8),
-            label.centerYAnchor.constraint(equalTo: overlay.centerYAnchor),
-            overlay.heightAnchor.constraint(equalToConstant: 22),
-            overlay.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            overlay.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -8),
-            overlay.widthAnchor.constraint(lessThanOrEqualTo: scrollView.widthAnchor, constant: -16)
-        ])
-
-        feedbackOverlay = overlay
-        feedbackLabel = label
-
-        return overlay
+        searchBadge.show(text,
+                         tint: matched ? .labelColor : .systemRed,
+                         over: enclosingScrollView,
+                         hideAfter: SATablesListView.feedbackVisibleInterval)
     }
 
     private func isSearchableScalar(_ scalar: Unicode.Scalar) -> Bool {
@@ -887,14 +787,5 @@ import AppKit
         }
 
         return rows
-    }
-}
-
-/// The search badge is purely informational; without this override the
-/// visual-effect view would swallow clicks meant for the rows beneath it.
-@objc private final class SAClickThroughVisualEffectView: NSVisualEffectView {
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        nil
     }
 }

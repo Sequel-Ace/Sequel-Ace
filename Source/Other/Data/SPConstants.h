@@ -377,6 +377,7 @@ extern NSString *SPCustomQueryFunctionCompletionInsertsArguments;
 extern NSString *SPCustomQueryEditorThemeName;
 extern NSString *SPCustomQuerySoftIndent;
 extern NSString *SPCustomQuerySoftIndentWidth;
+extern NSString *SPCustomQueryVimMode;
 extern NSString *UseDashStyleForBlockComment;
 
 // AutoUpdate Prefpane
