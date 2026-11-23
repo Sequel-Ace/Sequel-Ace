@@ -900,7 +900,7 @@ jobs:
       - name: Mint exact-target public asset token
         if: steps.public_assets_before.outputs.mode == 'api_upload' && steps.public_assets_before.outputs.ready != 'true'
         id: public_asset_token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
