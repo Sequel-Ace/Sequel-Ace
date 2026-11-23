@@ -198,8 +198,8 @@ extension SPAppController: SPMCPDataSource {
                     alert.alertStyle = .warning
                     alert.messageText = NSLocalizedString("MCP Server Error", comment: "MCP start error title")
                     alert.informativeText = String(format: NSLocalizedString(
-                        "The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server.",
-                        comment: "MCP start error message"),
+                        "ClaudeSettings.pointer.mcpPortError.message",
+                        comment: "Claude Settings pointer: MCP start error message; %ld is the port, %@ the error"),
                         Int(port), errorMsg ?? "unknown error")
                     alert.runModal()
                 }
@@ -532,7 +532,7 @@ extension SPAppController: SPMCPDataSource {
             // INTO OUTFILE etc. past that check. Re-validate the BOUND sql - what
             // actually runs - so the read-only boundary holds.
             if UserDefaults.standard.bool(forKey: SPMCPReadOnly), !SPMCPReadOnlyGuard.isReadOnly(bound) {
-                return ["error": "Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace Preferences > MCP Server to run write queries."]
+                return ["error": "Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace \(SAClaudeSettingsPointers.mcpReadOnlyPlace) to run write queries."]
             }
         }
 

@@ -88,6 +88,7 @@
 
 	// Hooks for layouts using the new single button with interchangeable actions
 	IBOutlet id runPrimaryActionButton;
+	IBOutlet NSPopUpButton *editorOptionsButton;
 	IBOutlet id runPrimaryActionButtonAsSelection;
 	IBOutlet NSMenuItem *runPrimaryActionMenuItem;
 	IBOutlet NSMenuItem *runSecondaryActionMenuItem;
@@ -166,7 +167,7 @@
 @property BOOL textViewWasChanged;
 @property (strong) SPBracketHighlighter *bracketHighlighter;
 
-// Exposed for Swift extensions (see SPCustomQuery+Explain.swift)
+// Exposed for Swift extensions (see SPCustomQuery+Explain.swift, SPCustomQuery+Script.swift)
 @property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
 @property (readonly, strong) SPTablesList *tablesListInstance;
 @property (readonly, strong) SPTextView *textView;
@@ -178,15 +179,23 @@
 @property (readonly, strong) NSTextField *errorTextTitle;
 @property (readonly, strong) id errorText;
 @property (readonly, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
+@property (readonly, strong) SPMySQLConnection *mySQLConnection;
+@property (readonly, strong) NSScrollView *customQueryScrollView;
+@property (readonly, strong) id affectedRowsText;
 
 // IBAction methods
 - (IBAction)runPrimaryQueryAction:(id)sender;
 - (IBAction)runSecondaryQueryAction:(id)sender;
+- (IBAction)runTertiaryQueryAction:(id)sender;
+/// Set while a run that must not change the Run button (⌥⌘R) calls -runAllAsScriptAction:.
+@property (nonatomic, assign) BOOL skipsRememberingScriptRun;
 - (IBAction)switchDefaultQueryAction:(id)sender;
 - (IBAction)runAllQueries:(id)sender;
 - (IBAction)runSelectedQueries:(id)sender;
 - (IBAction)chooseQueryFavorite:(id)sender;
 - (IBAction)chooseQueryHistory:(id)sender;
+/// Inserts a query on its own line (History / Favorites insert mode; also the Process List's Open in editor).
+- (void)insertPickedQuery:(NSString *)query;
 - (IBAction)closeSheet:(id)sender;
 - (IBAction)gearMenuItemSelected:(id)sender;
 - (IBAction)filterQueryFavorites:(id)sender;

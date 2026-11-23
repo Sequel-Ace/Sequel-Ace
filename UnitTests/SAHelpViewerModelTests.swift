@@ -6,6 +6,7 @@
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
 //
 
+import AppKit
 import XCTest
 
 final class SAHelpViewerModelTests: XCTestCase {
@@ -133,6 +134,26 @@ final class SAHelpViewerModelTests: XCTestCase {
         XCTAssertEqual(SAHelpTarget(rawValue: 2), .web)
     }
 
+    /// The segmented tabs bind to the index; it maps onto the targets in segment order and ignores an index out of range.
+    func testTargetIndexMapsToTargets() {
+        let model = SAHelpViewerModel()
+        XCTAssertEqual(model.targetIndex, 0)
+
+        model.targetIndex = 1
+        XCTAssertEqual(model.target, .page)
+        model.targetIndex = 2
+        XCTAssertEqual(model.target, .web)
+        XCTAssertEqual(model.targetIndex, 2)
+
+        model.target = .mysql
+        XCTAssertEqual(model.targetIndex, 0)
+
+        model.targetIndex = 3
+        XCTAssertEqual(model.target, .mysql)
+        model.targetIndex = -1
+        XCTAssertEqual(model.target, .mysql)
+    }
+
     // MARK: - Navigation policy matrix
 
     func testInternalLinkClickLooksUpTheTerm() {
@@ -215,9 +236,77 @@ final class SAHelpViewerModelTests: XCTestCase {
 
     // MARK: - Theme hook
 
-    func testThemeChangeScriptCallsTheTemplateHook() {
-        XCTAssertEqual(SAHelpViewerModel.themeChangeScript(isDarkAppearance: true), "window.onThemeChange('dark')")
-        XCTAssertEqual(SAHelpViewerModel.themeChangeScript(isDarkAppearance: false), "window.onThemeChange('light')")
+    private func theme(background: UInt32, text: UInt32) -> SAClaudeThemeColours {
+        let srgb = SAClaudeStyle.srgb
+        return SAClaudeThemeColours(background: srgb(background), text: srgb(text), keyword: srgb(0x6DA7EC), variable: srgb(0xA096EB),
+                                    caret: srgb(0xD97757), quote: srgb(0x55BF50), backtick: srgb(0xF4ABAB), selection: srgb(0x383835))
+    }
+
+    /// The hook gets the light/dark switch and the palette's CSS variables, so a theme or an accent change restyles the open page.
+    func testThemeChangeScriptPassesPalette() {
+        let accent = SAClaudeStyle.srgb(0x3B82F6)
+        let dark = SAClaudeHintCardPalette.make(theme: theme(background: 0x1F1E1D, text: 0xF0EFEC), accent: accent)
+        let darkScript = SAHelpViewerModel.themeChangeScript(palette: dark)
+        XCTAssertTrue(darkScript.hasPrefix("window.onThemeChange('dark', {"), darkScript)
+        XCTAssertTrue(darkScript.contains("\"--sa-accent\":\"\(SAClaudeHintCardCSS.colour(dark.accent))\""), darkScript)
+        XCTAssertTrue(darkScript.contains("\"--sa-surface\":\"\(SAClaudeHintCardCSS.colour(dark.surface))\""), darkScript)
+        XCTAssertEqual(darkScript, "window.onThemeChange('dark', \(SAClaudeHintCardCSS.json(dark)))")
+
+        let light = SAClaudeHintCardPalette.make(theme: theme(background: 0xFFFFFF, text: 0x000000), accent: accent)
+        let lightScript = SAHelpViewerModel.themeChangeScript(palette: light)
+        XCTAssertTrue(lightScript.hasPrefix("window.onThemeChange('light', {"), lightScript)
+        XCTAssertTrue(lightScript.contains("\"--sa-text\":\"#000000\""), lightScript)
+    }
+
+    // MARK: - Page theming gate
+
+    func testThemingBeforeAnyPageRunsNoScript() {
+        var theming = SAHelpViewerModel.PageTheming()
+
+        XCTAssertFalse(theming.themeChanged())
+        XCTAssertFalse(theming.themeChanged())
+        // A commit with no page requested has nothing to re-theme either.
+        XCTAssertFalse(theming.pageCommitted())
+    }
+
+    func testRequestingAPageNeedsNoScriptForEarlierChanges() {
+        var theming = SAHelpViewerModel.PageTheming()
+
+        _ = theming.themeChanged()
+        _ = theming.themeChanged()
+        theming.requestPage()
+
+        // The page was generated from the latest palette: nothing is left to apply when it commits.
+        XCTAssertFalse(theming.pageCommitted())
+    }
+
+    func testChangesAfterTheFirstPageApplyLive() {
+        var theming = SAHelpViewerModel.PageTheming()
+        theming.requestPage()
+        XCTAssertFalse(theming.pageCommitted())
+
+        XCTAssertTrue(theming.themeChanged())
+        XCTAssertTrue(theming.themeChanged())
+    }
+
+    func testAChangeWhileAPageIsLoadingIsAppliedAgainWhenItCommits() {
+        var theming = SAHelpViewerModel.PageTheming()
+        theming.requestPage()
+
+        XCTAssertTrue(theming.themeChanged())
+        XCTAssertTrue(theming.pageCommitted())
+        // Once applied, a further commit (the next navigation) has nothing pending.
+        XCTAssertFalse(theming.pageCommitted())
+    }
+
+    func testRequestingAnotherPageDropsChangesItsHTMLAlreadyHas() {
+        var theming = SAHelpViewerModel.PageTheming()
+        theming.requestPage()
+        XCTAssertTrue(theming.themeChanged())
+
+        theming.requestPage()
+
+        XCTAssertFalse(theming.pageCommitted())
     }
 
     // MARK: - Context menu

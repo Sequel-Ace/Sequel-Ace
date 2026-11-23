@@ -193,6 +193,24 @@ final class SARuleFilterDropBoxClickTests: XCTestCase {
         XCTAssertFalse(box.isShowingPreview)
         XCTAssertFalse(box.filterMenu()?.items.contains { $0.title == "Copy WHERE Clause" } ?? true)
     }
+
+    /// A defaults write on a background thread posts `UserDefaults.didChangeNotification` synchronously there. The
+    /// drop box observes it, and an observer that waits for the main queue blocked the writer while main waited
+    /// on that writer (a deadlock in the concurrent migration tests).
+    func testBackgroundDefaultsWriteDoesNotWaitForTheMainThread() {
+        let box = SPRuleFilterDropBox(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        let key = "SPRuleFilterDropBoxTests.backgroundWrite.\(UUID().uuidString)"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            UserDefaults.standard.set(true, forKey: key)
+            finished.signal()
+        }
+        // The main thread blocks here, as it does while waiting for concurrentPerform workers.
+        XCTAssertEqual(finished.wait(timeout: .now() + 2), .success)
+        withExtendedLifetime(box) {}
+    }
 }
 
 /// Where the drop zone puts its label and chevron.
@@ -288,6 +306,115 @@ final class SARuleFilterDropBoxLayoutCycleTests: XCTestCase {
 
                 XCTAssertLessThanOrEqual(box.layoutPasses, 2, "size \(size), preview \(showingPreview)")
             }
+        }
+    }
+}
+
+/// The rule editor sizes its own height to its rows: `NSRuleEditor.setFrameSize(_:)` refuses any other
+/// height. DBView.xib gives it a flexible height and a flexible top margin, so whenever Auto Layout applied a
+/// frame to it (its clip view laid out at a fractional height, as during the filter bar's animation) AppKit
+/// regenerated its autoresizing constraints and asked for another Update Constraints pass; at some heights the
+/// engine's answer never matched the refused height and the passes repeated until AppKit raised (the Table
+/// History Forward crash, 2026-10-21).
+final class SARuleFilterRuleEditorLayoutCycleTests: XCTestCase {
+
+    /// Counts the frame sizes the rule editor is given.
+    private final class CountingRuleEditor: SPFilterRuleEditor {
+        var frameSizeCalls = 0
+
+        /// Counts the call.
+        override func setFrameSize(_ newSize: NSSize) {
+            frameSizeCalls += 1
+            super.setFrameSize(newSize)
+        }
+    }
+
+    /// One plain criterion, so rows can be added without the filter controller.
+    private final class Criteria: NSObject, NSRuleEditorDelegate {
+        func ruleEditor(_ editor: NSRuleEditor, numberOfChildrenForCriterion criterion: Any?, with rowType: NSRuleEditor.RowType) -> Int {
+            criterion == nil ? 1 : 0
+        }
+
+        func ruleEditor(_ editor: NSRuleEditor, child index: Int, forCriterion criterion: Any?, with rowType: NSRuleEditor.RowType) -> Any {
+            "name"
+        }
+
+        func ruleEditor(_ editor: NSRuleEditor, displayValueForCriterion criterion: Any, inRow row: Int) -> Any {
+            "name"
+        }
+    }
+
+    /// Verifies the XIB's mask loses its vertical flexibility: the height is the rule editor's own.
+    func testVerticalFlexibilityIsDropped() {
+        let editor = SPFilterRuleEditor(frame: NSRect(x: 0, y: 0, width: 400, height: 29))
+        editor.autoresizingMask = [.width, .height, .maxYMargin]
+        XCTAssertEqual(editor.autoresizingMask, [.width])
+        XCTAssertEqual(SARuleFilterRuleEditorSizing.autoresizingMask(from: [.width, .height, .minYMargin, .maxYMargin, .minXMargin]), [.width, .minXMargin])
+    }
+
+    /// Verifies the mask decoded from a nib (DBView.xib's) loses its vertical flexibility too: the app's editor comes
+    /// through `init(coder:)`, which decodes the mask without the setter.
+    func testDecodedMaskLosesVerticalFlexibility() throws {
+        let plain = NSRuleEditor(frame: NSRect(x: 0, y: 0, width: 400, height: 29))
+        plain.autoresizingMask = [.width, .height, .maxYMargin]
+        let archiver = NSKeyedArchiver(requiringSecureCoding: false)
+        archiver.encode(plain, forKey: NSKeyedArchiveRootObjectKey)
+        archiver.finishEncoding()
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: archiver.encodedData)
+        unarchiver.requiresSecureCoding = false
+        unarchiver.setClass(SPFilterRuleEditor.self, forClassName: "NSRuleEditor")
+        let decoded = try XCTUnwrap(unarchiver.decodeObject(forKey: NSKeyedArchiveRootObjectKey) as? SPFilterRuleEditor)
+        XCTAssertEqual(decoded.autoresizingMask, [.width])
+    }
+
+    /// Verifies the rule editor settles within two frame updates at clip heights that looped before (a short,
+    /// fractional clip under three rows), given the XIB's mask.
+    func testLayoutSettlesAtFractionalClipHeights() {
+        let criteria = Criteria()
+        for height in [5.8, 20.7, 32.5, 94.666_666] as [CGFloat] {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 500), styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            defer { window.close() }
+            let content = NSView()
+            window.contentView = content
+            // A constraint anywhere in the window puts it under Auto Layout, as in the document window.
+            let constrained = NSView()
+            constrained.translatesAutoresizingMaskIntoConstraints = false
+            content.addSubview(constrained)
+            NSLayoutConstraint.activate([
+                constrained.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+                constrained.topAnchor.constraint(equalTo: content.topAnchor),
+                constrained.widthAnchor.constraint(equalToConstant: 10),
+                constrained.heightAnchor.constraint(equalToConstant: 10),
+            ])
+            let container = NSView(frame: NSRect(x: 0, y: 300, width: 900, height: 150))
+            container.autoresizingMask = [.width, .minYMargin]
+            content.addSubview(container)
+            let scrollView = NSScrollView(frame: NSRect(x: 1, y: 41, width: 898, height: 33))
+            scrollView.autoresizingMask = [.width, .height]
+            scrollView.hasVerticalScroller = true
+            scrollView.autohidesScrollers = true
+            scrollView.borderType = .noBorder
+            container.addSubview(scrollView)
+            let editor = CountingRuleEditor(frame: NSRect(x: 0, y: 0, width: 898, height: 29))
+            // DBView.xib's mask for the filter rule editor.
+            editor.autoresizingMask = [.width, .height, .maxYMargin]
+            editor.delegate = criteria
+            editor.nestingMode = .list
+            editor.rowHeight = 32
+            scrollView.documentView = editor
+            for _ in 0..<3 { editor.addRow(nil) }
+            window.layoutIfNeeded()
+
+            editor.frameSizeCalls = 0
+            var frame = scrollView.frame
+            frame.size.height = height
+            scrollView.frame = frame
+            scrollView.contentView.needsLayout = true
+            window.layoutIfNeeded()
+
+            XCTAssertLessThanOrEqual(editor.frameSizeCalls, 2, "clip height \(height)")
+            XCTAssertEqual(editor.frame.height, 96, "clip height \(height)")
         }
     }
 }
@@ -858,6 +985,58 @@ final class SARuleFilterBottomBarLayoutTests: XCTestCase {
         XCTAssertFalse(m.dropZoneVisible)
         XCTAssertEqual(m.dropZoneReservedHeight, 0)
         XCTAssertEqual(m.containerRequestedHeight, 0)
+    }
+
+    /// Verifies the AND/OR pill and the Apply pill sit on the drop zone's centre line, at the rule rows' pill height
+    /// (the XIB's 22pt pop-up and 27pt buttons drew pills that differed in where they sat).
+    func testBarPillsCentreOnTheDropZone() {
+        let zone = NSRect(x: 10, y: 7, width: 600, height: 28)
+        let centreY = SARuleFilterDropZoneLayoutPolicy.barCentreY(dropZoneVisible: true, dropZoneFrame: zone, barHeight: 40)
+        XCTAssertEqual(centreY, zone.midY)
+        let popUp = NSPopUpButton(frame: NSRect(x: 458, y: 4, width: 118, height: 22))
+        let apply = NSButton(frame: NSRect(x: 579, y: 2, width: 101, height: 27))
+        SARuleFilterDropZoneLayoutPolicy.centreBarControls([popUp, apply], onY: centreY)
+        for control in [popUp, apply] as [NSView] {
+            XCTAssertEqual(control.frame.height, SAClaudeFilterChrome.controlHeight)
+            XCTAssertEqual(control.frame.minY, control.frame.minY.rounded(), "whole points")
+            let pill = SAClaudeFilterChrome.controlFrame(in: control.frame)
+            XCTAssertEqual(pill, control.frame, "the pill fills the control")
+            XCTAssertEqual(pill.midY, zone.midY)
+            XCTAssertGreaterThanOrEqual(pill.minY, zone.minY, "a gap above the grid header")
+        }
+        XCTAssertEqual(popUp.frame.minX, 458)
+        XCTAssertEqual(apply.frame.width, 101)
+    }
+
+    /// Verifies the controls stay in the middle of the 31pt button bar (on whole points) when the drop zone is hidden.
+    func testBarControlsCentreInThePlainBarWithoutTheDropZone() {
+        let centreY = SARuleFilterDropZoneLayoutPolicy.barCentreY(dropZoneVisible: false, dropZoneFrame: .zero, barHeight: 31)
+        XCTAssertEqual(SARuleFilterDropZoneLayoutPolicy.barControlOriginY(height: SAClaudeFilterChrome.controlHeight, centreY: centreY), 3)
+    }
+
+    /// Verifies centring sets the pill height and moves only the vertical origin and the height.
+    func testCentringSetsTheHeightAndMovesControlsVertically() {
+        let popUp = NSView(frame: NSRect(x: 458, y: 4, width: 118, height: 22))
+        let apply = NSView(frame: NSRect(x: 579, y: 2, width: 101, height: 27))
+        SARuleFilterDropZoneLayoutPolicy.centreBarControls([popUp, apply], onY: 21)
+        XCTAssertEqual(popUp.frame, NSRect(x: 458, y: 9, width: 118, height: 24))
+        XCTAssertEqual(apply.frame, NSRect(x: 579, y: 9, width: 101, height: 24))
+    }
+
+    /// Verifies the pop-up and the buttons are one gap apart, and the pop-up one gap from the drop zone; the hidden
+    /// button (same place as Apply) moves with it.
+    func testBarControlsKeepOneGapBetweenZoneAndPills() {
+        let popUp = NSPopUpButton(frame: NSRect(x: 912.5, y: 10, width: 118, height: 22))
+        let apply = NSButton(frame: NSRect(x: 1033.5, y: 7, width: 101, height: 27))
+        let add = NSButton(frame: NSRect(x: 1033.5, y: 7, width: 101, height: 27))
+        let zoneMaxX: CGFloat = 899.5
+        SARuleFilterDropZoneLayoutPolicy.spaceBarControls([popUp, apply, add], afterX: zoneMaxX)
+        let gap = SARuleFilterDropZoneLayoutPolicy.barControlGap
+        XCTAssertEqual(popUp.frame.minX - zoneMaxX, gap)
+        XCTAssertEqual(apply.frame.minX - popUp.frame.maxX, gap)
+        XCTAssertEqual(add.frame, apply.frame)
+        XCTAssertEqual(popUp.frame.minY, 10, "x only")
+        XCTAssertEqual(apply.frame.size, NSSize(width: 101, height: 27))
     }
 }
 

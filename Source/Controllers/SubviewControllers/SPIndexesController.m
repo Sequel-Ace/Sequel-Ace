@@ -108,6 +108,12 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 - (void)awakeFromNib
 {
+	// The Indexes tab's bottom strip. This runs for both nibs; in the New index sheet's, addIndexButton
+	// is the sheet's Add button, which sits straight in the sheet's content view.
+	if ([addIndexButton superview] != [[addIndexButton window] contentView]) {
+		[SAClaudeTabBarStyler attachToContainer:[addIndexButton superview] barTop:25 content:[indexesTableView enclosingScrollView] status:nil search:nil label:nil];
+	}
+
 	// As this controller also loads its own nib, it may call awakeFromNib multiple times; perform setup only once.
 	if (mainNibLoaded) return;
     [super awakeFromNib];
@@ -136,6 +142,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:IndexesControllerKVOContext];
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+
 }
 
 #pragma mark -

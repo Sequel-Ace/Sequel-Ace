@@ -128,6 +128,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
     // Register application defaults
     [prefs registerDefaults:preferenceDefaults];
+    [SAEditorAppearanceThemeSwitcher registerDefaults];
+    [SAClaudeEditorDefaults registerAndMigrate];
 
     // Upgrade prefs before any other parts of the app pick up on the values
     SPApplyRevisionChanges();
@@ -194,6 +196,14 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
+    [SAConnectionColourStyleMigration migrateStandardDefaults];
+    [SAClaudeToolbarMenu install];
+    [SAClaudeSettingsWindowHost applySettingsMenuTitle];
+    [SAClaudeSheetStyler start];
+    [SAClaudeMenuGlyphPass start];
+    [SAClaudeWindowTabBarController installWindowMenuMergeItem];
+    [SAClaudeConnectionsFileMenu install];
+
     [SAAnalyticsConsentPolicy requestConsentIfNeeded];
     [SAAnalyticsConsentPolicy applyAnalyticsConsent];
 
@@ -203,8 +213,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // this reRequests access to all bookmarks
     SecureBookmarkManager *secureBookmarkManager = SecureBookmarkManager.sharedInstance;
 
-    // prompt user to recreate secure bookmarks
-    if(secureBookmarkManager.staleBookmarks.count > 0){
+    // prompt user to recreate secure bookmarks (not in a private build: it is unsandboxed and needs no bookmarks)
+    if([NSBundle.mainBundle showsStaleBookmarkAlertForCount:secureBookmarkManager.staleBookmarks.count]){
 
         SPLog(@"We have stale bookmarks");
 
@@ -219,12 +229,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                                                      message:[SABookmarkAlertContent staleBookmarksMessageWithCount:secureBookmarkManager.staleBookmarks.count]
                                                    listItems:[SABookmarkAlertContent displayNamesForBookmarkPaths:staleBookmarkPaths]
                                                accessoryView:_staleBookmarkHelpView
-                                          primaryButtonTitle:NSLocalizedString(@"Open Files Preferences", @"open files preferences button")
+                                          primaryButtonTitle:NSLocalizedString(@"ClaudeSettings.pointer.openSettings", @"Claude Settings pointer: button that opens Settings on the place the message names (was \"Open Files Preferences\" / \"Go to Network Settings\")")
                                         secondaryButtonTitle:NSLocalizedString(@"Continue", @"continue launching button")
                           primaryButtonHandler:^{
             SPLog(@"re-request access now");
-            [self->prefsController showWindow:self];
-            [self->prefsController displayPreferencePane:self->prefsController->fileItem];
+            [self->prefsController showSettingsForPointer:SAClaudeSettingsPointerLaunchStaleFiles];
         } secondaryButtonHandler:^{
             SPLog(@"Continue launching with stale bookmarks");
         }];
@@ -269,6 +278,15 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [SPBundleManager.shared reloadBundles:self];
     [self _copyDefaultThemes];
 
+    // The editor theme follows the app's light/dark appearance when the user wants it to.
+    NSString *themesDirectory = [[NSFileManager defaultManager] applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
+    if (themesDirectory) {
+        // Installed copies of the bundled Claude themes are refreshed when the bundled ones change.
+        NSString *bundledThemesPath = [NSString stringWithFormat:@"%@/Default Themes", NSBundle.mainBundle.sharedSupportPath];
+        [SAClaudeThemeRefresher refreshInstalledThemesFromDirectory:bundledThemesPath toDirectory:themesDirectory defaults:[NSUserDefaults standardUserDefaults]];
+        [[SAEditorAppearanceThemeSwitcher shared] startWithThemesDirectory:themesDirectory];
+    }
+
     // Start the embedded MCP server if enabled in preferences.
     [self setupMCPServer];
 
@@ -282,7 +300,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
 
         // Set autoconnection if appropriate
-        if ([prefs boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
+        if ([prefs boolForKey:SPAutoConnectToDefault] && [NSBundle.mainBundle staleBookmarksAllowAutoConnectForCount:secureBookmarkManager.staleBookmarks.count]) {
             [newWindowController.databaseDocument connect];
         }
     }
@@ -304,7 +322,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (void)addCheckForUpdatesMenuItem {
-    if (NSBundle.mainBundle.isMASVersion == NO) {
+    if (NSBundle.mainBundle.offersGitHubUpdates) {
         SPLog(@"Adding menu item to check for updates");
         NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...") action:@selector(checkForNewVersionFromMenu) keyEquivalent:@""];
         [mainMenu insertItem:updates atIndex:1];
@@ -814,6 +832,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
                 // Security check if file really exists
                 if ([fileManager fileExistsAtPath:fileName]) {
                     [newWindowController.databaseDocument setIsSavedInBundle:isBundleFile];
+                    // Claude look: a restored bundle window keeps its bundle's favourites and filters (SASessionBundleRestoreMark)
+                    if (isBundleFile) [SASessionBundleRestoreMark markDocument:newWindowController.databaseDocument];
                     if (![newWindowController.databaseDocument setStateFromConnectionFile:fileName]) {
                         break;
                     }

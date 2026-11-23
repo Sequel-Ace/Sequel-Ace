@@ -41,10 +41,12 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPColorSelectorView.h"
+#import "sequel-ace-Swift.h"
 
 @interface SPColorSelectorView ()
 
 - (void)setupTrackingAreas;
+- (NSInteger)slotCount;
 - (void)_drawDotBevelStyleWithGradient:(NSGradient *)gradient insideRect:(NSRect)colorSquareRect;
 - (void)_drawDotFlatStyleWithColor:(NSColor *)color insideRect:(NSRect)colorSquareRect;
 
@@ -58,19 +60,10 @@
 // key for dictionary in NSTrackingAreas's userInfo
 NSString* kTrackerKey = @"whichTracker";
 
-// key values for dictionary in NSTrackingAreas's userInfo,
-// which tracking area is being tracked
-enum trackingAreaIDs
-{
-	kTrackingAreaNone = -1,
-	kTrackingArea0,
-	kTrackingArea1,
-	kTrackingArea2,
-	kTrackingArea3,
-	kTrackingArea4,
-	kTrackingArea5,
-	kTrackingArea6
-};
+// The tag of the "no colour" slot. Every other slot's tag is the index of its
+// colour in colorList; SAFavoriteColourSelectorLayout decides which slots exist
+// (the "none" slot, then the colours in rainbow order) and where they are drawn.
+static const NSInteger kTrackingAreaNone = -1;
 
 // -------------------------------------------------------------------------------
 //	initWithFrame:
@@ -147,35 +140,44 @@ enum trackingAreaIDs
 }
 
 // -------------------------------------------------------------------------------
-//	Returns the rectangle corresponding to the tracking area.
+//	Returns the rectangle of the slot at the given position (0 is the "none" slot).
+//	The dots keep their size when the view is wide enough and are squeezed
+//	together (then shrunk) when it is narrower, so they always fit the view.
 // -------------------------------------------------------------------------------
 - (NSRect)rectForColorViewAtIndex:(NSInteger)index
 {
-	CGFloat baseY = 2.0;
-	CGFloat baseX = 3.0;
-	
-	CGFloat marginR = 7.0;
-	
-	CGFloat width = 16.0;
-	CGFloat height = 16.0;
-	
-	NSRect returnRect = NSZeroRect;
-	
-	switch (index)
-	{
-		case kTrackingAreaNone:
-		case kTrackingArea0:
-		case kTrackingArea1:
-		case kTrackingArea2:
-		case kTrackingArea3:
-		case kTrackingArea4:
-		case kTrackingArea5:
-		case kTrackingArea6:
-			returnRect = NSMakeRect(baseX + (index + 1) * (width + marginR), baseY, width, height);
-			break;
-	}
-	
-	return returnRect;
+	return [SAFavoriteColourSelectorLayout rectForSlot:index colourCount:[colorList count] width:[self bounds].size.width height:[self bounds].size.height];
+}
+
+- (BOOL)isDarkAppearance
+{
+	NSAppearanceName match = [[self effectiveAppearance] bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]];
+	return [match isEqualToString:NSAppearanceNameDarkAqua];
+}
+
+- (void)setFrameSize:(NSSize)newSize
+{
+	[super setFrameSize:newSize];
+
+	// the slot positions depend on the width
+	[self setupTrackingAreas];
+	[self setNeedsDisplay:YES];
+}
+
+- (NSInteger)slotCount
+{
+	return [SAFavoriteColourSelectorLayout slotCountForColourCount:[colorList count]];
+}
+
+- (void)setColorList:(NSArray *)newColorList
+{
+	colorList = [newColorList copy];
+
+	// The slots depend on the list: rebuild the tracking areas and redraw
+	trackEntered = NO;
+	hoverTag = NSNotFound;
+	[self setupTrackingAreas];
+	[self setNeedsDisplay:YES];
 }
 
 - (NSGradient *)gradientForTag:(NSInteger)colorTag
@@ -202,35 +204,49 @@ enum trackingAreaIDs
 
 // -------------------------------------------------------------------------------
 //	setupTrackingAreas:
+//
+//	One tracking area per slot; any earlier ones are removed first. Each area's
+//	userInfo holds the tag of its slot.
 // -------------------------------------------------------------------------------
 - (void)setupTrackingAreas
 {
-	if (trackingAreas == nil)
-	{
+	if (trackingAreas == nil) {
 		trackingAreas = [NSMutableArray array];	// keep all tracking areas in an array
-		
-		// determine the tracking options
-		NSTrackingAreaOptions trackingOptions = NSTrackingEnabledDuringMouseDrag |
-		NSTrackingMouseEnteredAndExited |
-		NSTrackingActiveInActiveApp |
-		NSTrackingActiveAlways;
-		
-		NSInteger index;
-		
-		for (index = kTrackingAreaNone; index <= kTrackingArea6; index++)
-		{
-			// make tracking data (to be stored in NSTrackingArea's userInfo) so we can later determine which tracking area is focused on
-			//
-			NSDictionary* trackerData = [NSDictionary dictionaryWithObjectsAndKeys: [NSNumber numberWithInteger:index], kTrackerKey, nil];
-			NSTrackingArea* trackingArea = [[NSTrackingArea alloc] initWithRect:[self rectForColorViewAtIndex:index]
-																		options:trackingOptions
-																		  owner:self
-																	   userInfo:trackerData];
-			
-			[trackingAreas addObject:trackingArea];	// keep track of this tracking area for later disposal
-			[self addTrackingArea: trackingArea];	// add the tracking area to the view/window
-		}
 	}
+
+	for (NSTrackingArea *oldArea in trackingAreas) {
+		[self removeTrackingArea:oldArea];
+	}
+	[trackingAreas removeAllObjects];
+
+	// determine the tracking options
+	NSTrackingAreaOptions trackingOptions = NSTrackingEnabledDuringMouseDrag |
+	NSTrackingMouseEnteredAndExited |
+	NSTrackingActiveInActiveApp |
+	NSTrackingActiveAlways;
+
+	NSInteger colourCount = [colorList count];
+	NSInteger slots = [self slotCount];
+
+	for (NSInteger slot = 0; slot < slots; slot++)
+	{
+		// make tracking data (to be stored in NSTrackingArea's userInfo) so we can later determine which tracking area is focused on
+		NSInteger tag = [SAFavoriteColourSelectorLayout tagForSlot:slot colourCount:colourCount];
+		NSDictionary* trackerData = [NSDictionary dictionaryWithObjectsAndKeys: [NSNumber numberWithInteger:tag], kTrackerKey, nil];
+		NSTrackingArea* trackingArea = [[NSTrackingArea alloc] initWithRect:[self rectForColorViewAtIndex:slot]
+																	options:trackingOptions
+																	  owner:self
+																   userInfo:trackerData];
+
+		[trackingAreas addObject:trackingArea];	// keep track of this tracking area for later disposal
+		[self addTrackingArea: trackingArea];	// add the tracking area to the view/window
+	}
+}
+
+- (void)updateTrackingAreas
+{
+	[super updateTrackingAreas];
+	[self setupTrackingAreas];
 }
 
 #pragma mark -
@@ -246,53 +262,77 @@ enum trackingAreaIDs
 	// see if we should be drawing any of the tags as already selected
 	NSInteger currentlySelectedTag = [self selectedTag];
 	
-	NSInteger index;
+	NSInteger colourCount = [colorList count];
+	NSInteger slots = [self slotCount];
+	NSInteger selectedSlot = [SAFavoriteColourSelectorLayout slotForTag:currentlySelectedTag colourCount:colourCount];
+	BOOL dark = [self isDarkAppearance];
 	
-	for (index = kTrackingAreaNone; index <= kTrackingArea6; index++)
+	for (NSInteger slot = 0; slot < slots; slot++)
 	{
-		NSRect colorSquareRect = [self rectForColorViewAtIndex:index];
+		NSRect colorSquareRect = [self rectForColorViewAtIndex:slot];
+		NSInteger index = [SAFavoriteColourSelectorLayout tagForSlot:slot colourCount:colourCount];
 		
 		//make sure the color at index is actually defined
 		if(index >= 0 && [colorList safeObjectAtIndex:index] == nil)
 			continue;
 		
 		//do not draw a selection around the X item
-		if (index > kTrackingAreaNone && index == currentlySelectedTag)
+		BOOL hovered = (index == hoverTag && trackEntered);
+		if (slot > 0 && slot == selectedSlot)
 		{
+			// light: a pale disc; dark: a translucent white disc with a clear ring, so light dots keep their edge
 			NSBezierPath *highlightPath = [NSBezierPath bezierPathWithOvalInRect:NSInsetRect(colorSquareRect, -1.5, -1.5)];
-			[[NSColor colorWithCalibratedRed:0.76 green:0.78 blue:0.82 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.18] set];
+			} else {
+				[[NSColor colorWithCalibratedRed:0.76 green:0.78 blue:0.82 alpha:1.0] set];
+			}
 			[highlightPath fill];
 			
-			[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.55] set];
+			} else {
+				[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			}
 			[highlightPath setLineWidth:1.0];
 			[highlightPath stroke];
 			
 		}
-		else if (index == hoverTag && trackEntered)
+		else if (hovered)
 		{
 			// if we are tracking inside any tag, we want outline the color choice
 			NSBezierPath *highlightPath = [NSBezierPath bezierPathWithOvalInRect:NSInsetRect(colorSquareRect, -1.5, -1.5)];
-			[[NSColor colorWithCalibratedWhite:0.94 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.10] set];
+			} else {
+				[[NSColor colorWithCalibratedWhite:0.94 alpha:1.0] set];
+			}
 			[highlightPath fill];
 			
-			[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			if (dark) {
+				[[NSColor colorWithWhite:1.0 alpha:0.30] set];
+			} else {
+				[[NSColor colorWithCalibratedWhite:0.6 alpha:1.0] set];
+			}
 			[highlightPath setLineWidth:1.0];
 			[highlightPath stroke];
 		}
 		
 		if (index == kTrackingAreaNone) {
 			
-			[[NSColor disabledControlTextColor] set];
+			// in the dark the disabled colour is too faint on the hover disc
+			[((dark && hovered) ? [NSColor secondaryLabelColor] : [NSColor disabledControlTextColor]) set];
 			
-			// Draw an X
+			// Draw an X, scaled with the slot
+			CGFloat unit = colorSquareRect.size.width / 16.0;
 			NSBezierPath *left = [NSBezierPath bezierPath];
 			
-			[left setLineWidth:3.0];
+			[left setLineWidth:3.0 * unit];
 			[left setLineCapStyle:NSLineCapStyleButt];
-			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0, colorSquareRect.origin.y +  4.0)];
-			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y + 12.0)];
-			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y +  4.0)];
-			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0, colorSquareRect.origin.y + 12.0)];
+			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0 * unit, colorSquareRect.origin.y +  4.0 * unit)];
+			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0 * unit, colorSquareRect.origin.y + 12.0 * unit)];
+			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0 * unit, colorSquareRect.origin.y +  4.0 * unit)];
+			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0 * unit, colorSquareRect.origin.y + 12.0 * unit)];
 			[left stroke];
 		}
 		else {
@@ -340,12 +380,11 @@ enum trackingAreaIDs
 
 - (void)_drawDotFlatStyleWithColor:(NSColor *)color insideRect:(NSRect)colorSquareRect
 {
-	CGFloat h,s,b,a;
-	[[color colorUsingColorSpace:[NSColorSpace deviceRGBColorSpace]] getHue:&h saturation:&s brightness:&b alpha:&a];
-	
-	NSRect dotRect = NSInsetRect(colorSquareRect, 2.0, 2.0);
+	// the dot is 12pt in a full-size slot, and fills a squeezed one
+	CGFloat inset = MAX(0.0, (colorSquareRect.size.width - [SAFavoriteColourSelectorLayout visualDotSize]) / 2.0);
+	NSRect dotRect = NSInsetRect(colorSquareRect, inset, inset);
 	NSBezierPath *circlePath = [NSBezierPath bezierPathWithOvalInRect:dotRect];
-	[[NSColor colorWithCalibratedHue:h saturation:s*1.21 brightness:b*1.1 alpha:a] set];
+	[color set];
 	[circlePath fill];
 	
 	[[color shadowWithLevel:0.15f] set];
@@ -408,13 +447,16 @@ enum trackingAreaIDs
 	NSPoint mousePoint = [self convertPoint:[[self window] mouseLocationOutsideOfEventStream] fromView:nil];
 	
 	// figure out which tag color was clicked on at mouseUp time
-	NSInteger index;
+	NSInteger colourCount = [colorList count];
+	NSInteger slots = [self slotCount];
 	
-	for (index = kTrackingAreaNone; index <= kTrackingArea6; index++)
+	for (NSInteger slot = 0; slot < slots; slot++)
 	{
-		NSRect tagRect = [self rectForColorViewAtIndex:index];
+		NSRect tagRect = [self rectForColorViewAtIndex:slot];
 		if (NSPointInRect(mousePoint, tagRect))
 		{
+			NSInteger index = [SAFavoriteColourSelectorLayout tagForSlot:slot colourCount:colourCount];
+
 			// Ignore non-changes
 			if (index == selectedTag) return;
 			

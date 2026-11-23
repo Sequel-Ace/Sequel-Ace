@@ -175,6 +175,9 @@
 		[self _updateServerVariablesFilterForFilterString:[filterVariablesSearchField stringValue]];
 	}
 	
+	// Claude look: grid, search highlights and the full-value strip (claimed by owner identity; built once).
+	[SAClaudeServerVariablesStyler claimWindow:[self window]];
+
 	// Open the sheet
 	[window beginSheet:self.window completionHandler:nil];
 }

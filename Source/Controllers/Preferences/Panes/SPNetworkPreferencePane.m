@@ -50,6 +50,7 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
 - (void)storeSSLCiphers;
 + (NSArray *)defaultSSLCipherList;
 - (void)_refreshBookmarks;
+- (NSUInteger)_populateSSHFilePopUp:(NSPopUpButton *)button;
 
 @end
 
@@ -118,6 +119,11 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
 - (NSString *)preferencePaneToolTip
 {
 	return NSLocalizedString(@"Network Preferences", @"network preference pane tooltip");
+}
+
+- (NSTableView *)cipherTableView
+{
+	return sslCipherView;
 }
 
 - (void)preferencePaneWillBeShown
@@ -288,7 +294,11 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
     [self updateSSHConfigPopUp:sshConfigChooser];
 }
 
-- (void)updateSSHConfigPopUp:(NSPopUpButton*)button
+/**
+ * The chooser's menu, rebuilt from the granted files: "Sequel Ace default", for known hosts (tag 2) the ADVANCED item,
+ * every granted file, "Other file...". Returns how many granted files it lists.
+ */
+- (NSUInteger)_populateSSHFilePopUp:(NSPopUpButton *)button
 {
 	// clear up all existing items
 	[button removeAllItems];
@@ -332,6 +342,45 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
 	// it
 	[[button menu] addItem:[NSMenuItem separatorItem]];
 	[button addItemWithTitle:@"Other file..."];
+
+	return count;
+}
+
+- (NSArray *)sshFileMenuTitlesForKnownHosts:(BOOL)knownHosts
+{
+	NSPopUpButton *chooser = knownHosts ? knownHostsChooser : sshConfigChooser;
+	[self _populateSSHFilePopUp:chooser];
+
+	NSMutableArray *titles = [NSMutableArray arrayWithCapacity:[chooser numberOfItems]];
+	for (NSMenuItem *item in [chooser itemArray]) {
+		[titles addObject:[item isSeparatorItem] ? (id)[NSNull null] : [item title]];
+	}
+	return titles;
+}
+
+- (void)chooseSSHFileMenuItemAtIndex:(NSInteger)index knownHosts:(BOOL)knownHosts
+{
+	NSPopUpButton *chooser = knownHosts ? knownHostsChooser : sshConfigChooser;
+	[self _populateSSHFilePopUp:chooser];
+	if (index < 0 || index >= [chooser numberOfItems] || [[chooser itemAtIndex:index] isSeparatorItem]) return;
+
+	[chooser selectItemAtIndex:index];
+
+	if (knownHosts) {
+		// Picking in the chooser first wrote its tag (0) to the key through the selectedTag binding, then the action
+		// overwrote it — except for "Sequel Ace default", where the 0 stayed and the tunnel reads an empty or numeric
+		// path as the default file. Nothing is written in passing here, so that choice clears the key instead.
+		if (index == 0) [prefs removeObjectForKey:SPSSHUsualKnownHostsFile];
+		[self updateKnownHostsConfig:chooser];
+	}
+	else {
+		[self updateSSHConfig:chooser];
+	}
+}
+
+- (void)updateSSHConfigPopUp:(NSPopUpButton*)button
+{
+	NSUInteger count = [self _populateSSHFilePopUp:button];
 
     // sshConfigChooser button tagged with @1 in IB
     if(button.tag == 1){
@@ -404,8 +453,8 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
                         SPLog(@"fileNames adding missing file: %@", missingFile.lastPathComponent);
                     }
 
-                    // prompt user to recreate secure bookmarks
-                    if(missingBookmarkPaths.count > 0){
+                    // prompt user to recreate secure bookmarks (not in a private build: it is unsandboxed and needs no bookmarks)
+                    if([NSBundle.mainBundle showsStaleBookmarkAlertForCount:missingBookmarkPaths.count]){
 
                         NSView *helpView = [self modifyAndReturnBookmarkHelpView];
 
@@ -419,8 +468,7 @@ static NSString *SPSSLCipherListMarkerItem = @"--";
                             SPLog(@"request access now");
                             [self->errorFileNames removeAllObjects];
                             SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
-                            [prefCon showWindow:nil];
-                            [prefCon displayPreferencePane:prefCon->fileItem];
+                            [prefCon showSettingsForPointer:SAClaudeSettingsPointerNetworkMissingFiles];
 
                         } secondaryButtonHandler:^{
                             SPLog(@"No not now");

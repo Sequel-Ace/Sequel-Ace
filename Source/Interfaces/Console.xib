@@ -57,7 +57,7 @@
                             <rect key="frame" x="1" y="1" width="574" height="132"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" autosaveColumns="NO" rowHeight="16" headerView="112" id="14">
+                                <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" autosaveColumns="NO" rowHeight="16" headerView="112" id="14" customClass="SAClaudeConsoleTableView">
                                     <rect key="frame" x="0.0" y="0.0" width="574" height="115"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -129,7 +129,7 @@
                             <rect key="frame" x="539" y="1" width="15" height="124"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
-                        <tableHeaderView key="headerView" wantsLayer="YES" id="112">
+                        <tableHeaderView key="headerView" wantsLayer="YES" id="112" customClass="SAClaudeTableHeaderView">
                             <rect key="frame" x="0.0" y="0.0" width="574" height="17"/>
                             <autoresizingMask key="autoresizingMask"/>
                             <connections>

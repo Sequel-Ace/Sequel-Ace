@@ -39,8 +39,10 @@
 #import "sequel-ace-Swift.h"
 
 @interface SPPreferenceController () <NSWindowDelegate>
-
-- (void)_resizeWindowForContentView:(NSView *)view;
+{
+	// The Claude Settings content in this window (sidebar + panes); the XIB panes stay loaded behind it.
+	SAClaudeSettingsWindowHost *settingsHost;
+}
 
 @end
 
@@ -91,37 +93,37 @@
 					   filePreferencePane,
 					   mcpPreferencePane,
 					   nil];
+
+	settingsHost = [SAClaudeSettingsWindowHost installIn:[self window] controller:self];
+
     [super windowDidLoad];
+}
+
+- (NSArray *)legacyPreferencePanes
+{
+	return preferencePanes;
 }
 
 #pragma mark -
 #pragma mark Toolbar item IBAction methods
 
 - (IBAction)displayPreferencePane:(id)sender
-{	
-	SPPreferencePane <SPPreferencePaneProtocol> *preferencePane = nil;
-	
-	if (!sender) {
-		preferencePane = generalPreferencePane;
-	}
-	else {
-		for (SPPreferencePane <SPPreferencePaneProtocol> *prefPane in preferencePanes)
-		{
-			if ([[prefPane preferencePaneIdentifier] isEqualToString:[sender itemIdentifier]]) {
-				preferencePane = prefPane;
-				break;
-			}
-		}
-	}
-	
-	[[self window] setMinSize:NSMakeSize(500, 450)];
-	[[self window] setShowsResizeIndicator:YES];
-	
-	[toolbar setSelectedItemIdentifier:[preferencePane preferencePaneIdentifier]];
-	
-	[preferencePane preferencePaneWillBeShown];
-	
-	[self _resizeWindowForContentView:[preferencePane preferencePaneView]];
+{
+	NSString *identifier = [sender respondsToSelector:@selector(itemIdentifier)] ? [sender itemIdentifier] : nil;
+
+	[self window]; // Loads the nib, which installs the Settings content.
+	[settingsHost showLegacyPaneIdentifier:identifier];
+}
+
+- (void)showSettingsPane:(NSString *)paneID revealRow:(NSString *)rowID regrantStaleFiles:(BOOL)flag
+{
+	[self showWindow:self];
+	[settingsHost showPane:paneID revealRowID:rowID regrantStaleFiles:flag];
+}
+
+- (void)showSettingsPane:(NSString *)paneID revealRow:(NSString *)rowID
+{
+	[self showSettingsPane:paneID revealRow:rowID regrantStaleFiles:NO];
 }
 
 #pragma mark -
@@ -153,6 +155,9 @@
 			[prefs setObject:[SAArchiving archivedDataForFont:font] forKey:SPCustomQueryEditorFont];
 			
 			[editorPreferencePane updateDisplayedEditorFontName];
+			break;
+		case SPPrefFontChangeTargetScriptConsole:
+			[SAScriptConsoleFontPanel applyFontPanelChange];
 			break;
 	}
 }
@@ -236,25 +241,8 @@
 	[toolbar setSelectedItemIdentifier:[generalPreferencePane preferencePaneIdentifier]];
 	[toolbar setAllowsUserCustomization:NO];
 
-	[[self window] setToolbar:toolbar];
-	[[self window] setShowsToolbarButton:NO];
-
-	[self displayPreferencePane:nil];
-}
-
-/**
- * Resizes the window to the size of the supplied view.
- */
-- (void)_resizeWindowForContentView:(NSView *)view
-{
-	// Handle expanding
-	[[self window] resizeForContentView:view];
-
-	// Add view
-	[self window].contentView = view;
-
-	// Handle contracting
-	[[self window] resizeForContentView:view];
+	// The toolbar is no longer shown: the Claude Settings sidebar replaces it. Its items stay, as outside callers pass
+	// them to -displayPreferencePane: to name a pane.
 }
 
 #pragma mark - SPPreferenceControllerDelegate
@@ -262,10 +250,22 @@
 #pragma mark Window delegate methods
 
 /**
+ * Writes the edit in progress in a Settings field before the window closes (SwiftUI's focus change would come too late).
+ */
+- (BOOL)windowShouldClose:(NSWindow *)sender
+{
+	[settingsHost commitEditing];
+
+	return YES;
+}
+
+/**
  * Trap window close notifications and use them to ensure changes are saved.
  */
 - (void)windowWillClose:(NSNotification *)notification
 {
+	[settingsHost commitEditing];
+
 	[[NSColorPanel sharedColorPanel] close];
 
 	// Mark the currently selected field in the window as having finished editing, to trigger saves.

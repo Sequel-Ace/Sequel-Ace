@@ -110,14 +110,14 @@ import AppKit
     @discardableResult
     @objc func newWindowForWindow() -> SPWindowController {
         let windowController = createNewWindowController()
-        createWindow(newWindowController: windowController, inWindow: SPWindow(), ordered: .above)
+        createWindow(newWindowController: windowController)
         return windowController
     }
 
     @discardableResult
     @objc func replaceTabServiceWithInitialWindow() -> SPWindowController {
         let windowController = createNewWindowController()
-        createWindow(newWindowController: windowController, inWindow: SPWindow(), ordered: .above)
+        createWindow(newWindowController: windowController)
         windowController.showWindow(self)
         return windowController
     }
@@ -150,16 +150,31 @@ private extension TabManager {
         newWindow.makeKeyAndOrderFront(nil)
     }
 
-    func createWindow(newWindowController: SPWindowController, inWindow window: NSWindow, ordered orderingMode: NSWindow.OrderingMode) {
+    /// Opens a window of its own. Not a child window of a throwaway parent, as it used to be: such windows are
+    /// left out of Merge All Windows (disabled in the Window menu, a no-op when sent). Cascaded from the current
+    /// window. Its tabbing mode is left alone: briefly disallowing tabbing while it first ordered in left it
+    /// without a tab group, so it could not be merged either.
+    func createWindow(newWindowController: SPWindowController) {
 
         guard let newManagement = addManagedWindow(windowController: newWindowController) else { preconditionFailure() }
         let newWindow = newManagement.window
 
-        window.addChildWindow(newWindow, ordered: orderingMode)
-        let index = window.tabGroup?.windows.firstIndex(of: newWindow) ?? 0
-        managedWindows.insert(newManagement, at: index)
+        let current = managedWindows.first { $0.window.isMainWindow }?.window ?? managedWindows.first { $0.window.isVisible }?.window
+        if let current, !current.styleMask.contains(.fullScreen) {
+            newWindow.setFrameTopLeftPoint(newWindow.cascadeTopLeft(from: NSPoint(x: current.frame.minX, y: current.frame.maxY)))
+            // A screen-filling window leaves no room to cascade: open the new one exactly over it instead of half
+            // off the screen. Only when that window is itself on the screen; otherwise the cascade is kept.
+            if let visible = (current.screen ?? NSScreen.main)?.visibleFrame, !visible.contains(newWindow.frame), visible.contains(current.frame) {
+                newWindow.setFrame(current.frame, display: false)
+            }
+        }
+        // A window of its own is the first tab of its own group.
+        managedWindows.insert(newManagement, at: 0)
         newWindow.collectionBehavior = [newWindow.collectionBehavior, .participatesInCycle]
         newWindow.makeKeyAndOrderFront(nil)
+        // AppKit adds its tab strip to a lone window while ordering it in when "Show Tab Bar" was once chosen;
+        // the Claude tab bar replaces it.
+        SAClaudeWindowTabBarController.hideNativeTabBar(in: newWindow)
     }
 
     @discardableResult

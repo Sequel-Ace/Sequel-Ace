@@ -39,7 +39,7 @@
 {
 	// Controllers
 	IBOutlet __weak SPDatabaseDocument *dbDocument;
-	IBOutlet SPTableStructure *tableStructure;
+	IBOutlet __weak SPTableStructure *tableStructure; // weak: the table structure owns this controller
 	IBOutlet SPTablesList *tablesList;
 	IBOutlet SPTableData *tableData;
 	

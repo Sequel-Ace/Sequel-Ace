@@ -26,9 +26,25 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     /// without this generic controller needing to know the specifics.
     @objc var windowWillCloseHandler: (() -> Void)?
 
+    /// When set, a web link the user clicks (http or https, also one opening a new window) opens in the default browser
+    /// instead of in this window. For pages of ours that point to the online documentation (the socket help page).
+    @objc var opensWebLinksInBrowser = false
+
     private let model = SAWebViewModel()
     private let bridge = SABundleJSBridge()
+    private let backdrop = SABundleHTMLBackdrop(colour: SAClaudeHintCardPalette.currentPaper().surface)
     private var titleSubscription: AnyCancellable?
+
+    /// What the web view sits on. The HTML this window was handed gets a base under its own styles: the theme base when
+    /// the page is plain (it follows the theme), the paper when it styles itself. A page reached by a link or loaded
+    /// from a URL gets none and draws itself.
+    private enum Base { case none, paper, theme }
+
+    /// The base of what is shown now, decided on every committed navigation.
+    private var base: Base = .none
+
+    /// The base the HTML handed to `displayHTMLContent` was loaded with (plain → theme, styled → paper).
+    private var loadedBase: Base = .paper
 
     // Saves the window's frame when a caller supplies a temporary one, so it can be
     // restored when the window closes.
@@ -59,7 +75,7 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         configureModelHooks()
 
         window.contentView = NSHostingView(
-            rootView: SABundleHTMLOutputView(model: model, externalConfiguration: externalConfiguration)
+            rootView: SABundleHTMLOutputView(model: model, backdrop: backdrop, externalConfiguration: externalConfiguration)
         )
         window.setFrameAutosaveName("SPBundleHTMLOutputWindow")
         window.delegate = self
@@ -69,6 +85,11 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             .sink { [weak self] title in
                 self?.window?.title = title
             }
+
+        // The window's surface and appearance follow the palette, which follows the editor theme and the accent.
+        themeChanged()
+        SAClaudeThemeWatcher.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
+        SAClaudeAccent.observe(self) { controller in MainActor.assumeIsolated { controller.themeChanged() } }
     }
 
     @available(*, unavailable)
@@ -76,19 +97,94 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         fatalError("init(coder:) is not supported; use init()")
     }
 
+    // MARK: - Theme
+
+    /// The window chrome and the colour outside the page follow the current palette. A page on the theme base follows
+    /// it too: its surface behind the page, its appearance, and the base's CSS rewritten in place. (A page on the paper
+    /// keeps the palette it was loaded with.)
+    private func themeChanged() {
+        let palette = SAClaudeHintCardPalette.current()
+        if let window {
+            SAClaudeRareWindowChrome.apply(to: window, palette: palette)
+        }
+        switch base {
+        case .paper:
+            let paper = SAClaudeHintCardPalette.currentPaper().surface
+            model.underPageBackgroundColor = paper
+            backdrop.colour = paper
+        case .theme:
+            model.underPageBackgroundColor = palette.surface
+            backdrop.colour = palette.surface
+            let name: NSAppearance.Name = palette.isDark ? .darkAqua : .aqua
+            if model.pageAppearance?.name != name { model.pageAppearance = NSAppearance(named: name) }
+            refreshThemeBase(palette: palette)
+        case .none:
+            model.underPageBackgroundColor = palette.surface
+            backdrop.colour = palette.surface
+        }
+    }
+
+    /// Sets the web view up for what it shows. The HTML the window was handed sits on its base, with no page background
+    /// of its own: on the paper in a light appearance (bundle HTML has always rendered on a light page, so a page
+    /// supporting both colour schemes takes its light one, readable on the paper), or — a plain page — on the theme's
+    /// surface in the theme's appearance. Any other page (a link followed from it, a URL, a new window's page) draws
+    /// its own background in the window's appearance, as before.
+    private func show(_ newBase: Base) {
+        base = newBase
+        model.drawsPageBackground = newBase == .none
+        switch newBase {
+        case .paper: model.pageAppearance = NSAppearance(named: .aqua)
+        case .theme: model.pageAppearance = NSAppearance(named: SAClaudeHintCardPalette.current().isDark ? .darkAqua : .aqua)
+        case .none: model.pageAppearance = nil
+        }
+        themeChanged()
+    }
+
+    /// Rewrites the theme base's CSS in the shown page to `palette` (once the page is parsed), so a plain page follows a
+    /// theme change, and a page shown again from history takes the current theme. Runs in the app's own script world, so
+    /// the page's scripts neither see nor block it.
+    private func refreshThemeBase(palette: SAClaudeHintCardPalette) {
+        guard let webView = model.webView else { return }
+        let css = SAClaudePaperBase.themeCSS(theme: palette, paper: .currentPaper())
+        let script = """
+            const apply = () => {
+                const base = document.querySelector('style[\(SAClaudePaperBase.marker)]');
+                if (base && base.textContent !== css) { base.textContent = css; }
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', apply, { once: true });
+            } else {
+                apply();
+            }
+            """
+        webView.callAsyncJavaScript(script, arguments: ["css": css], in: nil, in: .defaultClient, completionHandler: nil)
+    }
+
     // MARK: - Legacy ObjC API (display content)
 
+    /// HTML Sequel Ace hands the window (bundle output, its own help page) sits on a base: the base stylesheet goes in
+    /// ahead of the page's own styles and the web view draws no background of its own, so the colour behind it shows
+    /// wherever the page paints none. A plain page (no colours or fonts of its own) gets the theme base and follows the
+    /// theme; a page that styles itself gets the paper. (Set up front so the page is parsed in the right appearance;
+    /// each commit confirms.)
     @objc(displayHTMLContent:withOptions:)
     func displayHTMLContent(_ content: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.orderFront(nil)
         applyDisplayOptions(displayOptions)
-        model.loadHTMLString(content)
+        loadedBase = SAClaudePlainPage.isPlain(content) ? .theme : .paper
+        show(loadedBase)
+        let stylesheet = loadedBase == .theme
+            ? SAClaudePaperBase.themeStylesheet(theme: .current(), paper: .currentPaper())
+            : SAClaudePaperBase.stylesheet(paper: .currentPaper(), theme: .current())
+        model.loadHTMLString(SAClaudePaperBase.inject(stylesheet, into: content))
     }
 
+    /// Remote pages (and `window.open` targets) are shown as they are: no base, the web view's own background.
     @objc(displayURLString:withOptions:)
     func displayURLString(_ urlString: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.makeKeyAndOrderFront(nil)
         applyDisplayOptions(displayOptions)
+        show(.none)
         if let url = URL(string: urlString) {
             model.load(URLRequest(url: url))
         }
@@ -245,6 +341,19 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     // MARK: - Web view hooks
 
     private func configureModelHooks() {
+        // What is shown decides the base, whichever way it got there (a link, a reload, back and forward).
+        model.onCommit = { [weak self] isLoadedHTML in
+            guard let self else { return }
+            self.show(isLoadedHTML ? self.loadedBase : .none)
+        }
+
+        model.decideNavigationPolicy = { [weak self] action in
+            guard self?.opensWebLinksInBrowser == true, action.navigationType == .linkActivated,
+                  let url = action.request.url, Self.isWebURL(url) else { return nil }
+            NSWorkspace.shared.open(url)
+            return .cancel
+        }
+
         model.onSequelaceURL = { url in
             (NSApp.delegate as? SPAppController)?.handleEvent(with: url)
         }
@@ -256,8 +365,12 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         // the child's window.system handler to the opener's window. Because no web view
         // is returned, the two windows have no script connection and don't need to
         // share a web process. Trade-off: JS window.open() gets no handle back.
-        model.onCreateWebView = { _, request in
+        model.onCreateWebView = { [weak self] _, request in
             guard let url = request.url else {
+                return nil
+            }
+            if self?.opensWebLinksInBrowser == true, Self.isWebURL(url) {
+                NSWorkspace.shared.open(url)
                 return nil
             }
             let controller = SABundleHTMLOutputWindowController()
@@ -298,6 +411,10 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
         }
     }
 
+    private static func isWebURL(_ url: URL) -> Bool {
+        ["http", "https"].contains(url.scheme?.lowercased() ?? "")
+    }
+
     /// Ports the legacy keyDown: zoom and history shortcuts.
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         guard event.modifierFlags.contains(.command) else { return false }
@@ -336,7 +453,7 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
 
     @objc func showSourceCode() {
         model.fetchOuterHTML { sourceCode in
-            guard let sourceCode = sourceCode else { return }
+            guard let sourceCode = sourceCode.map(SAClaudePaperBase.strip) else { return }
 
             let controller = SABundleHTMLOutputWindowController()
             let escaped = (sourceCode as NSString).htmlEscape() ?? ""
@@ -360,7 +477,8 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             guard response == .OK, let url = panel.url else { return }
 
             self?.model.fetchOuterHTML { sourceCode in
-                guard let sourceCode = sourceCode else { return }
+                // The page as the bundle wrote it, without the paper base.
+                guard let sourceCode = sourceCode.map(SAClaudePaperBase.strip) else { return }
                 do {
                     try sourceCode.write(to: url, atomically: true, encoding: .utf8)
                 } catch {

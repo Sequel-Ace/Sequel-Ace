@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct SAAboutView: View {
+    /// The Claude kit's colours, injected by `SAAboutWindowController`, which owns them (the sheet gets them again below).
+    @EnvironmentObject private var palette: SAClaudeSwiftUIPalette
     @State private var showingLicense = false
 
     private let appName: String = {
@@ -35,11 +37,12 @@ struct SAAboutView: View {
                     .frame(width: 150, height: 150)
 
                 Text(appName)
-                    .font(.system(size: 18))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(palette.text)
 
                 Text(versionText)
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(palette.muted)
                     .multilineTextAlignment(.center)
 
                 Spacer().frame(height: 4)
@@ -48,17 +51,22 @@ struct SAAboutView: View {
                     Button("License") {
                         showingLicense = true
                     }
+                    .buttonStyle(SAClaudeSecondaryButtonStyle(size: .form))
 
                     Link("Privacy Policy", destination: SAAnalyticsConsentPolicy.privacyPolicyURL)
+                        .font(.system(size: NSFont.systemFontSize))
+                        .foregroundColor(palette.accent)
                         .fixedSize()
                 }
-                .controlSize(.large)
             }
             .frame(width: 170)
             .padding([.vertical, .leading], 20)
 
             ScrollView {
-                Text(credits)
+                Text(credits.tintingLinks(with: palette.accent))
+                    .font(.system(size: 12))
+                    .foregroundColor(palette.secondary)
+                    .tint(palette.accent)
                     .textSelection(.enabled)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
@@ -67,8 +75,10 @@ struct SAAboutView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 600, height: 320)
+        .background(palette.surface.ignoresSafeArea())
         .sheet(isPresented: $showingLicense) {
             SALicenseSheetView(license: license, isPresented: $showingLicense)
+                .environmentObject(palette)
         }
     }
 
@@ -83,14 +93,29 @@ struct SAAboutView: View {
     }
 }
 
+private extension AttributedString {
+    /// The same text with every link run in `colour` (a link otherwise takes the system accent, not the Claude one).
+    func tintingLinks(with colour: Color) -> AttributedString {
+        var result = self
+        for run in result.runs where run.link != nil {
+            result[run.range].foregroundColor = colour
+        }
+        return result
+    }
+}
+
 struct SALicenseSheetView: View {
+    @EnvironmentObject private var palette: SAClaudeSwiftUIPalette
     let license: AttributedString
     @Binding var isPresented: Bool
 
     var body: some View {
         VStack(spacing: 20) {
             ScrollView {
-                Text(license)
+                Text(license.tintingLinks(with: palette.accent))
+                    .font(.system(size: 12))
+                    .foregroundColor(palette.text)
+                    .tint(palette.accent)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -101,11 +126,12 @@ struct SALicenseSheetView: View {
                 Button("OK") {
                     isPresented = false
                 }
+                .buttonStyle(SAClaudePrimaryButtonStyle(size: .form))
                 .keyboardShortcut(.return, modifiers: [])
-                .controlSize(.large)
             }
         }
         .padding(20)
         .frame(width: 500, height: 400)
+        .background(palette.surface.ignoresSafeArea())
     }
 }

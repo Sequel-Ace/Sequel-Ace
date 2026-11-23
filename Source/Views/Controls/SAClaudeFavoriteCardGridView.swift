@@ -1,0 +1,690 @@
+//
+//  SAClaudeFavoriteCardGridView.swift
+//  Sequel Ace
+//
+//  The connection screen's favourite cards: a flipped view (the document view of its own scroll view) that draws
+//  the cards and folder headers laid out by `SAClaudeFavoriteCardLayout`, and turns clicks, keys, right-clicks and
+//  drags into requests to its owner (`SAClaudeFavoriteCardGridController`), which drives the hidden favourites
+//  outline. The view holds no favourites state of its own beyond what it draws.
+//  App target only.
+//
+
+import AppKit
+
+final class SAClaudeFavoriteCardGridView: NSView, NSDraggingSource, NSTextFieldDelegate {
+
+    struct Colours {
+        var text: NSColor = .labelColor
+        var muted: NSColor = .secondaryLabelColor
+        var hairline: NSColor = .separatorColor
+        var hoverStroke: NSColor = .tertiaryLabelColor
+        var cardFill: NSColor = .controlBackgroundColor
+        /// Quick connect's dashed outline.
+        var dashedStroke: NSColor = .tertiaryLabelColor
+        var dropFill: NSColor = .selectedContentBackgroundColor
+        /// The theme's background is dark: cards use the dark fill, ink and tint of their favourite colour.
+        var isDark = false
+    }
+
+    /// The private drag type: the dragged card's ID, within this app only.
+    static let dragType = NSPasteboard.PasteboardType("com.sequel-ace.claude.favorite-card")
+
+    typealias Layout = SAClaudeFavoriteCardLayout
+
+    // MARK: Owner hooks
+
+    /// A card or folder header was clicked (or chosen with the arrow keys).
+    var onSelect: ((String) -> Void)?
+    /// A favourite card or folder header was double-clicked, or Return / Enter was pressed with a card selected.
+    var onActivate: ((String) -> Void)?
+    /// A folder's inline name field committed a name (folder ID, the text as typed).
+    var onRenameFolder: ((String, String) -> Void)?
+    /// The menu for a right-click on a card or folder header (`nil` ID: empty space).
+    var menuProvider: ((String?) -> NSMenu?)?
+    /// Whether this card may be dragged now.
+    var canDrag: ((String) -> Bool)?
+    /// Whether dropping this card at this target would move it.
+    var canDrop: ((String, Layout.DropTarget) -> Bool)?
+    /// Performs the drop; `true` when the favourite moved.
+    var onDrop: ((String, Layout.DropTarget) -> Bool)?
+    /// `false` while connecting (the outline is disabled then): clicks, keys and drags are ignored.
+    var isInteractive: () -> Bool = { true }
+
+    // MARK: State
+
+    var colours = Colours() { didSet { needsDisplay = true } }
+    /// The selected card or folder (the hidden outline's first selected row).
+    var selectedID: String? {
+        didSet {
+            guard selectedID != oldValue else { return }
+            needsDisplay = true
+            noteFocusRingMaskChanged()
+            if let selectedID, let frame = frame(of: selectedID) { scrollToVisible(frame.insetBy(dx: 0, dy: -Layout.gap)) }
+            NSAccessibility.post(element: self, notification: .selectedChildrenChanged)
+        }
+    }
+    /// The unsaved-edits dot on the selected card.
+    var showsUnsavedDot = false { didSet { if showsUnsavedDot != oldValue { needsDisplay = true } } }
+    /// A search is active: an empty result shows "No favourites match".
+    var isFiltering = false
+
+    private(set) var model = SAClaudeFavoriteGridModel(topLevel: [], folders: [])
+    private(set) var items: [Layout.Item] = []
+    private(set) var contentHeight: CGFloat = 0
+    private var cardsByID: [String: SAClaudeFavoriteCard] = [:]
+    private var foldersByID: [String: SAClaudeFavoriteFolder] = [:]
+
+    private var hoverID: String? { didSet { if hoverID != oldValue { needsDisplay = true } } }
+    private var dropTarget: Layout.DropTarget? { didSet { if dropTarget != oldValue { needsDisplay = true } } }
+    private var mouseDownID: String?
+    private var mouseDownPoint: NSPoint?
+    private var draggedID: String?
+    private var trackingArea: NSTrackingArea?
+    private var accessibilityCards: [SAClaudeFavoriteCardAccessibilityElement] = []
+    /// The inline name field over a folder header, while renaming it.
+    private var folderNameField: NSTextField?
+    private var folderNameFieldID: String?
+    /// ✓ (save the name) and ✕ (cancel) after the folder name field, so committing is visible, not only Return.
+    private var folderNameButtons: [NSButton] = []
+    private static let folderButtonSize: CGFloat = 18
+
+    private static let nameFont = NSFont.systemFont(ofSize: 13, weight: .medium)
+    private static let summaryFont = NSFont.systemFont(ofSize: 11)
+    private static let badgeFont = NSFont.systemFont(ofSize: 10, weight: .medium)
+    /// Folder names: the same size and weight as the card names (Quick connect).
+    private static let headerFont = NSFont.systemFont(ofSize: 13, weight: .medium)
+    private static let messageFont = NSFont.systemFont(ofSize: 12)
+    private static let padding = Layout.contentPadding
+    private static let dotSize: CGFloat = 6
+    private static let dragThreshold: CGFloat = 4
+    private static let autoscrollMargin: CGFloat = 20
+    private static let databaseGlyphSize: CGFloat = 16
+    private static let symbolPointSize: CGFloat = 13
+
+    private static let noMatches = NSLocalizedString("ClaudeFavoriteCardsNoMatches", value: "No favourites match",
+                                                     comment: "connection screen : shown in the favourite cards when the search matches nothing")
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        registerForDraggedTypes([Self.dragType])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var isFlipped: Bool { true }
+    override var isOpaque: Bool { false }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override var acceptsFirstResponder: Bool { true }
+
+    // MARK: - Model and layout
+
+    /// Shows `model` laid out at `width`; the view is at least `minimumHeight` tall so the space below the cards
+    /// still takes drops (the end of the top level or the last folder).
+    func update(model: SAClaudeFavoriteGridModel, width: CGFloat, minimumHeight: CGFloat) {
+        self.model = model
+        let layout = Layout.items(for: model, width: max(width, 1))
+        items = layout.items
+        contentHeight = layout.contentHeight
+        cardsByID = Dictionary(model.allCards.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        foldersByID = Dictionary(model.folders.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        if let hoverID, frame(of: hoverID) == nil { self.hoverID = nil }
+        setFrameSize(NSSize(width: max(width, 1), height: max(contentHeight, minimumHeight)))
+        placeFolderNameField()
+        rebuildAccessibilityElements()
+        needsDisplay = true
+        noteFocusRingMaskChanged()
+    }
+
+    func frame(of id: String) -> NSRect? {
+        items.first { $0.kind == .card(id) || $0.kind == .folderHeader(id) }?.frame
+    }
+
+    private func item(at point: NSPoint) -> Layout.Item? {
+        items.first { $0.frame.contains(point) }
+    }
+
+    private func id(of item: Layout.Item) -> String {
+        switch item.kind {
+        case .card(let id), .folderHeader(let id): return id
+        }
+    }
+
+    // MARK: - Drawing
+
+    override func draw(_ dirtyRect: NSRect) {
+        for item in items where item.frame.intersects(dirtyRect) {
+            switch item.kind {
+            case .card(let id):
+                guard let card = cardsByID[id] else { continue }
+                if card.isQuickConnect { drawQuickConnect(card, in: item.frame) } else { drawCard(card, in: item.frame) }
+            case .folderHeader(let id):
+                guard let folder = foldersByID[id] else { continue }
+                drawHeader(folder, in: item.frame)
+            }
+        }
+        if isFiltering, model.allCards.allSatisfy(\.isQuickConnect) { drawNoMatches() }
+        drawDropIndicator()
+    }
+
+    private func cardPath(_ frame: NSRect, inset: CGFloat) -> NSBezierPath {
+        let radius = Layout.radius - inset
+        return NSBezierPath(roundedRect: frame.insetBy(dx: inset, dy: inset), xRadius: radius, yRadius: radius)
+    }
+
+    private func drawCard(_ card: SAClaudeFavoriteCard, in frame: NSRect) {
+        let fill = cardPath(frame, inset: 0)
+        colours.cardFill.setFill()
+        fill.fill()
+        let vivid = card.colorIndex.flatMap(SAVividColour.init(index:))
+        drawOutline(card, colour: vivid, in: frame)
+
+        // The icon circle at the left, then the name and, below it, the summary with the badge at the row's right end.
+        let dark = colours.isDark
+        let circle = NSRect(x: frame.minX + Self.padding, y: frame.midY - Layout.circleSize / 2, width: Layout.circleSize, height: Layout.circleSize)
+        (vivid?.tint(dark: dark) ?? colours.text.withAlphaComponent(0.07)).setFill()
+        NSBezierPath(ovalIn: circle).fill()
+        drawIcon(SAClaudeFavoriteCardIcon.icon(type: card.type), colour: vivid?.ink(dark: dark) ?? colours.muted, in: circle)
+
+        let badge = card.badge.isEmpty ? nil : NSAttributedString(string: card.badge, attributes: [.font: Self.badgeFont, .foregroundColor: vivid?.ink(dark: dark) ?? colours.muted])
+        let pillWidth = badge.map { ceil($0.size().width) + 12 }
+        let widths = Layout.textWidths(cardWidth: frame.width, pillWidth: pillWidth)
+        if let badge, let pillWidth {
+            let pill = NSRect(x: frame.maxX - Self.padding - pillWidth, y: frame.minY + 34, width: pillWidth, height: 16)
+            (vivid?.tint(dark: dark) ?? colours.text.withAlphaComponent(0.07)).setFill()
+            NSBezierPath(roundedRect: pill, xRadius: 6, yRadius: 6).fill()
+            badge.draw(at: NSPoint(x: pill.minX + 6, y: pill.midY - badge.size().height / 2))
+        }
+        let x = circle.maxX + Layout.circleGap
+        drawText(card.name, font: Self.nameFont, colour: colours.text, in: NSRect(x: x, y: frame.minY + 11, width: widths.name, height: 18))
+        drawText(card.summary, font: Self.summaryFont, colour: colours.muted, in: NSRect(x: x, y: frame.minY + 35, width: widths.summary, height: 16))
+
+        if showsUnsavedDot, card.id == selectedID {
+            SAClaudeStatusChrome.clay.setFill()
+            NSBezierPath(ovalIn: NSRect(x: frame.minX + 5, y: frame.minY + 5, width: Self.dotSize, height: Self.dotSize)).fill()
+        }
+    }
+
+    /// The connection type's icon, centred in the card's circle.
+    private func drawIcon(_ icon: SAClaudeFavoriteCardIcon, colour: NSColor, in circle: NSRect) {
+        switch icon {
+        case .databaseGlyph:
+            let image = SAClaudeGlyphs.image(.database, tint: colour)
+            let size = Self.databaseGlyphSize
+            image.draw(in: NSRect(x: circle.midX - size / 2, y: circle.midY - size / 2, width: size, height: size),
+                       from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+        case .symbol(let name):
+            drawSymbol(name, pointSize: Self.symbolPointSize, colour: colour, in: circle)
+        }
+    }
+
+    private func drawQuickConnect(_ card: SAClaudeFavoriteCard, in frame: NSRect) {
+        let path = cardPath(frame, inset: 0.5)
+        path.lineWidth = 1
+        path.setLineDash([4, 3], count: 2, phase: 0)
+        (card.id == hoverID ? colours.hoverStroke : colours.dashedStroke).setStroke()
+        path.stroke()
+        if card.id == selectedID { drawSelection(in: frame, colour: SAClaudeStatusChrome.clay) }
+
+        let glyphSize: CGFloat = 16
+        let glyph = NSRect(x: frame.minX + Self.padding + 2, y: frame.midY - glyphSize / 2, width: glyphSize, height: glyphSize)
+        drawSymbol("bolt", pointSize: 14, colour: colours.muted, in: glyph)
+        let x = glyph.maxX + 10
+        let width = max(0, frame.maxX - Self.padding - x)
+        drawText(card.name, font: Self.nameFont, colour: colours.text, in: NSRect(x: x, y: frame.minY + 11, width: width, height: 18))
+        drawText(card.summary, font: Self.summaryFont, colour: colours.muted, in: NSRect(x: x, y: frame.minY + 35, width: width, height: 16))
+    }
+
+    private func drawOutline(_ card: SAClaudeFavoriteCard, colour: SAVividColour?, in frame: NSRect) {
+        if card.id == selectedID {
+            // The ring is the favourite's colour, the accent when it has none.
+            drawSelection(in: frame, colour: colour?.fill(dark: colours.isDark) ?? SAClaudeStatusChrome.clay)
+            return
+        }
+        let path = cardPath(frame, inset: 0.5)
+        path.lineWidth = 1
+        (card.id == hoverID ? colours.hoverStroke : colours.hairline).setStroke()
+        path.stroke()
+    }
+
+    private func drawSelection(in frame: NSRect, colour: NSColor) {
+        let path = cardPath(frame, inset: 1)
+        path.lineWidth = 2
+        colour.setStroke()
+        path.stroke()
+    }
+
+    private func drawHeader(_ folder: SAClaudeFavoriteFolder, in frame: NSRect) {
+        if dropTarget == .into(folderID: folder.id) || (dropTarget == .endOf(folderID: folder.id) && folder.cards.isEmpty) {
+            let highlight = NSBezierPath(roundedRect: frame.insetBy(dx: 0.5, dy: 0.5), xRadius: 6, yRadius: 6)
+            colours.dropFill.setFill()
+            highlight.fill()
+            highlight.lineWidth = 1
+            SAClaudeStatusChrome.clay.setStroke()
+            highlight.stroke()
+        }
+        let selected = folder.id == selectedID
+        let colour = selected ? SAClaudeStatusChrome.clay : colours.muted
+        let glyph = NSRect(x: frame.minX + 4, y: frame.midY - 8, width: 16, height: 16)
+        drawSymbol("folder", pointSize: 13, colour: colour, in: glyph)
+        guard folder.id != folderNameFieldID else { return }
+        drawText(folder.title, font: Self.headerFont, colour: selected ? SAClaudeStatusChrome.clay : colours.muted,
+                 in: NSRect(x: glyph.maxX + 6, y: frame.midY - 9, width: max(0, frame.maxX - glyph.maxX - 10), height: 18))
+    }
+
+    private func drawNoMatches() {
+        guard let quickConnect = items.first(where: { $0.kind == .card(SAClaudeFavoriteGridModel.quickConnectID) })?.frame else { return }
+        let besideQuickConnect = quickConnect.maxX + Layout.gap + 160 <= bounds.maxX
+        let rect = besideQuickConnect
+            ? NSRect(x: quickConnect.maxX + Layout.gap + 6, y: quickConnect.midY - 8, width: bounds.maxX - quickConnect.maxX - Layout.gap - 6, height: 17)
+            : NSRect(x: quickConnect.minX + 6, y: quickConnect.maxY + 8, width: bounds.width - 6, height: 17)
+        drawText(Self.noMatches, font: Self.messageFont, colour: colours.muted, in: rect)
+    }
+
+    private func drawDropIndicator() {
+        guard let dropTarget, let bar = insertionBar(for: dropTarget) else { return }
+        SAClaudeStatusChrome.clay.setFill()
+        NSBezierPath(roundedRect: bar, xRadius: 1, yRadius: 1).fill()
+    }
+
+    /// The clay bar for a reorder target; `nil` when the folder header shows the target instead.
+    private func insertionBar(for target: Layout.DropTarget) -> NSRect? {
+        let width: CGFloat = 2
+        switch target {
+        case .before(let cardID, _):
+            guard let card = frame(of: cardID) else { return nil }
+            return NSRect(x: max(0, card.minX - Layout.gap / 2 - width / 2), y: card.minY, width: width, height: card.height)
+        case .endOf(let folderID):
+            let cards = folderID.map { foldersByID[$0]?.cards ?? [] } ?? model.topLevel
+            guard let last = cards.last, let card = frame(of: last.id) else { return nil }
+            return NSRect(x: min(bounds.maxX - width, card.maxX + Layout.gap / 2 - width / 2), y: card.minY, width: width, height: card.height)
+        case .into:
+            return nil
+        }
+    }
+
+    private func drawText(_ string: String, font: NSFont, colour: NSColor, in rect: NSRect) {
+        guard rect.width > 0, !string.isEmpty else { return }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        NSAttributedString(string: string, attributes: [.font: font, .foregroundColor: colour, .paragraphStyle: paragraph])
+            .draw(with: rect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
+    }
+
+    private func drawSymbol(_ name: String, pointSize: CGFloat, colour: NSColor, in rect: NSRect) {
+        guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)
+                .applying(NSImage.SymbolConfiguration(paletteColors: [colour]))) else { return }
+        let size = symbol.size
+        let target = NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height)
+        symbol.draw(in: target, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+    }
+
+    // MARK: - Focus ring
+
+    override var focusRingMaskBounds: NSRect {
+        selectedID.flatMap { frame(of: $0) } ?? .zero
+    }
+
+    override func drawFocusRingMask() {
+        guard let selectedID, let frame = frame(of: selectedID) else { return }
+        if cardsByID[selectedID] != nil {
+            cardPath(frame, inset: 0).fill()
+        } else {
+            NSBezierPath(roundedRect: frame, xRadius: 6, yRadius: 6).fill()
+        }
+    }
+
+    // MARK: - Mouse
+
+    override func updateTrackingAreas() {
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+        super.updateTrackingAreas()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if let item = item(at: point), case .card(let id) = item.kind { hoverID = id } else { hoverID = nil }
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hoverID = nil
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        mouseDownID = nil
+        mouseDownPoint = nil
+        guard isInteractive() else { return }
+        // Becoming first responder first ends any edit in the panel, as clicking the outline did.
+        window?.makeFirstResponder(self)
+        let point = convert(event.locationInWindow, from: nil)
+        guard let item = item(at: point) else { return }
+        let id = id(of: item)
+        onSelect?(id)
+        if event.clickCount == 2 {
+            // Connects a favourite; renames a folder (as the outline's double-click did).
+            onActivate?(id)
+        } else if case .card = item.kind {
+            mouseDownID = id
+            mouseDownPoint = point
+        }
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let id = mouseDownID, let start = mouseDownPoint, isInteractive() else { return }
+        let point = convert(event.locationInWindow, from: nil)
+        guard hypot(point.x - start.x, point.y - start.y) >= Self.dragThreshold else { return }
+        mouseDownID = nil
+        guard let card = cardsByID[id], !card.isQuickConnect, canDrag?(id) ?? false, let frame = frame(of: id) else { return }
+
+        let pasteboardItem = NSPasteboardItem()
+        pasteboardItem.setString(id, forType: Self.dragType)
+        let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
+        draggingItem.setDraggingFrame(frame, contents: snapshot(of: frame))
+        draggedID = id
+        beginDraggingSession(with: [draggingItem], event: event, source: self)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        mouseDownID = nil
+        mouseDownPoint = nil
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        guard isInteractive() else { return nil }
+        window?.makeFirstResponder(self)
+        let point = convert(event.locationInWindow, from: nil)
+        return menuProvider?(item(at: point).map(id(of:)))
+    }
+
+    private func snapshot(of rect: NSRect) -> NSImage {
+        let image = NSImage(size: rect.size)
+        if let rep = bitmapImageRepForCachingDisplay(in: rect) {
+            cacheDisplay(in: rect, to: rep)
+            image.addRepresentation(rep)
+        }
+        return image
+    }
+
+    // MARK: - Keyboard
+
+    override func keyDown(with event: NSEvent) {
+        guard isInteractive() else {
+            super.keyDown(with: event)
+            return
+        }
+        let direction: Layout.MoveDirection?
+        switch event.keyCode {
+        case 123: direction = .left
+        case 124: direction = .right
+        case 125: direction = .down
+        case 126: direction = .up
+        case 36, 76:
+            // Return / Enter connects, as on the outline.
+            if let selectedID, cardsByID[selectedID] != nil { onActivate?(selectedID) }
+            return
+        default: direction = nil
+        }
+        guard let direction else {
+            super.keyDown(with: event)
+            return
+        }
+        // A selected folder header moves relative to its folder.
+        let current = selectedID.flatMap { cardsByID[$0] != nil || foldersByID[$0] != nil ? $0 : nil }
+        if let next = Layout.neighbour(of: current, direction, items: items) {
+            onSelect?(next)
+        } else {
+            NSSound.beep()
+        }
+    }
+
+    // MARK: - Renaming a folder
+
+    /// Shows an inline name field over the folder's header, `name` selected; Return, ✓ or leaving the field commits
+    /// (`onRenameFolder`), Escape or ✕ cancels.
+    func beginRenamingFolder(_ id: String, name: String) {
+        guard foldersByID[id] != nil, let window else { return }
+        endRenamingFolder(cancel: true)
+        let field = NSTextField(string: name)
+        field.font = Self.headerFont
+        field.textColor = colours.text
+        field.backgroundColor = colours.cardFill
+        field.drawsBackground = true
+        field.isBezeled = false
+        field.isBordered = false
+        field.focusRingType = .none
+        field.usesSingleLineMode = true
+        field.lineBreakMode = .byClipping
+        field.cell?.isScrollable = true
+        field.wantsLayer = true
+        field.layer?.cornerRadius = 4
+        field.layer?.borderWidth = 1
+        field.layer?.borderColor = SAClaudeStatusChrome.clay.cgColor
+        field.delegate = self
+        folderNameField = field
+        folderNameFieldID = id
+        addSubview(field)
+        folderNameButtons = [
+            folderNameButton(symbol: "checkmark", tint: SAClaudeStatusChrome.clay,
+                             label: NSLocalizedString("ClaudeFolderRenameSave", value: "Save folder name",
+                                                      comment: "connection page : folder rename : save button"),
+                             action: #selector(saveFolderName(_:))),
+            folderNameButton(symbol: "xmark", tint: colours.muted,
+                             label: NSLocalizedString("ClaudeFolderRenameCancel", value: "Cancel renaming",
+                                                      comment: "connection page : folder rename : cancel button"),
+                             action: #selector(cancelFolderName(_:))),
+        ]
+        folderNameButtons.forEach { addSubview($0) }
+        placeFolderNameField()
+        needsDisplay = true
+        if let frame = frame(of: id) { scrollToVisible(frame) }
+        // Select through the field editor: `selectText(_:)` on a field that is already editing ends that edit first,
+        // which `controlTextDidEndEditing` would take as the rename finishing (the field vanished at once).
+        if window.makeFirstResponder(field) { field.currentEditor()?.selectAll(nil) }
+    }
+
+    /// The accent changed: the cards, folder headers, reorder bar and unsaved dot are drawn in it (a redraw picks it
+    /// up); an open rename field's outline and Save glyph hold it, so those are set again.
+    func accentDidChange() {
+        folderNameField?.layer?.borderColor = SAClaudeStatusChrome.clay.cgColor
+        folderNameButtons.first?.contentTintColor = SAClaudeStatusChrome.clay
+        needsDisplay = true
+    }
+
+    /// Keeps the name field on its folder's header after a relayout; ends it (cancelled) when the folder is gone.
+    private func placeFolderNameField() {
+        guard let field = folderNameField, let id = folderNameFieldID else { return }
+        guard let header = frame(of: id) else {
+            endRenamingFolder(cancel: true)
+            return
+        }
+        let minX = header.minX + 24
+        let buttonsWidth = CGFloat(folderNameButtons.count) * (Self.folderButtonSize + 4)
+        let frame = NSRect(x: minX, y: header.midY - 10,
+                           width: max(40, min(280, header.maxX - minX - 4 - buttonsWidth)), height: 20)
+        if field.frame != frame { field.frame = frame }
+        var x = frame.maxX + 6
+        for button in folderNameButtons {
+            let buttonFrame = NSRect(x: x, y: header.midY - Self.folderButtonSize / 2,
+                                     width: Self.folderButtonSize, height: Self.folderButtonSize)
+            if button.frame != buttonFrame { button.frame = buttonFrame }
+            x += Self.folderButtonSize + 4
+        }
+    }
+
+    private func folderNameButton(symbol: String, tint: NSColor, label: String, action: Selector) -> NSButton {
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 11, weight: .semibold)) ?? NSImage()
+        let button = NSButton(image: image, target: self, action: action)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.contentTintColor = tint
+        button.toolTip = label
+        button.refusesFirstResponder = true
+        return button
+    }
+
+    @objc private func saveFolderName(_ sender: Any?) {
+        commitFolderName()
+    }
+
+    /// Saves the name as it stands and hands the keyboard back to the cards (Return, ✓).
+    private func commitFolderName() {
+        guard let field = folderNameField, let id = folderNameFieldID else { return }
+        let name = field.stringValue
+        // The delegate goes first, so ending the edit here doesn't commit a second time (`controlTextDidEndEditing`);
+        // ending it hands the keyboard back to the cards.
+        endRenamingFolder(cancel: false)
+        onRenameFolder?(id, name)
+    }
+
+    @objc private func cancelFolderName(_ sender: Any?) {
+        endRenamingFolder(cancel: true)
+        window?.makeFirstResponder(self)
+    }
+
+    private func endRenamingFolder(cancel: Bool) {
+        guard let field = folderNameField else { return }
+        folderNameField = nil
+        folderNameFieldID = nil
+        field.delegate = nil
+        if field.currentEditor() != nil { window?.makeFirstResponder(self) }
+        field.removeFromSuperview()
+        folderNameButtons.forEach { $0.removeFromSuperview() }
+        folderNameButtons = []
+        needsDisplay = true
+    }
+
+    /// The name field takes Return / Enter (save) and Escape (cancel) itself. Left to the field, Return would end the
+    /// edit as a Return movement, and a text field with no action of its own then hands the key to the window's
+    /// default button — the connection panel's Connect (an "Insufficient connection details" alert, or a connection).
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard control === folderNameField else { return false }
+        switch SAClaudeInlineNameCommand(commandSelector) {
+        case .commit:
+            commitFolderName()
+            return true
+        case .cancel:
+            endRenamingFolder(cancel: true)
+            return true
+        case nil:
+            return false
+        }
+    }
+
+    func controlTextDidEndEditing(_ notification: Notification) {
+        guard let field = notification.object as? NSTextField, field === folderNameField, let id = folderNameFieldID else { return }
+        let name = field.stringValue
+        let movement = (notification.userInfo?["NSTextMovement"] as? Int).flatMap(NSTextMovement.init(rawValue:))
+        // Ends after this notification: the field editor is still being torn down.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.folderNameField === field else { return }
+            self.endRenamingFolder(cancel: false)
+            // Return / Tab hand the keyboard back to the cards; a click elsewhere already moved it.
+            if let movement, movement != .other { self.window?.makeFirstResponder(self) }
+            self.onRenameFolder?(id, name)
+        }
+    }
+
+    // MARK: - Dragging source
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        context == .withinApplication ? .move : []
+    }
+
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        draggedID = nil
+        dropTarget = nil
+    }
+
+    // MARK: - Dragging destination
+
+    private func target(for sender: NSDraggingInfo) -> (id: String, target: Layout.DropTarget)? {
+        guard (sender.draggingSource as? SAClaudeFavoriteCardGridView) === self, let id = draggedID, isInteractive() else { return nil }
+        let point = convert(sender.draggingLocation, from: nil)
+        guard let target = Layout.dropTarget(at: point, items: items, model: model), canDrop?(id, target) ?? false else { return nil }
+        return (id, target)
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        draggingUpdated(sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        autoscroll(to: convert(sender.draggingLocation, from: nil))
+        let resolved = target(for: sender)
+        dropTarget = resolved?.target
+        return resolved == nil ? [] : .move
+    }
+
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        dropTarget = nil
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        defer { dropTarget = nil }
+        guard let (id, target) = target(for: sender) else { return false }
+        return onDrop?(id, target) ?? false
+    }
+
+    override func concludeDragOperation(_ sender: NSDraggingInfo?) {
+        dropTarget = nil
+    }
+
+    /// Scrolls the capped grid while a drag hovers near its top or bottom edge.
+    private func autoscroll(to point: NSPoint) {
+        let visible = visibleRect
+        guard visible.height < bounds.height else { return }
+        let step: CGFloat = 12
+        if point.y < visible.minY + Self.autoscrollMargin {
+            scroll(NSPoint(x: visible.minX, y: max(0, visible.minY - step)))
+        } else if point.y > visible.maxY - Self.autoscrollMargin {
+            scroll(NSPoint(x: visible.minX, y: min(bounds.height - visible.height, visible.minY + step)))
+        }
+    }
+
+    // MARK: - Accessibility
+
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .list }
+    override func accessibilityLabel() -> String? {
+        NSLocalizedString("ClaudeFavoriteCardsAccessibility", value: "Favourites", comment: "connection screen : accessibility name of the favourite cards")
+    }
+    override func accessibilityChildren() -> [Any]? { accessibilityCards }
+    override func accessibilitySelectedChildren() -> [Any]? { accessibilityCards.filter { $0.cardID == selectedID } }
+
+    private func rebuildAccessibilityElements() {
+        accessibilityCards = model.allCards.compactMap { card in
+            guard let frame = frame(of: card.id) else { return nil }
+            let element = SAClaudeFavoriteCardAccessibilityElement()
+            element.cardID = card.id
+            element.owner = self
+            element.setAccessibilityRole(.button)
+            element.setAccessibilityLabel([card.name, card.summary, card.badge].filter { !$0.isEmpty }.joined(separator: ", "))
+            element.setAccessibilityFrameInParentSpace(frame)
+            element.setAccessibilityParent(self)
+            return element
+        }
+    }
+
+    fileprivate func pressAccessibilityCard(_ id: String) {
+        guard isInteractive() else { return }
+        onSelect?(id)
+    }
+}
+
+/// One card for VoiceOver; pressing it selects the card.
+private final class SAClaudeFavoriteCardAccessibilityElement: NSAccessibilityElement {
+    var cardID = ""
+    weak var owner: SAClaudeFavoriteCardGridView?
+
+    override func accessibilityPerformPress() -> Bool {
+        owner?.pressAccessibilityCard(cardID)
+        return owner != nil
+    }
+}

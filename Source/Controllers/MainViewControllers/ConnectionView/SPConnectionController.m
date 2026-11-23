@@ -165,6 +165,30 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 @implementation SPConnectionController
 
+/**
+ * Whether Vault connection attempt `attemptID` is still the live one, asked from the background Vault queue.
+ *
+ * A closed tab's controller can now be freed, and its -dealloc tears down the connection view and its panels,
+ * which must happen on the main thread. So the background queue never releases a reference of its own: the weak
+ * variable is read here (by address, so the caller makes no strong temporary), and the reference that read takes
+ * is transferred to the main queue, which drops it there, even when it is the last one. The strong local's scope
+ * ends before the hand-off, while the transferred reference is still outstanding.
+ */
+static BOOL SAVaultAttemptIsLive(SPConnectionController * __weak const *weakController, NSUInteger attemptID)
+{
+	CFTypeRef reference = NULL;
+	BOOL live = NO;
+	{
+		SPConnectionController *controller = *weakController;
+		if (controller) {
+			live = !controller->cancellingConnection && controller->connectionAttemptID == attemptID;
+			reference = CFBridgingRetain(controller);
+		}
+	}
+	if (reference) dispatch_async(dispatch_get_main_queue(), ^{ CFRelease(reference); });
+	return live;
+}
+
 // Associated object keys for password visibility toggle (shared between methods)
 static void *kOriginalStringKey = &kOriginalStringKey;
 static void *kRedactedStringKey = &kRedactedStringKey;
@@ -691,8 +715,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSString *outUsername = nil;
             NSString *outPassword = nil;
 
-            SPConnectionController *strongSelf = weakSelf;
-            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+            // No strong reference to self on this queue (see SAVaultAttemptIsLive): it may outlive the tab.
+            if (!SAVaultAttemptIsLive(&weakSelf, vaultConnectionAttemptID)) {
                 [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
                 return;
             }
@@ -708,8 +732,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
 
             // User may cancel while the OIDC browser is open; bail without showing an error.
-            strongSelf = weakSelf;
-            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+            if (!SAVaultAttemptIsLive(&weakSelf, vaultConnectionAttemptID)) {
                 [VaultAuthManager clearCachedCredentialsForHost:credHost
                                                            port:credPort
                                                      oidcMount:credMount
@@ -911,8 +934,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         SPLog(@"self->keySelectionPanel.URL.class: %@", classStr);
 
+        // A cancelled panel (the user's Cancel, or the tab closing under it) has no URL to check or bookmark; the
+        // per-sender branches below clear the setting.
+        if (returnCode == NSModalResponseCancel) {
+            SPLog(@"key selection cancelled");
+        }
         // check it's really a URL
-        if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
+        else if(![self->keySelectionPanel.URL isKindOfClass:[NSURL class]]){
 
             SPLog(@"self->keySelectionPanel.URL is not a valid URL: %@", classStr);
 
@@ -1207,6 +1235,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     BOOL isAWSDirectoryAuthorized = [self isAWSDirectoryAuthorized];
     BOOL showAWSAuthorizationPrompt = (isAWSIAMConnection && !isAWSDirectoryAuthorized);
     BOOL showAWSProfileRegionSelectors = (isAWSIAMConnection && isAWSDirectoryAuthorized);
+    // A private build without ~/.aws: the authorize note's place says so instead of an empty profile picker.
+    BOOL showAWSDirectoryMissingNote = (showAWSProfileRegionSelectors && [AWSDirectoryBookmarkManager.shared showsMissingAWSDirectoryNote]);
 
     // IAM connections always use TLS internally, so manual SSL settings are disabled for that mode.
     if (isAWSIAMConnection && [self useSSL]) {
@@ -1233,15 +1263,21 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     }
 
     if (awsAuthorizeInfoLabel) {
-        [awsAuthorizeInfoLabel setHidden:!showAWSAuthorizationPrompt];
+        static NSString *authorizeInfoText = nil;
+        if (!authorizeInfoText) authorizeInfoText = [[awsAuthorizeInfoLabel stringValue] copy];
+        NSString *infoText = showAWSDirectoryMissingNote
+            ? NSLocalizedString(@"No ~/.aws folder found. Set up a profile with the AWS CLI (aws configure, or aws sso login) to connect with AWS IAM.", @"AWS IAM : note in place of the profile picker when a private build finds no ~/.aws folder")
+            : authorizeInfoText;
+        if (![[awsAuthorizeInfoLabel stringValue] isEqualToString:infoText]) [awsAuthorizeInfoLabel setStringValue:infoText];
+        [awsAuthorizeInfoLabel setHidden:!(showAWSAuthorizationPrompt || showAWSDirectoryMissingNote)];
     }
 
     if (awsProfileLabel) {
-        [awsProfileLabel setHidden:!isAWSIAMConnection];
+        [awsProfileLabel setHidden:(!isAWSIAMConnection || showAWSDirectoryMissingNote)];
     }
 
     if (awsProfilePopup) {
-        [awsProfilePopup setHidden:!showAWSProfileRegionSelectors];
+        [awsProfilePopup setHidden:(!showAWSProfileRegionSelectors || showAWSDirectoryMissingNote)];
     }
 
     if (awsRegionLabel) {
@@ -1597,6 +1633,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     // Re-apply scroll layout after every details resize to avoid clipped top rows in small windows.
     [self scrollViewFrameChanged:nil];
+
+    // Claude look: the connection panel takes over the details frames (and re-centres them).
+    [SAClaudeConnectionPanelStyler panelDidResizeIn:connectionResizeContainer];
 }
 
 #pragma mark -
@@ -1850,6 +1889,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             }
             break;
     }
+
+    // Claude look: chain the panel's visible controls in visual order.
+    [SAClaudeConnectionPanelStyler keyViewsDidChangeIn:connectionResizeContainer];
 }
 
 /**
@@ -1941,7 +1983,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     SPTreeNode *selectedNode = [self selectedFavoriteNode];
 
-    SPTreeNode *parent = ([selectedNode isGroup] && selectedNode != quickConnectItem) ? selectedNode : (SPTreeNode *)[selectedNode parentNode];
+    // Beside the selection in the classic sidebar; always top-level on the Claude connection page, whose cards show
+    // no tree (rule pinned in SAFavoriteNewFolderPlacement).
+    SAFavoriteNewFolderParent placement = [SAFavoriteNewFolderPlacement parentForSelectionIsFolder:[selectedNode isGroup]
+                                                                           selectionIsQuickConnect:(selectedNode == quickConnectItem)
+                                                                                      hasSelection:(selectedNode != nil)
+                                                                             favouritesShowAsCards:[SAClaudeConnectionPageStyler showsCardsIn:connectionDetailsScrollView]];
+    SPTreeNode *parent = nil;
+    if (placement == SAFavoriteNewFolderParentSelectedNode) parent = selectedNode;
+    else if (placement == SAFavoriteNewFolderParentSelectedNodeParent) parent = (SPTreeNode *)[selectedNode parentNode];
 
     // Ensure the parent is expanded
     [favoritesOutlineView expandItem:parent];
@@ -2675,8 +2725,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [alert setAlertStyle:NSAlertStyleWarning];
 
     [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
-        if (returnCode == NSAlertThirdButtonReturn) {
-            // Cancel
+        // Proceed only for the two copy buttons: Cancel (third button) and a sheet ended without a button (a tab closed
+        // under it, NSModalResponseCancel) copy nothing.
+        if (returnCode != NSAlertFirstButtonReturn && returnCode != NSAlertSecondButtonReturn) {
             return;
         }
 
@@ -2715,12 +2766,39 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // additional empty selection check
     if(![[self selectedFavoriteNodes] count]) return;
 
-    NSSavePanel *savePanel = [NSSavePanel savePanel];
-
     // suggest the name of the favorite or a default name for multiple selection
     NSString *fileName = ([[self selectedFavoriteNodes] count] == 1)? [[(id<SPNamedNode>)[[self selectedFavoriteNode] representedObject] nodeName] stringByAppendingPathExtension:@"plist"] : nil;
     // This if() is so we can also catch nil due to favorite corruption (NSSavePanel will @throw if nil is passed in)
     if(!fileName) fileName = SPExportFavoritesFilename;
+
+    [self _exportFavoriteNodes:^NSArray *{ return [self selectedFavoriteNodes]; } suggestedFileName:fileName];
+}
+
+/**
+ * Claude look: displays the same save panel and writes every favourite, folders included (the top level of the
+ * favourites tree), in the same file format — the ⋯ menu's and the File menu's Export with nothing selected.
+ */
+- (IBAction)exportAllFavorites:(id)sender
+{
+    if (![[favoritesRoot allChildLeafs] count]) return;
+
+    [self _exportFavoriteNodes:^NSArray *{ return [self _allFavoriteNodes]; } suggestedFileName:SPExportFavoritesFilename];
+}
+
+/**
+ * The favourites folder's children (the tree's root holds that one folder): every favourite and folder.
+ */
+- (NSArray *)_allFavoriteNodes
+{
+    return [[[[favoritesRoot childNodes] firstObject] childNodes] copy] ?: @[];
+}
+
+/**
+ * Shows the export save panel and writes the nodes `nodes` returns (read when the panel is confirmed).
+ */
+- (void)_exportFavoriteNodes:(NSArray *(^)(void))nodes suggestedFileName:(NSString *)fileName
+{
+    NSSavePanel *savePanel = [NSSavePanel savePanel];
 
     [savePanel setAccessoryView:exportPanelAccessoryView];
     [savePanel setNameFieldStringValue:fileName];
@@ -2732,7 +2810,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
             [exporter setDelegate:self];
 
-            [exporter writeFavorites:[self selectedFavoriteNodes] toFile:[[savePanel URL] path]];
+            [exporter writeFavorites:nodes() toFile:[[savePanel URL] path]];
          }
      }];
 }
@@ -3238,6 +3316,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     [self.favoritesListDataSource reloadDataIn:favoritesOutlineView];
     [self _scrollToSelectedNode];
+
+    // Claude look: the favourite cards re-read the favourites tree.
+    [SAClaudeConnectionPageStyler favoritesDidReloadIn:connectionDetailsScrollView];
 }
 
 /**
@@ -3746,20 +3827,18 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     SPLog(@"Cannot read sshConfigFile: %@", sshConfigFile);
 
     NSAlert *alert = [[NSAlert alloc] init];
-    [alert addButtonWithTitle:NSLocalizedString(@"Go to Network Settings", @"SSH config file error alert - Go to network settings button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"ClaudeSettings.pointer.openSettings", @"Claude Settings pointer: button that opens Settings on the place the message names (was \"Open Files Preferences\" / \"Go to Network Settings\")")];
     [alert addButtonWithTitle:NSLocalizedString(@"Reset to Default & Continue", @"SSH config file error alert - Reset to default button")];
     [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"SSH config file error alert - Cancel button")];
     [alert setMessageText:NSLocalizedString(@"Cannot Access SSH Config File", @"SSH config file error alert title")];
-    [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.", @"SSH config file error alert message"), sshConfigFile]];
+    [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"ClaudeSettings.pointer.sshConfigFile.message", @"Claude Settings pointer: SSH config file error alert message; %@ is the file's path"), sshConfigFile]];
     [alert setAlertStyle:NSAlertStyleWarning];
 
     NSInteger response = [alert runModal];
 
     if (response == NSAlertFirstButtonReturn) { // Go to Settings
         SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
-        [prefCon showWindow:nil];
-        id filePaneItem = prefCon->networkItem;
-        [prefCon displayPreferencePane:filePaneItem];
+        [prefCon showSettingsForPointer:SAClaudeSettingsPointerConnectionSSHConfigFile];
         [self _restoreConnectionInterface];
         return NO;
     } else if (response == NSAlertSecondButtonReturn) { // Reset to Default
@@ -4255,6 +4334,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     [self _startEditingConnection];
 
+    // Claude look: re-read ~/.aws on each visit to the AWS IAM tab (a folder created meanwhile replaces the note).
+    if (selectedTabView == SPAWSIAMConnection) [self _syncAWSIAMAndSSLInterfaceState];
+
     [self resizeTabViewToConnectionType:selectedTabView animating:YES];
 
 
@@ -4288,27 +4370,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     [[NSUserDefaults standardUserDefaults] setBool:YES forKey:SPConnectionShownSocketHelp];
                 };
 
-                NSDictionary *tmpDic2 = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};
-                NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : tmpDic2};
+                // Always our own page (online or offline), its links in the browser; it links to the online docs.
+                bundleController.opensWebLinksInBrowser = YES;
+                NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @600}};
+                NSString *path = [[NSBundle mainBundle] pathForResource:@"local-connection" ofType:@"html"];
+                SPLog(@"path: %@", path);
 
-                if ([self connected]) {
-                    SPLog(@"Connected, loading remote URL");
-                    [bundleController displayURLString:SPDocsSocketConnection withOptions:tmpDict];
-                }
-                else{
-                    SPLog(@"Not connected, loading local file");
-                    NSString *path = [[NSBundle mainBundle] pathForResource:@"local-connection" ofType:@"html"];
-                    SPLog(@"path: %@", path);
+                NSString *html = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
 
-                    NSString *html = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
-
-                    if(error == nil){
-                        // slightly larger
-                        NSMutableDictionary *mutDict = [tmpDict mutableCopy];
-                        mutDict[@"frame"] = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @600};
-
-                        [bundleController displayHTMLContent:html withOptions:mutDict];
-                    }
+                if(error == nil){
+                    [bundleController displayHTMLContent:html withOptions:tmpDict];
                 }
                 if(error == nil){
                     [SPBundleManager.shared addHTMLOutputController:bundleController];
@@ -4372,6 +4443,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         scrollDocumentFrame.size.height = scrollViewFrame.size.height;
         [[connectionDetailsScrollView documentView] setFrame:scrollDocumentFrame];
     }
+
+    // Claude look: the connection page lays itself out again (and keeps the user's scroll position).
+    [SAClaudeConnectionPageStyler pageNeedsLayoutIn:connectionDetailsScrollView];
 }
 
 #pragma mark -
@@ -4407,6 +4481,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // import does not depend on a selection
     if(action == @selector(importFavorites:)) return YES;
+
+    // Claude look: exporting everything needs a favourite, not a selection
+    if (action == @selector(exportAllFavorites:)) return [[favoritesRoot allChildLeafs] count] > 0;
 
     // Copy connection string requires a single non-group favorite
     if (action == @selector(copyConnectionString:)) {
@@ -4858,6 +4935,24 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Force a resize after a tiny delay to ensure view is fully loaded
         [self performSelector:@selector(_forceInitialResize) withObject:nil afterDelay:0.0];
+
+        // Claude look: restyle the connection form as the Claude connection panel (it lays out on every resize above).
+        [SAClaudeConnectionPanelStyler attachToController:self
+                                                container:connectionResizeContainer
+                                               scrollView:connectionDetailsScrollView
+                                           formContainers:[NSArray arrayWithObjects:standardConnectionFormContainer, socketConnectionFormContainer,
+                                                           sshConnectionFormContainer, awsIAMConnectionFormContainer, vaultConnectionFormContainer, nil]
+                                            connectButton:connectButton
+                                               helpButton:helpButton
+                                        progressIndicator:progressIndicator
+                                             progressText:progressIndicatorText
+                                          editButtonsView:editButtonsView
+                                    awsAuthorizeInfoLabel:awsAuthorizeInfoLabel];
+
+        // Claude look: the connection page (favourite cards above the panel; the sidebar collapses, its outline hidden).
+        [SAClaudeConnectionPageStyler attachToController:self splitView:connectionSplitView scrollView:connectionDetailsScrollView
+                                               container:connectionResizeContainer instructionsField:connectionInstructionsTextField
+                                             searchField:favoritesSearchField];
     }
 
     return self;
@@ -5257,6 +5352,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
 {
+    // Claude look: the panel title's name field is an inline rename — Return saves the name, Escape restores it;
+    // neither reaches the window's default button (Connect).
+    SAClaudeNameCommandResult nameCommand = [SAClaudeConnectionPanelStyler handleNameCommand:commandSelector inControl:control container:connectionResizeContainer];
+    if (nameCommand == SAClaudeNameCommandResultCancelledToClean) [self _stopEditingConnection];
+    if (nameCommand != SAClaudeNameCommandResultNotHandled) return YES;
+
     // NSComboBox routes keyboard popup requests through moveDown: on its text
     // delegate. Let the Swift control defer that first popup until preparation.
     if (control == awsRegionComboBox && commandSelector == @selector(moveDown:)
@@ -5384,7 +5485,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCACertFileLocationKey];
-    [self removeObserver:self forKeyPath:SPBookmarksChangedNotification];
+    // SPBookmarksChangedNotification is a notification-centre registration (removed by
+    // -removeObserver: above), not KVO; removing it as a key path raised once this controller
+    // could actually deallocate.
 
 
     [self setConnectionKeychainID:nil];

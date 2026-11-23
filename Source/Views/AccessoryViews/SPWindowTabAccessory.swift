@@ -30,95 +30,161 @@
 
 import Cocoa
 
+/// The content of a native window tab: the favourite colour as a dot, the tab title and the SSL padlock,
+/// centred as one group (`SAClaudeTabContentLayout`). AppKit still draws the tab itself (fill, close button);
+/// this view only replaces its label.
+///
+/// The accessory is pinned across the tab (`viewDidMoveToSuperview`), which squeezes AppKit's own title label
+/// to zero width, so `window.tab.title` stays set for the Window menu, the tab overview and accessibility
+/// without being drawn twice.
 final class SPWindowTabAccessory: NSView {
     // MARK: Initializers
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        addContentSubviews()
     }
-    
+
     init() {
         super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
-
-        addSubviews(tabAccessoryColorView, tabAccessoryViewImage, tabText)
-        
-        tabAccessoryColorView.snp.makeConstraints {
-            $0.height.equalTo(5)
-            $0.bottom.leading.trailing.equalToSuperview()
-        }
-        tabText.snp.makeConstraints {
-            $0.bottom.equalTo(tabAccessoryColorView.snp.top)
-            $0.leading.top.equalToSuperview()
-            $0.trailing.equalTo(tabAccessoryViewImage.snp.leading)
-        }
-
-        tabAccessoryViewImage.snp.makeConstraints {
-            $0.size.equalTo(20)
-            $0.trailing.equalToSuperview()
-            $0.centerY.equalToSuperview()
-        }
+        addContentSubviews()
     }
-    
-    // MARK: Subviews
-    
-    private lazy var tabAccessoryColorView: NSView = {
-        let colorView = NSView()
 
-        colorView.wantsLayer = true
-        return colorView
-    }()
-    
+    private func addContentSubviews() {
+        addSubviews(colourDot, tabText, lockImageView)
+        for view in [colourDot, tabText, lockImageView] {
+            view.translatesAutoresizingMaskIntoConstraints = true
+        }
+        applySelectionStyle()
+    }
+
+    // MARK: State
+
+    private var hasColour = false
+    private var isSSL = false
+    private var isSelected = false
+
+    // MARK: Subviews
+
+    private let colourDot = TabColourDot()
+
     private lazy var tabText: NSTextField = {
-        let text = NSTextField()
-        text.userActivity = .none
-        text.backgroundColor = .clear
-        text.isEditable = false
-        text.isHidden = false
-        text.alignment = .center
-        text.isBordered = false
-        text.textColor = .labelColor
+        let text = NSTextField(labelWithString: "")
+        text.lineBreakMode = .byTruncatingTail
+        text.maximumNumberOfLines = 1
+        text.cell?.truncatesLastVisibleLine = true
+        text.alignment = .natural
         return text
     }()
 
-    private lazy var tabAccessoryViewImage: NSImageView = {
+    private lazy var lockImageView: NSImageView = {
+        let size = SAClaudeTabContentLayout.lockSize
         var image = NSImage(imageLiteralResourceName: "fallback_lock.fill")
-        if #available(macOS 11, *), let systemImage = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil) {
+        if let systemImage = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: size, weight: .regular)) {
             image = systemImage
         }
+        image.isTemplate = true
         let imageView = NSImageView(image: image)
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.contentTintColor = SAClaudeStyle.textMuted
         imageView.toolTip = NSLocalizedString("Connection Secured via SSL", comment: "Connection Secured via SSL information text")
         imageView.isHidden = true
         return imageView
     }()
-    
-    // MARK: Setters
-    
-    func update(color: NSColor?, isSSL: Bool) {
-        var tabColor = color
-        if #available(macOS 10.13, *) {
-            if(tabColor != nil && tabColor?.colorNameComponent.starts(with: "favorite") == true) {
-                tabColor = NSColor(named: tabColor!.colorNameComponent + "-tab") ?? tabColor
-            }
-        }
 
-        tabAccessoryColorView.layer?.backgroundColor = tabColor?.cgColor
-        tabAccessoryViewImage.isHidden = !isSSL
+    // MARK: Setters
+
+    /// The colour a tab shows for a connection's favourite colour: a favourite's `-tab` variant from the asset
+    /// catalog when there is one, otherwise the colour itself.
+    static func tabColour(for color: NSColor?) -> NSColor? {
+        if let name = color?.colorNameComponentIfNamed, name.starts(with: "favorite") {
+            return NSColor(named: name + "-tab") ?? color
+        }
+        return color
+    }
+
+    func update(color: NSColor?, isSSL: Bool) {
+        let tabColor = Self.tabColour(for: color)
+
+        colourDot.colour = tabColor
+        hasColour = tabColor != nil
+        self.isSSL = isSSL
+        needsLayout = true
     }
 
     func setTitle(title: String) {
+        guard tabText.stringValue != title else { return }
         tabText.stringValue = title
+        needsLayout = true
     }
-    
+
+    /// The full path of the tab (the window title), shown when hovering the tab content.
+    func setToolTipPath(_ path: String) {
+        if toolTip != path { toolTip = path }
+    }
+
+    /// Whether this tab is the selected one of its group: medium primary text when selected, regular secondary otherwise.
+    func setSelected(_ selected: Bool) {
+        guard isSelected != selected else { return }
+        isSelected = selected
+        applySelectionStyle()
+        needsLayout = true
+    }
+
+    private func applySelectionStyle() {
+        tabText.font = .systemFont(ofSize: 12, weight: isSelected ? .medium : .regular)
+        tabText.textColor = isSelected ? SAClaudeStyle.textPrimary : SAClaudeStyle.textSecondary
+    }
+
+    // MARK: Layout
+
+    /// Frames the subviews only; the accessory's own size comes from its constraints to the tab.
+    override func layout() {
+        super.layout()
+        let frames = SAClaudeTabContentLayout.frames(size: bounds.size,
+                                                     titleWidth: tabText.cell?.cellSize.width ?? 0,
+                                                     hasColour: hasColour,
+                                                     isSSL: isSSL)
+        colourDot.isHidden = frames.dot == nil
+        if let dot = frames.dot { colourDot.frame = dot }
+        tabText.frame = frames.title
+        lockImageView.isHidden = frames.lock == nil
+        if let lock = frames.lock { lockImageView.frame = lock }
+    }
+
     // MARK: Callbacks
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        // The text and lock use dynamic colours AppKit resolves when drawing; the dot draws itself.
+        colourDot.needsDisplay = true
+        tabText.needsDisplay = true
+        lockImageView.needsDisplay = true
+    }
 
     override func viewDidMoveToSuperview() {
         super.viewDidMoveToSuperview()
         if superview != nil {
+            // Fill the tab's height so the content centres in it; 35pt clears the close button.
             self.snp.makeConstraints {
                 $0.leading.equalToSuperview().offset(35)
                 $0.trailing.equalToSuperview().offset(-35)
-                $0.top.equalToSuperview().offset(5)
+                $0.top.equalToSuperview()
                 $0.bottom.equalToSuperview()
             }
         }
+    }
+}
+
+/// The favourite colour as a filled circle; resolves the (possibly dynamic) colour when it draws.
+private final class TabColourDot: NSView {
+    var colour: NSColor? {
+        didSet { needsDisplay = true }
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let colour else { return }
+        colour.setFill()
+        NSBezierPath(ovalIn: bounds).fill()
     }
 }

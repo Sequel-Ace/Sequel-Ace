@@ -321,6 +321,48 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
             editorIsEmpty: true
         ))
     }
+
+    /// Removing the last rule with the − button on a visible bar falls back
+    /// to a blank starter row; every other combination of the three facts
+    /// leaves the editor alone.
+    func testReseedAfterUserDeletionOnlyWhenEmptyVisibleAndUserDriven() {
+        for editorIsEmpty in [false, true] {
+            for barVisible in [false, true] {
+                for userDriven in [false, true] {
+                    let expected = editorIsEmpty && barVisible && userDriven
+                    XCTAssertEqual(
+                        SARuleFilterVisibilityPolicy.shouldReseedStarterAfterUserDeletion(
+                            editorIsEmpty: editorIsEmpty,
+                            barVisible: barVisible,
+                            deletionWasUserDriven: userDriven
+                        ),
+                        expected,
+                        "empty=\(editorIsEmpty) visible=\(barVisible) userDriven=\(userDriven)"
+                    )
+                }
+            }
+        }
+    }
+
+    func testReseedAfterUserDeletionNotWhenRulesRemain() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldReseedStarterAfterUserDeletion(
+            editorIsEmpty: false, barVisible: true, deletionWasUserDriven: true))
+    }
+
+    func testReseedAfterUserDeletionNotWhenBarHidden() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldReseedStarterAfterUserDeletion(
+            editorIsEmpty: true, barVisible: false, deletionWasUserDriven: true))
+    }
+
+    func testReseedAfterUserDeletionNotWhenEmptiedProgrammatically() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldReseedStarterAfterUserDeletion(
+            editorIsEmpty: true, barVisible: true, deletionWasUserDriven: false))
+    }
+
+    func testReseedAfterUserDeletionWhenUserRemovedLastRuleOnVisibleBar() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldReseedStarterAfterUserDeletion(
+            editorIsEmpty: true, barVisible: true, deletionWasUserDriven: true))
+    }
 }
 
 final class SARuleFilterDropZoneLayoutPolicyTests: XCTestCase {

@@ -28,9 +28,8 @@
 
 import AppKit
 
-private let kMCPDefaultPort = 8765
-private let kMCPMinPort     = 1024
-private let kMCPMaxPort     = 65535
+private let kMCPMinPort     = SAClaudeSettingsRules.mcpPortRange.lowerBound
+private let kMCPMaxPort     = SAClaudeSettingsRules.mcpPortRange.upperBound
 
 /// Preference pane for the built-in MCP (Model Context Protocol) server.
 /// Lets users enable/disable the server and configure its port, read-only
@@ -224,6 +223,13 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
 
     // MARK: - Actions
 
+    /// The Settings window's server switch: what clicking the checkbox did.
+    @objc func setServerEnabled(_ enabled: Bool) {
+        if !isViewLoaded { _ = view }
+        enableCheckbox.state = enabled ? .on : .off
+        toggleMCPServer(enableCheckbox)
+    }
+
     /// Toggle the MCP server enabled state.
     @objc func toggleMCPServer(_ sender: Any?) {
         let enabled = enableCheckbox.state == .on
@@ -246,20 +252,24 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
 
     /// Validate and save a new port number.
     @objc func updatePort(_ sender: NSTextField) {
-        let digits = sender.stringValue.replacingOccurrences(of: " ", with: "")
-        // Reject non-numeric input (integerValue would silently accept e.g. "8765abc").
-        let allDigits = !digits.isEmpty &&
-            digits.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) == nil
-        let port = Int(digits) ?? 0
-        if !allDigits || port < kMCPMinPort || port > kMCPMaxPort {
+        if !applyPort(text: sender.stringValue) {
+            sender.stringValue = "\(currentPort)"
+        }
+    }
+
+    /// Validates and saves the port typed as `text` (the port field's action, and the Settings window's port field):
+    /// refused (non-numeric, e.g. "8765abc" that integerValue would silently accept, or outside 1024–65535), the
+    /// "Invalid Port" alert runs and nothing is written (returns false); accepted, the port is saved and the server
+    /// restarted on it if running.
+    @objc @discardableResult func applyPort(text: String) -> Bool {
+        guard let port = SAClaudeSettingsRules.mcpPort(fromText: text) else {
             let alert = NSAlert()
             alert.messageText = NSLocalizedString("Invalid Port", comment: "MCP pref: invalid port alert")
             alert.informativeText = String(format: NSLocalizedString("Port must be between %ld and %ld.",
                                                                      comment: "MCP pref: port range"),
                                            kMCPMinPort, kMCPMaxPort)
             alert.runModal()
-            sender.stringValue = "\(currentPort)"
-            return
+            return false
         }
 
         defaults.set(port, forKey: SPMCPServerPort)
@@ -274,6 +284,7 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
                 self?.refreshStatus()
             }
         }
+        return true
     }
 
     /// Open a panel to choose the default export directory.
@@ -322,20 +333,33 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
     // MARK: - Private helpers
 
     private func refreshStatus() {
-        let running = SPMCPServer.shared.isRunning
-        let enabled = defaults.bool(forKey: SPMCPServerEnabled)
+        statusLabel.stringValue = statusText
+        statusLabel.textColor = statusColour
+    }
 
-        if !enabled {
-            statusLabel.stringValue = NSLocalizedString("MCP server is disabled.", comment: "MCP pref: status disabled")
-            statusLabel.textColor = .secondaryLabelColor
-        } else if running {
-            statusLabel.stringValue = String(format: NSLocalizedString("MCP server is running on http://127.0.0.1:%ld/mcp",
-                                                                       comment: "MCP pref: status running"),
-                                             currentPort)
-            statusLabel.textColor = .systemGreen
-        } else {
-            statusLabel.stringValue = NSLocalizedString("MCP server is not running.", comment: "MCP pref: status stopped")
-            statusLabel.textColor = .systemOrange
+    /// The status line now (the Settings window shows it under the server switch).
+    var status: SAClaudeSettingsRules.MCPStatus {
+        SAClaudeSettingsRules.mcpStatus(enabled: defaults.bool(forKey: SPMCPServerEnabled),
+                                        running: SPMCPServer.shared.isRunning, port: currentPort)
+    }
+
+    @objc var statusText: String {
+        switch status {
+        case .disabled:
+            return NSLocalizedString("MCP server is disabled.", comment: "MCP pref: status disabled")
+        case .running(let port):
+            return String(format: NSLocalizedString("MCP server is running on http://127.0.0.1:%ld/mcp",
+                                                    comment: "MCP pref: status running"), port)
+        case .stopped:
+            return NSLocalizedString("MCP server is not running.", comment: "MCP pref: status stopped")
+        }
+    }
+
+    @objc var statusColour: NSColor {
+        switch status {
+        case .disabled: return .secondaryLabelColor
+        case .running: return .systemGreen
+        case .stopped: return .systemOrange
         }
     }
 
@@ -343,16 +367,16 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
         endpointField.stringValue = endpointURLString
     }
 
-    private var endpointURLString: String {
-        return "http://127.0.0.1:\(currentPort)/mcp"
+    @objc var endpointURLString: String {
+        return SAClaudeSettingsRules.mcpEndpoint(port: currentPort)
     }
 
-    private var currentPort: Int {
-        let p = defaults.integer(forKey: SPMCPServerPort)
-        return (p >= kMCPMinPort && p <= kMCPMaxPort) ? p : kMCPDefaultPort
+    @objc var currentPort: Int {
+        return SAClaudeSettingsRules.mcpEffectivePort(stored: defaults.integer(forKey: SPMCPServerPort))
     }
 
-    private var currentExportPath: String {
+    /// The export folder: the chosen one, else Downloads.
+    @objc var currentExportPath: String {
         if let path = defaults.string(forKey: SPMCPExportPath), !path.isEmpty { return path }
         return NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first
             ?? NSTemporaryDirectory()

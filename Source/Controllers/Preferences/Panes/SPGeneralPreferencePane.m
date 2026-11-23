@@ -162,6 +162,9 @@ static NSString *SPDatabaseImage = @"database-small";
 	
 	// Select the default favorite from prefs	
 	[defaultFavoritePopup selectItemWithTag:[prefs boolForKey:SPSelectLastFavoriteUsed] ? 0 : [prefs integerForKey:SPDefaultFavorite]];
+
+	// The Settings window's "Favourite to select" pill rebuilds from the tree too (callers run this when it changes).
+	[SAClaudeSettingsFavourites treeDidChange];
 }
 
 #pragma mark -

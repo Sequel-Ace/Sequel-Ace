@@ -17,11 +17,15 @@ enum SAHelpViewerNavigation {
 }
 
 /// Content of the MySQL help viewer window: the toolbar row from the legacy
-/// HelpViewer.xib (navigation, search field, target selector) above a WKWebView.
+/// HelpViewer.xib (navigation, search field, target selector) above a WKWebView,
+/// in the Claude kit's look (`SAClaudeSwiftUIPalette` from the environment): ghost
+/// icon buttons, the search field in the Claude field chrome, Claude segmented tabs
+/// and a hairline rule on the theme's surface.
 struct SAHelpViewerView: View {
 
     @ObservedObject var model: SAHelpViewerModel
     @ObservedObject var webViewModel: SAWebViewModel
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
 
     /// Configuration carrying the selection bridge; built by the window controller.
     let webViewConfiguration: WKWebViewConfiguration
@@ -36,22 +40,26 @@ struct SAHelpViewerView: View {
                 searchField
                 targetSelector
             }
-            .padding(.horizontal, 11)
+            .padding(.horizontal, 10)
             .padding(.vertical, 6)
 
-            Divider()
+            Rectangle()
+                .fill(palette.hairline)
+                .frame(height: 1)
 
             SAWebView(model: webViewModel, externalConfiguration: webViewConfiguration)
         }
+        .background(palette.surface)
     }
 
     private var navigationControl: some View {
-        ControlGroup {
+        HStack(spacing: 2) {
             Button {
                 onNavigate(.back)
             } label: {
-                Image(systemName: "chevron.left")
+                Image(systemName: "chevron.left").font(Self.glyphFont)
             }
+            .buttonStyle(SAClaudeGhostIconButtonStyle())
             .disabled(!model.canGoBack)
             .accessibilityLabel(Self.backTitle)
             .help(Self.backTitle)
@@ -59,48 +67,59 @@ struct SAHelpViewerView: View {
             Button {
                 onNavigate(.tableOfContents)
             } label: {
-                Image(systemName: "list.bullet")
+                Image(systemName: "list.bullet").font(Self.glyphFont)
             }
+            .buttonStyle(SAClaudeGhostIconButtonStyle())
             .accessibilityLabel(Self.tableOfContentsTitle)
             .help(Self.tableOfContentsTitle)
 
             Button {
                 onNavigate(.forward)
             } label: {
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.right").font(Self.glyphFont)
             }
+            .buttonStyle(SAClaudeGhostIconButtonStyle())
             .disabled(!model.canGoForward)
             .accessibilityLabel(Self.forwardTitle)
             .help(Self.forwardTitle)
         }
-        .frame(width: 104)
     }
 
     private var searchField: some View {
-        SAHelpSearchField(
-            text: $model.searchString,
-            placeholder: model.target.searchFieldPlaceholder,
-            sendsWholeSearchString: model.target.sendsWholeSearchString,
-            focusRequest: model.focusSearchFieldRequest,
-            onSubmit: onSubmitSearch
-        )
+        SAClaudeFieldChrome(isFocused: model.isSearchFieldFocused, size: .form) {
+            SAHelpSearchField(
+                text: $model.searchString,
+                isFocused: $model.isSearchFieldFocused,
+                placeholder: model.target.searchFieldPlaceholder,
+                sendsWholeSearchString: model.target.sendsWholeSearchString,
+                focusRequest: model.focusSearchFieldRequest,
+                onSubmit: onSubmitSearch
+            )
+        }
         .frame(minWidth: 120, maxWidth: .infinity)
     }
 
     private var targetSelector: some View {
-        Picker("", selection: $model.target) {
-            Text(NSLocalizedString("MySQL", comment: "help viewer : search target : mysql help")).tag(SAHelpTarget.mysql)
-            Text(NSLocalizedString("Page", comment: "help viewer : search target : current page")).tag(SAHelpTarget.page)
-            Text(NSLocalizedString("Web", comment: "help viewer : search target : online documentation")).tag(SAHelpTarget.web)
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .frame(width: 152)
-        // The legacy XIB explained this control with per-segment tooltips; SwiftUI
-        // has no per-segment equivalent, so one tooltip covers all three.
-        .accessibilityLabel(NSLocalizedString("Search target", comment: "help viewer : search target selector accessibility label"))
-        .help(SAHelpTarget.selectorHelpText)
+        // The legacy XIB explained this control with per-segment tooltips; one
+        // tooltip covers all three.
+        SAClaudeSegmentedTabs(
+            titles: Self.targetTitles,
+            selection: $model.targetIndex,
+            help: SAHelpTarget.selectorHelpText,
+            accessibilityLabel: NSLocalizedString("Search target", comment: "help viewer : search target selector accessibility label"),
+            // The page's link colour (the card palette's readable accent), so the tab and the links agree.
+            selectedText: SAClaudeHintCardPalette.current().accent
+        )
     }
+
+    /// The segments' titles, in `SAHelpTarget` raw-value order.
+    private static let targetTitles = [
+        NSLocalizedString("MySQL", comment: "help viewer : search target : mysql help"),
+        NSLocalizedString("Page", comment: "help viewer : search target : current page"),
+        NSLocalizedString("Web", comment: "help viewer : search target : online documentation")
+    ]
+
+    private static let glyphFont = Font.system(size: 12, weight: .medium)
 
     private static let backTitle = NSLocalizedString("Show the previous page", comment: "help viewer : back button tooltip")
     private static let tableOfContentsTitle = NSLocalizedString("MySQL Table of Contents", comment: "help viewer : table of contents button tooltip")
@@ -109,10 +128,15 @@ struct SAHelpViewerView: View {
 
 /// NSSearchField wrapper: SwiftUI has no equivalent of `sendsWholeSearchString`,
 /// which is what makes the MySQL target search incrementally while the page and
-/// web targets only search on Return.
+/// web targets only search on Return. Borderless and unbezelled: the Claude field
+/// chrome around it draws the field, and its accent outline follows `isFocused`.
 struct SAHelpSearchField: NSViewRepresentable {
 
+    /// The placeholder's colour (`muted`); a palette change (theme, appearance) updates the view.
+    @EnvironmentObject var palette: SAClaudeSwiftUIPalette
     @Binding var text: String
+    /// Whether the field (or its field editor) is the window's first responder.
+    @Binding var isFocused: Bool
     /// Names the current search target, tying the field to the target selector.
     var placeholder: String
     var sendsWholeSearchString: Bool
@@ -124,25 +148,46 @@ struct SAHelpSearchField: NSViewRepresentable {
         Coordinator(self)
     }
 
-    func makeNSView(context: Context) -> NSSearchField {
-        let searchField = NSSearchField()
-        searchField.controlSize = .small
-        searchField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        searchField.placeholderString = placeholder
+    private var placeholderText: NSAttributedString {
+        // Ends in "…" when the field is too narrow (an attributed placeholder otherwise wraps and clips).
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        return NSAttributedString(string: placeholder, attributes: [.font: NSFont.systemFont(ofSize: 12),
+                                                                    .foregroundColor: NSColor(palette.muted),
+                                                                    .paragraphStyle: paragraph])
+    }
+
+    func makeNSView(context: Context) -> SAHelpSearchFieldView {
+        let searchField = SAHelpSearchFieldView()
+        searchField.font = .systemFont(ofSize: 12)
+        searchField.isBordered = false
+        searchField.isBezeled = false
+        searchField.drawsBackground = false
+        searchField.focusRingType = .none
+        searchField.placeholderAttributedString = placeholderText
         searchField.delegate = context.coordinator
         searchField.target = context.coordinator
         searchField.action = #selector(Coordinator.searchFieldAction(_:))
+        let coordinator = context.coordinator
+        searchField.onFocusChange = { focused in
+            if coordinator.parent.isFocused != focused {
+                coordinator.parent.isFocused = focused
+            }
+        }
         return searchField
     }
 
-    func updateNSView(_ nsView: NSSearchField, context: Context) {
+    func updateNSView(_ nsView: SAHelpSearchFieldView, context: Context) {
         context.coordinator.parent = self
 
         if nsView.stringValue != text {
             nsView.stringValue = text
         }
-        if nsView.placeholderString != placeholder {
-            nsView.placeholderString = placeholder
+        // In the palette's muted grey, as the other Claude search fields: AppKit's own placeholder colour follows the
+        // window's appearance, not the theme, and read as strong as text under a crossed theme/appearance.
+        let placeholderText = placeholderText
+        if nsView.placeholderAttributedString != placeholderText {
+            nsView.placeholderAttributedString = placeholderText
         }
         (nsView.cell as? NSSearchFieldCell)?.sendsWholeSearchString = sendsWholeSearchString
 
@@ -179,5 +224,57 @@ struct SAHelpSearchField: NSViewRepresentable {
             parent.text = sender.stringValue
             parent.onSubmit()
         }
+    }
+}
+
+/// The help viewer's search field, reporting when it gains or loses the keyboard
+/// focus: the window's first responder is the field itself, or — while it is being
+/// edited — the field editor it delegates to.
+final class SAHelpSearchFieldView: NSSearchField {
+
+    override class var cellClass: AnyClass? {
+        get { SAHelpSearchFieldCell.self }
+        set {}
+    }
+
+    /// Called with the new state whenever the focus moves into or out of the field.
+    var onFocusChange: ((Bool) -> Void)?
+
+    private var hasFocus = false
+    private var firstResponderObservation: NSKeyValueObservation?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        firstResponderObservation = window?.observe(\.firstResponder, options: [.initial, .new]) { [weak self] _, _ in
+            // Read on the next turn: focusing the field passes through the field
+            // itself and then the field editor, whose delegate is set only after
+            // it has become first responder.
+            DispatchQueue.main.async { self?.updateFocus() }
+        }
+        if window == nil {
+            updateFocus()
+        }
+    }
+
+    private func updateFocus() {
+        let responder = window?.firstResponder
+        let focused = responder === self || (responder as? NSText)?.delegate === self
+        guard focused != hasFocus else { return }
+        hasFocus = focused
+        onFocusChange?(focused)
+    }
+}
+
+/// An unbezelled search field cell draws its text between the magnifier and the
+/// cancel button but hands the field editor its whole frame, so typed text would
+/// run under the magnifier: editing gets the same text rect as drawing.
+final class SAHelpSearchFieldCell: NSSearchFieldCell {
+
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: searchTextRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
+    }
+
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: searchTextRect(forBounds: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
     }
 }

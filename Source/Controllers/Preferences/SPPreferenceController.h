@@ -37,6 +37,7 @@
 @class SPNetworkPreferencePane;
 @class SPFilePreferencePane;
 @class SPMCPPreferencePane;
+@class SPPreferencePane;
 
 /**
  * @class SPPreferenceController SPPreferenceController.h
@@ -89,8 +90,25 @@
  */
 @property (readwrite, assign) SPPreferenceFontChangeTarget fontChangeTarget;
 
-// Toolbar item IBAction methods
+/**
+ * The old pane controllers (General, Tables, Notifications, Editor, Network, File, MCP). They stay loaded behind the
+ * Claude Settings content (SAClaudeSettingsWindow.swift), which calls their code; nil until the window has loaded.
+ */
+@property (readonly) NSArray<SPPreferencePane<SPPreferencePaneProtocol> *> *legacyPreferencePanes;
+
+/**
+ * Old toolbar items' action, kept for outside callers that pass `fileItem` / `networkItem`: opens the Settings pane
+ * that now holds that pane's settings (nil: the first pane). Doesn't show the window.
+ */
 - (IBAction)displayPreferencePane:(id)sender;
+
+/**
+ * Shows the Settings window on a pane (an SAClaudeSettingsPaneID raw value, e.g. @"sshSecurity") and scrolls to a row
+ * (a catalog row id, e.g. @"accessibleFiles"; it decides the pane when known; nil for the top). `regrantStaleFiles` is
+ * passed to the accessible-files row (a file prompt asked for stale files to be re-granted).
+ */
+- (void)showSettingsPane:(NSString *)paneID revealRow:(NSString *)rowID regrantStaleFiles:(BOOL)flag;
+- (void)showSettingsPane:(NSString *)paneID revealRow:(NSString *)rowID;
 
 - (void)changeDefaultFont:(id)sender;
 

@@ -107,7 +107,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		
 		prefs = [NSUserDefaults standardUserDefaults];
 
-		[tables addObject:NSLocalizedString(@"TABLES", @"header for table list")];
+		[tables addObject:NSLocalizedString(@"Tables", @"header for table list")];
 
 		addTableCharsetHelper = nil; //initialized in awakeFromNib
 		_SQLitePinnedTableManager = SQLitePinnedTableManager.sharedInstance;
@@ -156,11 +156,31 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
 
-	NSFont *tableFont = [NSUserDefaults getFont];
-	[tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	// Claude-style sidebar: fixed 32pt rows in SF Pro, independent of the
+	// global table font (which still applies to the content and query grids).
+	[(SATablesListView *)tablesListView applyClaudeStyle];
+	[tableListSplitView setCustomDividerColor:[SAClaudeStyle divider]];
+	[SAClaudeSidebarChrome styleSidebarSplitView:tableListSplitView];
+
+	// Claude-style bottom bar: quiet icon buttons with a rounded hover fill.
+	[SAClaudeSidebarChrome styleBarButton:toolbarAddButton glyph:SAClaudeGlyphAdd];
+	[SAClaudeSidebarChrome styleBarButton:toolbarActionsButton glyph:SAClaudeGlyphActions];
+	[SAClaudeSidebarChrome styleBarButton:toolbarReloadButton glyph:SAClaudeGlyphRefresh];
+	if (infoPanelToggleButton) [SAClaudeSidebarChrome styleBarButton:infoPanelToggleButton glyph:SAClaudeGlyphInfoPanel];
+	// The bar's buttons sit directly in the sidebar pane: paint the whole pane
+	// in the sidebar colour and draw Claude's divider just above the bar.
+	NSView *sidebarPane = [toolbarAddButton superview];
+	if (sidebarPane) {
+		[SAClaudeSidebarChrome addSidebarBackground:sidebarPane];
+		[SAClaudeSidebarChrome addBarDivider:sidebarPane aboveView:toolbarAddButton];
+		[SAClaudeSidebarChrome setBarHeightInPane:sidebarPane belowView:tableListSplitView];
+	}
+
+	// Claude-style filter field: a 40pt band above the list with a rounded fill behind the field.
+	[SAClaudeSidebarFilterStyler attachToField:listFilterField listScrollView:[tablesListView enclosingScrollView]];
 
 	for (NSTableColumn *column in [tablesListView tableColumns]) {
-		[[column dataCell] setFont:tableFont];
+		[[column dataCell] setFont:[SAClaudeStyle rowFont]];
 	}
 }
 
@@ -174,9 +194,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	// Table font preference changed
 	if ([keyPath isEqualToString:SPGlobalFontSettings]) {
-		NSFont *tableFont = [NSUserDefaults getFont];
-		[tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
-		[tablesListView setFont:tableFont];
+		// The sidebar keeps its Claude-style font and row height; only reload.
 		[tablesListView reloadData];
 		// Force a visual refresh of the table list
 		[tablesListView setNeedsDisplay:YES];
@@ -284,7 +302,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
         if(![mySQLConnection queryErrored] && theResult != nil && [theResult numberOfRows] && [theResult numberOfFields] > 3) {
 
             // Add the header row
-            [tables addObject:NSLocalizedString(@"PROCS & FUNCS",@"header for procs & funcs list")];
+            [tables addObject:NSLocalizedString(@"Procedures and functions",@"header for procs & funcs list")];
             [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 
             for (NSArray *eachRow in theResult) {
@@ -308,10 +326,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	// Add the table headers even if no tables were found
 	if (tableListContainsViews) {
-		[tables insertObject:NSLocalizedString(@"TABLES & VIEWS",@"header for table & views list") atIndex:0];
+		[tables insertObject:NSLocalizedString(@"Tables and views",@"header for table & views list") atIndex:0];
 	} 
 	else {
-		[tables insertObject:NSLocalizedString(@"TABLES",@"header for table list") atIndex:0];
+		[tables insertObject:NSLocalizedString(@"Tables",@"header for table list") atIndex:0];
 	}
 	
 	[tableTypes insertObject:[NSNumber numberWithInteger:SPTableTypeNone] atIndex:0];
@@ -1924,6 +1942,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	// Cells are reused for tables without comments and for group headings.
 	[aCell setNote:@""];
+	[SAClaudeSidebarChrome styleTablesListCell:aCell
+									  selected:[[aTableView selectedRowIndexes] containsIndex:rowIndex]
+									   enabled:[aTableView isEnabled]];
 
 	if (rowIndex > 0 && rowIndex < (NSInteger)[filteredTableTypes count] && [[aTableColumn identifier] isEqualToString:@"tables"]) {
 
@@ -1943,19 +1964,19 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		switch([[filteredTableTypes safeObjectAtIndex:rowIndex] integerValue]) {
 			case SPTableTypeView:
-				[aCell setImage:[NSImage imageNamed:@"table-view-small"]];
+				[aCell setImage:[SAClaudeGlyphs sidebarImageForTableType:SPTableTypeView]];
 				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeTable:
-				[aCell setImage:[NSImage imageNamed:@"table-small"]];
+				[aCell setImage:[SAClaudeGlyphs sidebarImageForTableType:SPTableTypeTable]];
 				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeProc:
-				[aCell setImage:[NSImage imageNamed:@"proc-small"]];
+				[aCell setImage:[SAClaudeGlyphs sidebarImageForTableType:SPTableTypeProc]];
 				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeFunc:
-				[aCell setImage:[NSImage imageNamed:@"func-small"]];
+				[aCell setImage:[SAClaudeGlyphs sidebarImageForTableType:SPTableTypeFunc]];
 				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeNone:
@@ -1978,12 +1999,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
 {
-	if (row == 0) {
-		return 25;
-	} else {
-		NSFont *tableFont = [NSUserDefaults getFont];
-		return 4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
-	}
+	return [SAClaudeStyle rowHeight];
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
@@ -2104,7 +2120,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (void)removePinnedTablesSection {
     [pinnedTables removeAllObjects];
-    NSString * pinnedHeader = NSLocalizedString(@"PINNED", @"header for pinned tables");
+    NSString * pinnedHeader = NSLocalizedString(@"Pinned", @"header for pinned tables");
     while ([tables count] > 0) {
         if ([[tableTypes objectAtIndex:0] isEqual:@(SPTableTypeNone)] && [[tables objectAtIndex:0] isNotEqualTo:pinnedHeader]) {
             break;
@@ -2129,7 +2145,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
     NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:connectionIdentifier databaseName:databaseName];
     if (tablesToPin.count > 0) {
-        [tables insertObject:NSLocalizedString(@"PINNED", @"header for pinned tables") atIndex:0];
+        [tables insertObject:NSLocalizedString(@"Pinned", @"header for pinned tables") atIndex:0];
         [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
         NSSortDescriptor* sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:nil ascending:NO selector:@selector(localizedCompare:)];
         NSArray* sortedPinnedTables = [tablesToPin sortedArrayUsingDescriptors:@[sortDescriptor]];
@@ -2251,7 +2267,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		NSRange substringRange;
 		NSString *filterString = [listFilterField stringValue];
 		BOOL isPinnedTablesSection = 0;
-        NSString * pinnedHeader = NSLocalizedString(@"PINNED", @"header for pinned tables");
+        NSString * pinnedHeader = NSLocalizedString(@"Pinned", @"header for pinned tables");
 		for (i = 0; i < [tables count]; i++) {
 			tableType = [[tableTypes objectAtIndex:i] integerValue];
 			if (tableType == SPTableTypeNone) {
@@ -2282,15 +2298,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			if ((tableType == SPTableTypeTable || tableType == SPTableTypeView) && lastTableType == NSNotFound)
 			{
 				if (tableListContainsViews) {
-					[filteredTables addObject:NSLocalizedString(@"TABLES & VIEWS",@"header for table & views list")];
+					[filteredTables addObject:NSLocalizedString(@"Tables and views",@"header for table & views list")];
 				} else {
-					[filteredTables addObject:NSLocalizedString(@"TABLES",@"header for table list")];
+					[filteredTables addObject:NSLocalizedString(@"Tables",@"header for table list")];
 				}
 				[filteredTableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 			} else if ((tableType == SPTableTypeProc || tableType == SPTableTypeFunc)
 						&& (lastTableType == NSNotFound || lastTableType == SPTableTypeTable || lastTableType == SPTableTypeView))
 			{
-				[filteredTables addObject:NSLocalizedString(@"PROCS & FUNCS",@"header for procs & funcs list")];
+				[filteredTables addObject:NSLocalizedString(@"Procedures and functions",@"header for procs & funcs list")];
 				[filteredTableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 			}
 			lastTableType = tableType;

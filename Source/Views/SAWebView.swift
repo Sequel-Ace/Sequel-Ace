@@ -58,6 +58,47 @@ final class SAWebViewModel: NSObject, ObservableObject {
     /// First chance at key events; return true when handled.
     var handleKeyDown: ((NSEvent) -> Bool)?
 
+    /// The colour WebKit shows outside the page (rubber-band scrolling, before the first paint); nil is WebKit's
+    /// default. Applied when the web view attaches and on every change.
+    var underPageBackgroundColor: NSColor? {
+        didSet { applyUnderPageBackgroundColor() }
+    }
+
+    /// WebKit reads the colour's components as sRGB whatever its colour space (a theme's Generic RGB surface came out
+    /// darker than the same colour in the page's CSS), so it is handed over in sRGB.
+    private func applyUnderPageBackgroundColor() {
+        guard let webView else { return }
+        webView.underPageBackgroundColor = underPageBackgroundColor.map { $0.usingColorSpace(.sRGB) ?? $0 }
+    }
+
+    /// Whether the web view paints the default page background (white) behind a page that sets none; false makes it
+    /// transparent, so the view behind it shows through (the bundle window's paper). Applied when the web view attaches
+    /// and on every change, through WebKit's `drawsBackground` where the web view has it.
+    var drawsPageBackground = true {
+        didSet { applyDrawsPageBackground() }
+    }
+
+    private func applyDrawsPageBackground() {
+        guard let webView, webView.responds(to: Selector(("_setDrawsBackground:"))) else { return }
+        webView.setValue(drawsPageBackground, forKey: "drawsBackground")
+    }
+
+    /// The web view's own appearance, which decides the page's `prefers-color-scheme` and the colour scheme of a page
+    /// that supports both; nil inherits the window's. Applied when the web view attaches and on every change.
+    var pageAppearance: NSAppearance? {
+        didSet { webView?.appearance = pageAppearance }
+    }
+
+    /// Called whenever a navigation commits, with whether the committed document is the HTML handed to
+    /// `loadHTMLString` (at its base URL, `about:blank` without one) rather than anything else: a link, a URL load, a
+    /// new window's page. Lets the owner style the page by what is actually shown, not by how the window was opened.
+    var onCommit: ((_ isLoadedHTML: Bool) -> Void)?
+
+    fileprivate func didCommit(_ webView: WKWebView) {
+        let htmlURL = initialBaseURL ?? URL(string: "about:blank")
+        onCommit?(!initialHTMLString.isEmpty && webView.url == htmlURL)
+    }
+
     // MARK: - Loading
 
     /// Loads HTML. Pass a `baseURL` when the document contains relative links that
@@ -151,6 +192,15 @@ final class SAWebViewModel: NSObject, ObservableObject {
 
     fileprivate func attach(_ webView: WKWebView) {
         self.webView = webView
+        if underPageBackgroundColor != nil {
+            applyUnderPageBackgroundColor()
+        }
+        if !drawsPageBackground {
+            applyDrawsPageBackground()
+        }
+        if let pageAppearance {
+            webView.appearance = pageAppearance
+        }
         titleObservation = webView.observe(\.title, options: [.initial, .new]) { [weak self] webView, _ in
             self?.pageTitle = webView.title ?? ""
         }
@@ -281,6 +331,10 @@ struct SAWebView: NSViewRepresentable {
             let path = String(url.absoluteString.dropFirst("\(scheme):/".count))
             guard !path.isEmpty else { return nil }
             return path.removingPercentEncoding ?? path
+        }
+
+        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            model.didCommit(webView)
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

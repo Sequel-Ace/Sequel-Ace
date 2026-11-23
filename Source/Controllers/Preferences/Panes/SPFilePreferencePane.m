@@ -213,17 +213,32 @@
 	return [self view];
 }
 
+- (NSTableView *)grantedFilesTableView {
+	return fileView;
+}
+
+- (NSUInteger)grantedFileCount {
+	return [fileNames count];
+}
+
 /**
- * Called shortly before the preference pane will be made visible
- *  so this is where we decide to show the stale file panel or not
+ * Called when Settings shows the pane holding the list: reloads it. Stale entries show red and are re-granted by
+ * double-click; the re-select panel opens by itself only through -regrantStaleFiles.
  */
 - (void)preferencePaneWillBeShown
 {
     SPLog(@"calling loadBookmarks");
     [self loadBookmarks];
+}
+
+- (void)regrantStaleFiles
+{
+    [self loadBookmarks];
 
     if(weHaveStaleBookmarks == YES){
         SPLog(@"weHaveStaleBookmarks == YES, calling doubleClick");
+        // An explicit request: a panel cancelled earlier doesn't stop this one.
+        userClickedCancel = NO;
         [self doubleClick:nil];
     }
 }
@@ -235,7 +250,8 @@
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
     [staleBookmarks setArray:SecureBookmarkManager.sharedInstance.staleBookmarks];
 
-    if(staleBookmarks.count > 0){
+    // A private (unsandboxed) build lists the stale entries like the others: no red, no hint, no re-select panel.
+    if([NSBundle.mainBundle marksStaleBookmarksForCount:staleBookmarks.count]){
         staleLabel.hidden = NO;
         weHaveStaleBookmarks = YES;
     }
@@ -333,6 +349,8 @@ thus we get an index set with number of indexes: 3 (in 1 ranges), indexes: (3-5)
     // reset the table view for the files
 	[fileView deselectAll:nil];
 	[fileView reloadData];
+
+	[SAClaudeSettingsFileAccess listDidReload];
 }
 
 #pragma mark -

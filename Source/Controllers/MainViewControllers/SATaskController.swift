@@ -80,6 +80,9 @@ import AppKit
     private var taskFadeInStartDate: Date?
     private var queryStartDate: Date?
 
+    /// The Claude look of the progress layer (applied once the nib has loaded).
+    private var hudStyler: SAClaudeTaskHUDStyler?
+
     // MARK: - Cancellation state
 
     private var taskCanBeCancelled = false
@@ -100,14 +103,11 @@ import AppKit
             fatalError("SATaskController: failed to load ProgressIndicatorLayer.xib or connect its outlets")
         }
 
-        // Set up the progress indicator - change indicator color and shadow.
-        // (The child window itself is created lazily; see `taskProgressWindow`.)
-        taskProgressIndicator.setForeColor(.white)
-        let progressIndicatorShadow = NSShadow()
-        progressIndicatorShadow.shadowOffset = NSSize(width: 1.0, height: -1.0)
-        progressIndicatorShadow.shadowBlurRadius = 1.0
-        progressIndicatorShadow.shadowColor = NSColor(calibratedWhite: 0.0, alpha: 0.75)
-        taskProgressIndicator.shadow = progressIndicatorShadow
+        // Style the progress layer (it sizes the layer, so before the child window is
+        // created lazily from it; see `taskProgressWindow`).
+        hudStyler = SAClaudeTaskHUDStyler(layer: taskProgressLayer, indicator: taskProgressIndicator,
+                                          description: taskDescriptionText, duration: taskDurationTime,
+                                          cancelButton: taskCancelButton)
     }
 
     // MARK: - Task lifecycle (driven by SPDatabaseDocument)
@@ -122,12 +122,14 @@ import AppKit
             taskDisplayIsIndeterminate = true
             taskProgressIndicator.setIndeterminate(true)
             taskProgressIndicator.startAnimation(self)
+            hudStyler?.setAnimating(true)
             taskDisplayLastValue = 0
         }
 
         // If the working level just moved to start a task, set up the interface
         if isFirstLevel {
             taskCancelButton.isHidden = true
+            hudStyler?.layOut()
 
             // Schedule appearance of the task window in the near future, using a frame timer.
             taskFadeInStartDate = Date()
@@ -166,6 +168,7 @@ import AppKit
         taskProgressWindow.orderOut(self)
         taskDisplayIsIndeterminate = true
         taskProgressIndicator.setIndeterminate(true)
+        hudStyler?.setAnimating(false)
     }
 
     // MARK: - Description & progress
@@ -173,7 +176,7 @@ import AppKit
     /// Updates the task description shown to the user.
     @objc(setTaskDescription:)
     func setTaskDescription(_ description: String) {
-        taskDescriptionText.attributedStringValue = attributedString(description)
+        taskDescriptionText.attributedStringValue = attributedString(description, claudeAttributes: hudStyler?.descriptionAttributes())
     }
 
     /// Sets the task percentage progress - the first call to this automatically
@@ -192,6 +195,7 @@ import AppKit
             taskDisplayIsIndeterminate = false
             taskProgressIndicator.stopAnimation(self)
             taskProgressIndicator.setDoubleValue(0.5)
+            hudStyler?.setAnimating(false)
         }
 
         // Check the supplied progress. Compare it to the display interval - how often
@@ -202,9 +206,11 @@ import AppKit
             let value = Double(taskProgressValue)
             if Thread.isMainThread {
                 taskProgressIndicator.setDoubleValue(value)
+                hudStyler?.indicatorDidChange()
             } else {
                 DispatchQueue.main.async { [weak self] in
                     self?.taskProgressIndicator.setDoubleValue(value)
+                    self?.hudStyler?.indicatorDidChange()
                 }
             }
             taskDisplayLastValue = taskProgressValue
@@ -237,6 +243,7 @@ import AppKit
         taskDisplayIsIndeterminate = true
         taskProgressIndicator.setIndeterminate(true)
         taskProgressIndicator.startAnimation(self)
+        hudStyler?.setAnimating(true)
         taskDisplayLastValue = 0
     }
 
@@ -248,6 +255,11 @@ import AppKit
             ? #selector(YRKSpinningProgressIndicator.startAnimation(_:))
             : #selector(YRKSpinningProgressIndicator.stopAnimation(_:))
         taskProgressIndicator.performSelector(onMainThread: selector, with: self, waitUntilDone: false)
+        if Thread.isMainThread {
+            hudStyler?.setAnimating(shouldAnimate)
+        } else {
+            DispatchQueue.main.async { [weak self] in self?.hudStyler?.setAnimating(shouldAnimate) }
+        }
     }
 
     // MARK: - Cancellation
@@ -269,10 +281,11 @@ import AppKit
         taskCanBeCancelled = true
 
         let colorTitle = NSAttributedString(string: buttonTitle,
-                                            attributes: [.foregroundColor: NSColor.white])
+                                            attributes: hudStyler?.cancelTitleAttributes() ?? [.foregroundColor: NSColor.white])
         taskCancelButton.attributedTitle = colorTitle
         taskCancelButton.isEnabled = true
         taskCancelButton.isHidden = false
+        hudStyler?.layOut()
     }
 
     /// Disable task cancellation. Called automatically at the end of a task.
@@ -282,6 +295,7 @@ import AppKit
         taskCancellationCallbackObject = nil
         taskCancellationCallbackSelector = nil
         taskCancelButton.isHidden = true
+        hudStyler?.layOut()
     }
 
     /// Action sent by the cancel button when it's active.
@@ -301,8 +315,10 @@ import AppKit
             callbackObject.perform(callbackSelector)
         }
 
-        if let fieldRemovalTask = taskCancellationCallbackObject as? SAFieldRemovalTask {
-            fieldRemovalTask.requestQueryCancellation { [weak self] in
+        // A callback object that admits its own queries retries the connection
+        // cancel until any query it admitted before Stop has been interrupted.
+        if let requester = taskCancellationCallbackObject as? SAQueryCancellationRequesting {
+            requester.requestQueryCancellation { [weak self] in
                 self?.delegate?.taskControllerDidRequestCancellation()
             }
         } else {
@@ -323,7 +339,7 @@ import AppKit
         guard let queryStartDate = queryStartDate else { return }
         let timeSinceQueryStarted = Date().timeIntervalSince(queryStartDate)
         let queryRunningTime = DateComponentsFormatter.hourMinSecFormatter.string(from: timeSinceQueryStarted) ?? ""
-        taskDurationTime.attributedStringValue = attributedString(queryRunningTime)
+        taskDurationTime.attributedStringValue = attributedString(queryRunningTime, claudeAttributes: hudStyler?.durationAttributes())
     }
 
     // MARK: - Window placement & teardown
@@ -343,6 +359,7 @@ import AppKit
 
     /// Tear down the progress window and timers on document close.
     @objc func shutDown() {
+        hudStyler?.stopFollowing()
         taskProgressWindow.close()
         taskDrawTimer?.invalidate()
         queryExecutionTimer?.invalidate()
@@ -356,8 +373,9 @@ import AppKit
         // Keep the window hidden for the first ~0.5 secs
         if timeSinceFadeInStart < 0.5 { return }
 
-        if taskProgressWindow.parent == nil {
-            delegate?.taskParentWindow()?.addChildWindow(taskProgressWindow, ordered: .above)
+        if taskProgressWindow.parent == nil, let parentWindow = delegate?.taskParentWindow() {
+            parentWindow.addChildWindow(taskProgressWindow, ordered: .above)
+            hudStyler?.follow(parent: parentWindow, hud: taskProgressWindow)
         }
 
         var alphaValue = taskProgressWindow.alphaValue
@@ -378,9 +396,13 @@ import AppKit
 
     // MARK: - Helpers
 
-    /// Builds the bold, shadowed attributed string used for both the task
-    /// description and the query-duration labels.
-    private func attributedString(_ string: String) -> NSAttributedString {
+    /// Builds the attributed string for the task description or the
+    /// query-duration label: in `claudeAttributes` when the Claude look is
+    /// applied, otherwise bold and shadowed.
+    private func attributedString(_ string: String, claudeAttributes: [NSAttributedString.Key: Any]?) -> NSAttributedString {
+        if let claudeAttributes {
+            return NSAttributedString(string: string, attributes: claudeAttributes)
+        }
         let textShadow = NSShadow()
         textShadow.shadowColor = NSColor(calibratedWhite: 0.0, alpha: 0.75)
         textShadow.shadowOffset = NSSize(width: 1.0, height: -1.0)
