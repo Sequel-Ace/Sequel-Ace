@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.9.2)
+    addressable (2.10.0)
       public_suffix (>= 2.0.2, < 8.0)
     coffee-script (2.4.1)
       coffee-script-source
@@ -61,7 +61,7 @@ GEM
     jekyll-github-metadata (2.16.1)
       jekyll (>= 3.4, < 5.0)
       octokit (>= 4, < 7, != 4.4.0)
-    jekyll-optional-front-matter (0.3.4)
+    jekyll-optional-front-matter (0.3.5)
       jekyll (>= 3.0, < 5.0)
     jekyll-paginate (1.1.0)
     jekyll-readme-index (0.5.1)
@@ -80,7 +80,7 @@ GEM
     jekyll-watch (2.2.1)
       listen (~> 3.0)
     json (3.0.2)
-    kramdown (2.5.2)
+    kramdown (2.6.1)
       rexml (>= 3.4.4)
     kramdown-parser-gfm (1.1.0)
       kramdown (~> 2.0)
@@ -128,7 +128,7 @@ DEPENDENCIES
   jekyll-default-layout (= 0.2.1)
   jekyll-gist (= 1.5.0)
   jekyll-github-metadata (= 2.16.1)
-  jekyll-optional-front-matter (= 0.3.4)
+  jekyll-optional-front-matter (= 0.3.5)
   jekyll-paginate (= 1.1.0)
   jekyll-readme-index (= 0.5.1)
   jekyll-relative-links (= 0.9.2)
