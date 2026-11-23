@@ -237,3 +237,36 @@ import AppKit
         return proposedValueMatches(storedValue) || proposedValueMatches(displayValue)
     }
 }
+
+/// An input method composing in the field editor owns the editing commands
+/// AppKit dispatches while its marked text is in the cell.
+///
+/// The content table treats Escape, Return, Tab and the vertical arrows as
+/// gestures that end the cell's edit session. An input method dispatches the
+/// same commands while it composes — a Pinyin input that moves from inline
+/// composition to its candidate panel sends `cancelOperation:` for the inline
+/// part it gives up — and acting on them aborts the session mid-word, leaving
+/// the cell with only the text committed before the composition (#2688).
+/// Handing the command back to the field editor instead cancels or advances
+/// the composition and keeps the session alive, matching what a plain text
+/// field does.
+@objcMembers
+final class SAFieldEditorCompositionPolicy: NSObject {
+
+    private override init() {
+        super.init()
+    }
+
+    /// Whether an editing command arriving in the field editor belongs to an
+    /// input method's composition and must be left to the field editor's
+    /// standard marked-text handling.
+    ///
+    /// - Parameter textView: The field editor the command was dispatched for.
+    /// - Returns: `true` while the field editor shows marked (composing)
+    ///   text; `false` once no composition is in progress, when the session's
+    ///   own key handling applies again.
+    @objc(editingCommandBelongsToCompositionInTextView:)
+    static func editingCommandBelongsToComposition(in textView: NSTextView) -> Bool {
+        textView.hasMarkedText()
+    }
+}
