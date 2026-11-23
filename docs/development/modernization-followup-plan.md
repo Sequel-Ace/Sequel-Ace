@@ -39,9 +39,11 @@ revision date, not carried forward from the previous pass.
     client auth plugins as universal modules plus the libfido2 the WebAuthn
     plugin loads — rebuilt without Homebrew (#2627-#2629). Recipes, the
     no-Homebrew rule and the framework copy-back caveat:
-    `Frameworks/libmysqlclient/README.md`. Packaging the plugins into the
-    framework's `PlugIns` directory is still the #2590 follow-up (and will
-    need the USB device entitlement for FIDO keys).
+    `Frameworks/libmysqlclient/README.md`. The #2590 follow-up is done
+    (#2773): the plugins are copied into the framework's `PlugIns` directory
+    and a `dialog` plugin is built alongside them, so prompt-driven server
+    authentication (MariaDB/MySQL PAM) works. A WebAuthn login still needs
+    the USB device entitlement for FIDO keys.
   - **The warnings burn-down is complete** (413 in July → a floor) and its
     plan retired. Measured on this revision with a clean "Unit Tests"
     `build-for-testing`: **19 distinct diagnostics** (35 raw lines) — the
