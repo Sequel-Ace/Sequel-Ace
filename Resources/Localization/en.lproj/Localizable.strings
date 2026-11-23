@@ -164,6 +164,12 @@
 /* rename database refused because a view definition holds bytes or a literal (e.g. _latin1'…', _binary'…') outside UTF-8; %@ view */
 "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed." = "The definition of the view '%@' holds a string outside UTF-8; Rename Database cannot recreate it faithfully. Nothing was changed.";
 
+/* error message if max_allowed_packet < query size */
+"The query length of %lu bytes is larger than max_allowed_packet size (%lu)." = "The query length of %lu bytes is larger than max_allowed_packet size (%lu).";
+
+/* Error for a statement refused because no usable session could be taken for it; the next statement reconnects */
+"The statement was not sent: the connection's session could not be used and is being replaced. Please try again." = "The statement was not sent: the connection's session could not be used and is being replaced. Please try again.";
+
 /* rename database refused because a view's client character set is not UTF-8; %1$@ view, %2$@ character set */
 "The view '%@' was created through the character set '%@'; Rename Database can only recreate views created through UTF-8. Nothing was changed." = "The view '%1$@' was created through the character set '%2$@'; Rename Database can only recreate views created through UTF-8. Nothing was changed.";
 
@@ -6609,3 +6615,24 @@
 "No Matching Fields" = "No Matching Fields";
 /* Content filter: field selector accessibility label. */
 "Filter Field" = "Filter Field";
+
+/* Preferences : General : default export format label */
+"Default Export Format:" = "Default Export Format:";
+
+/* Preferences : General : default export format option that keeps the context-based choice */
+"Automatic" = "Automatic";
+
+/* Preferences : General : default export format tooltip */
+"Format File > Export opens on. Automatic uses CSV when the Content or Query view is showing rows, otherwise the format of your last export." = "Format File > Export opens on. Automatic uses CSV when the Content or Query view is showing rows, otherwise the format of your last export.";
+
+/* Preferences : General : default export format option */
+"SQL" = "SQL";
+
+/* Preferences : General : default export format option */
+"CSV" = "CSV";
+
+/* Preferences : General : default export format option */
+"XML" = "XML";
+
+/* Preferences : General : default export format option */
+"Dot" = "Dot";

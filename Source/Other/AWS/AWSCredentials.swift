@@ -351,15 +351,28 @@ import OSLog
 
     /// Parse an AWS credentials or config file for a specific profile
     private static func parseAWSFile(_ contents: String, forProfile profileName: String, isConfigFile: Bool) -> [String: String]? {
+        guard isConfigFile else {
+            return parseAWSSection(contents, headers: [profileName])
+        }
+
+        // In config file, profile sections are named "profile xyz". "default" may be written
+        // either as [default] or [profile default] (the latter is what `aws configure sso` writes).
+        // Select exactly one section for "default" so fields from the two spellings are never merged,
+        // and a [default] that appears after other sections is still found.
+        if profileName == "default" {
+            return parseAWSSection(contents, headers: ["default"])
+                ?? parseAWSSection(contents, headers: ["profile default"])
+        }
+
+        return parseAWSSection(contents, headers: [profileName, "profile \(profileName)"])
+    }
+
+    /// Return the key/value pairs of the first section whose header is in `headers`,
+    /// or nil if no such section exists. The scan ends at the next section header after the match.
+    private static func parseAWSSection(_ contents: String, headers: [String]) -> [String: String]? {
         var result = [String: String]()
         var currentProfile: String?
         var foundProfile = false
-
-        // In config file, profile sections are named "profile xyz" except for "default"
-        let targetSection = profileName
-        let targetSectionAlt: String? = isConfigFile && profileName != "default"
-            ? "profile \(profileName)"
-            : nil
 
         let lines = contents.components(separatedBy: .newlines)
 
@@ -375,8 +388,7 @@ import OSLog
             if line.hasPrefix("[") && line.hasSuffix("]") {
                 currentProfile = String(line.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
 
-                let isTargetProfile = currentProfile == targetSection ||
-                    (targetSectionAlt != nil && currentProfile == targetSectionAlt)
+                let isTargetProfile = currentProfile.map { headers.contains($0) } ?? false
 
                 if isTargetProfile {
                     foundProfile = true
