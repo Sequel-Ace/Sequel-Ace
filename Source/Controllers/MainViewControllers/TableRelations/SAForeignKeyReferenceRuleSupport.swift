@@ -71,23 +71,16 @@ import Foundation
 ///
 /// `SPTableStructure` supplies thin bridges for its legacy query, error, and
 /// reload calls; this type owns the cross-thread removal orchestration.
-@objc final class SAFieldRemovalTask: NSObject {
+@objc final class SAFieldRemovalTask: NSObject, SAQueryCancellationRequesting {
 
     @objc let field: String
     @objc let foreignKeyName: String?
     @objc let table: String
     @objc let database: String
 
-    private static let initialCancellationRetryDelay: TimeInterval = 0.025
-    private static let maximumCancellationRetryDelay: TimeInterval = 1
-
-    private let stateLock = NSLock()
-    private let cancellationQueue = DispatchQueue(
-        label: "com.sequel-ace.field-removal-query-cancellation",
-        qos: .userInitiated
+    private let admission = SAQueryAdmission(
+        cancellationQueueLabel: "com.sequel-ace.field-removal-query-cancellation"
     )
-    private var cancellationRequested = false
-    private var queryIsAdmitted = false
 
     @objc(initWithField:foreignKeyName:table:database:)
     init(field: String, foreignKeyName: String?, table: String, database: String) {
@@ -99,19 +92,13 @@ import Foundation
     }
 
     @objc func cancel() {
-        stateLock.lock()
-        cancellationRequested = true
-        stateLock.unlock()
+        admission.requestCancellation()
     }
 
     /// Keeps cancellation attempts off the main queue and backs them off while
     /// an admitted query remains active.
     func requestQueryCancellation(_ cancellation: @escaping () -> Void) {
-        scheduleCancellationAttempt(
-            after: 0,
-            nextRetryDelay: Self.initialCancellationRetryDelay,
-            cancellation: cancellation
-        )
+        admission.requestQueryCancellation(cancellation)
     }
 
     /// Sequences the optional foreign-key removal and field removal while
@@ -163,56 +150,15 @@ import Foundation
         }
     }
 
-    /// Cancels an admitted query while preventing it from completing its
-    /// transition to subsequent connection work. The cancellation closure
-    /// must not call back into this task.
-    private func cancelAdmittedQuery(_ cancellation: () -> Void) -> Bool {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        guard cancellationRequested, queryIsAdmitted else {
-            return false
-        }
-        cancellation()
-        return true
-    }
-
-    private func scheduleCancellationAttempt(
-        after delay: TimeInterval,
-        nextRetryDelay: TimeInterval,
-        cancellation: @escaping () -> Void
-    ) {
-        cancellationQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self, cancelAdmittedQuery(cancellation) else {
-                return
-            }
-
-            scheduleCancellationAttempt(
-                after: nextRetryDelay,
-                nextRetryDelay: min(nextRetryDelay * 2, Self.maximumCancellationRetryDelay),
-                cancellation: cancellation
-            )
-        }
-    }
-
     /// Runs a query only while this task remains active and the preceding
     /// query, if any, was not cancelled.
     private func runQueryIfAllowed(
         afterPreviousCancellation queryWasCancelled: Bool,
         operation: () -> SAFieldRemovalQueryResult
     ) -> SAFieldRemovalQueryResult? {
-        stateLock.lock()
-        guard !queryWasCancelled, !cancellationRequested else {
-            stateLock.unlock()
+        guard !queryWasCancelled else {
             return nil
         }
-        queryIsAdmitted = true
-        stateLock.unlock()
-
-        defer {
-            stateLock.lock()
-            queryIsAdmitted = false
-            stateLock.unlock()
-        }
-        return operation()
+        return admission.admit(operation)
     }
 }

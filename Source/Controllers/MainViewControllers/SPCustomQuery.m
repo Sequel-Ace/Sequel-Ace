@@ -139,6 +139,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @synthesize reloadingExistingResult = reloadingExistingResult;
 @synthesize errorTextTitle = errorTextTitle;
 @synthesize errorText = errorText;
+@synthesize mySQLConnection = mySQLConnection;
+@synthesize customQueryScrollView = customQueryScrollView;
+@synthesize affectedRowsText = affectedRowsText;
 
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes
 {
@@ -605,6 +608,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     NSString *taskString;
     
+    // A normal run shows its result in the grid, replacing any script output.
+    [self hideScriptConsole];
+
     //ensure there is no pending edit, which could be messed up (#2113)
     [[tableDocumentInstance parentWindowControllerWindow] endEditingFor:nil];
     
@@ -3489,6 +3495,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         return ([queryHistoryButton numberOfItems]-7);
     }
     else if ([menuItem action] == @selector(runExplainQueryAction:)) {
+        if ([tableDocumentInstance isWorking]) return NO;
+        return ([[textView string] length] > 0);
+    }
+    else if ([menuItem action] == @selector(runAllAsScriptAction:)) {
         if ([tableDocumentInstance isWorking]) return NO;
         return ([[textView string] length] > 0);
     }
