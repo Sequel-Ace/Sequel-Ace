@@ -3952,6 +3952,54 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	activeFilterToRestore = filter;
 }
 
+/**
+ * Shows a table of the current database filtered by a serialized rule filter
+ * (nil for no filter), as the foreign key arrow does in -clickLinkArrowTask:.
+ * Applied at once when the table's content is showing; otherwise stored for the
+ * table's next content load, selecting the table if it isn't selected yet.
+ * Used by Search in All Tables. Returns NO if the table can't be selected.
+ */
+- (BOOL)showTable:(NSString *)tableName withSerializedFilter:(NSDictionary *)filterSettings
+{
+	BOOL isSelectedTable = [tableName isEqualToString:[tableDocumentInstance table]];
+
+	if (isSelectedTable && [tableDocumentInstance currentlySelectedView] == SPTableViewContent) {
+		switch ([SAShowTableFilterPolicy actionForSelectedShowingContentWithSerializedFilter:(filterSettings != nil) activeFilterApplied:(activeFilter != SPTableContentFilterSourceNone)]) {
+			case SAShowTableFilterActionApplySerializedFilter:
+				[ruleFilterController restoreSerializedFilters:filterSettings];
+				[self setRuleEditorVisible:YES animate:YES];
+				[self filterTable:ruleFilterController];
+				break;
+			// nil settings mean "open without a filter" (a match the rule editor
+			// cannot represent), so an already-applied filter is cleared and the
+			// content reloaded unfiltered instead of hiding the reported matches.
+			case SAShowTableFilterActionClearActiveFilter:
+				[ruleFilterController setColumns:dataColumns];
+				[self filterTable:nil];
+				break;
+			case SAShowTableFilterActionLeaveContentAsIs:
+				break;
+		}
+		return YES;
+	}
+
+	[self setFiltersToRestore:filterSettings];
+	[self setActiveFilterToRestore:(filterSettings ? SPTableContentFilterSourceRuleFilter : SPTableContentFilterSourceNone)];
+	if (filterSettings) [self setRuleEditorVisible:YES animate:YES];
+	if (isSelectedTable) return YES;
+
+	// Keep the table's saved view state from replacing the filter set above
+	// (see -[SPHistoryController restoreViewStates])
+	[spHistoryControllerInstance setNavigatingFK:YES];
+	if (![tablesListInstance selectItemWithName:tableName]) {
+		[spHistoryControllerInstance setNavigatingFK:NO];
+		[self setFiltersToRestore:nil];
+		[self setActiveFilterToRestore:SPTableContentFilterSourceNone];
+		return NO;
+	}
+	return YES;
+}
+
 #pragma mark -
 #pragma mark Table drawing and editing
 

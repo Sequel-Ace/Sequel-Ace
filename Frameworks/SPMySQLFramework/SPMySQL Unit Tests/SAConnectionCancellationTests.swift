@@ -365,3 +365,125 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertFalse(SAConnectionCancellation.replacementFollowsFailedCheck(mark: .notMarked))
     }
 }
+
+// MARK: - Stopping one caller
+
+/// Search in All Tables runs its queries on a background thread, and an MCP request can hold the
+/// session while the search waits for it. A plain stop reaches whatever is running and pending,
+/// which there is the MCP request. These pin down that a stop for the search's thread alone
+/// leaves that request, and every other caller, alone.
+extension SAConnectionCancellationTests {
+
+    /// Runs one native statement inside a query operation, as `queryString` does.
+    /// - Parameter whileSent: Runs while the statement is out, if it is sent.
+    /// - Returns: Whether the statement was sent, and whether the operation reads as cancelled.
+    @discardableResult
+    private func runStatement(_ whileSent: () -> Void = {}) -> (sent: Bool, cancelled: Bool) {
+        let lease = host.sessionAccess
+        var outcome = (sent: false, cancelled: false)
+        _ = lease.performQuery {
+            outcome.sent = lease.beginNativeQuery()
+            if outcome.sent { whileSent() }
+            outcome.cancelled = lease.currentQueryWasCancelled
+            lease.endNativeQuery()
+            return nil
+        }
+        return outcome
+    }
+
+    /// Starts a caller on a thread of its own and waits until its statement is out.
+    /// - Returns: The caller's outcome, once `finish` is signalled, and a group to wait on.
+    private func startCallerWithAStatementOut(finish: DispatchSemaphore) -> (() -> (sent: Bool, cancelled: Bool), DispatchGroup) {
+        let isOut = DispatchSemaphore(value: 0)
+        let ended = DispatchGroup()
+        var outcome = (sent: false, cancelled: false)
+        ended.enter()
+        Thread.detachNewThread {
+            outcome = self.runStatement {
+                isOut.signal()
+                _ = finish.wait(timeout: .now() + 10)
+            }
+            ended.leave()
+        }
+        XCTAssertEqual(isOut.wait(timeout: .now() + 5), .success)
+        return ({ outcome }, ended)
+    }
+
+    /// Stop pressed while the search still waits behind another caller's statement: nothing is
+    /// killed, the other statement runs on and is not cancelled, and the search's is never sent.
+    func testStoppingACallerThatWaitsForTheSessionLeavesTheCallerAheadOfItAlone() throws {
+        let letTheOtherFinish = DispatchSemaphore(value: 0)
+        let (otherOutcome, otherEnded) = startCallerWithAStatementOut(finish: letTheOtherFinish)
+
+        let searchIsAboutToWait = DispatchSemaphore(value: 0)
+        let searchEnded = DispatchGroup()
+        var searchThread: Thread?
+        var searchOutcome = (sent: true, cancelled: false)
+        searchEnded.enter()
+        Thread.detachNewThread {
+            searchThread = Thread.current
+            searchIsAboutToWait.signal()
+            searchOutcome = self.runStatement()
+            searchEnded.leave()
+        }
+        XCTAssertEqual(searchIsAboutToWait.wait(timeout: .now() + 5), .success)
+        // Give the search time to enter its wait for the session.
+        Thread.sleep(forTimeInterval: 0.2)
+
+        cancellation.requestCancellation(of: try XCTUnwrap(searchThread), synchronously: true)
+        letTheOtherFinish.signal()
+        XCTAssertEqual(otherEnded.wait(timeout: .now() + 10), .success)
+        XCTAssertEqual(searchEnded.wait(timeout: .now() + 10), .success)
+
+        XCTAssertEqual(host.recordedCalls(), [], "the statement running was the other caller's")
+        XCTAssertTrue(otherOutcome().sent)
+        XCTAssertFalse(otherOutcome().cancelled)
+        XCTAssertFalse(searchOutcome.sent)
+        XCTAssertTrue(searchOutcome.cancelled)
+        XCTAssertFalse(theSocketWasShutDown())
+    }
+
+    /// Stop pressed while the search's own statement runs kills that statement.
+    func testStoppingACallerWhoseStatementRunsKillsIt() throws {
+        let letTheSearchFinish = DispatchSemaphore(value: 0)
+        let isOut = DispatchSemaphore(value: 0)
+        let searchEnded = DispatchGroup()
+        var searchThread: Thread?
+        var searchOutcome = (sent: false, cancelled: false)
+        searchEnded.enter()
+        Thread.detachNewThread {
+            searchThread = Thread.current
+            searchOutcome = self.runStatement {
+                isOut.signal()
+                _ = letTheSearchFinish.wait(timeout: .now() + 10)
+            }
+            searchEnded.leave()
+        }
+        XCTAssertEqual(isOut.wait(timeout: .now() + 5), .success)
+
+        cancellation.requestCancellation(of: try XCTUnwrap(searchThread), synchronously: true)
+        letTheSearchFinish.signal()
+        XCTAssertEqual(searchEnded.wait(timeout: .now() + 10), .success)
+
+        XCTAssertEqual(host.recordedCalls(), ["marked", "kill 42"])
+        XCTAssertTrue(searchOutcome.cancelled)
+    }
+
+    /// A stop for a caller whose operations have all ended reaches nothing: neither the caller
+    /// that runs now, nor a later operation on the same thread.
+    func testStoppingACallerThatHasEndedReachesNothing() throws {
+        let ended = Thread { self.runStatement() }
+        ended.start()
+        while !ended.isFinished { Thread.sleep(forTimeInterval: 0.01) }
+
+        let letTheOtherFinish = DispatchSemaphore(value: 0)
+        let (otherOutcome, otherEnded) = startCallerWithAStatementOut(finish: letTheOtherFinish)
+        cancellation.requestCancellation(of: ended, synchronously: true)
+        letTheOtherFinish.signal()
+        XCTAssertEqual(otherEnded.wait(timeout: .now() + 10), .success)
+
+        XCTAssertEqual(host.recordedCalls(), [])
+        XCTAssertFalse(otherOutcome().cancelled)
+        XCTAssertTrue(runStatement().sent, "a later operation is not reached by the stop")
+    }
+}

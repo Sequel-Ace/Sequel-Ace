@@ -69,11 +69,26 @@ public final class SAConnectionCancellation: NSObject {
         guard let host else {
             return
         }
-        let lease = host.sessionAccess
-
         // Recorded first, and without waiting: the stop reaches whatever is pending, outermost
         // query included, and names the native query and the session to act on from here.
-        let hold = lease.reserveCancellation()
+        act(on: host.sessionAccess.reserveCancellation(), of: host, synchronously: synchronously)
+    }
+
+    /// Stops only the operations `thread` is in: the statement they run, or the statement they
+    /// still wait to send. Other callers' work on the connection goes on.
+    /// - Parameters:
+    ///   - thread: The thread the caller to stop is on.
+    ///   - synchronously: As for ``requestCancellation(synchronously:)``.
+    @objc(requestCancellationOfThread:synchronously:)
+    public func requestCancellation(of thread: Thread, synchronously: Bool) {
+        guard let host else {
+            return
+        }
+        act(on: host.sessionAccess.reserveCancellation(of: thread), of: host, synchronously: synchronously)
+    }
+
+    private func act(on hold: SACancellationHold, of host: SAConnectionCancellationHost, synchronously: Bool) {
+        let lease = host.sessionAccess
         guard hold.holdsTheQuery, hold.query != 0 else {
             // Nothing native is running - the stop is recorded against the operations waiting
             // for the session, and there is nothing to kill or to shut down - or another stop for

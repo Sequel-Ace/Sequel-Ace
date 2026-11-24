@@ -73,6 +73,9 @@
 
 // Query cancellation
 - (void)cancelCurrentQuery;
+// Cancels only the query made on the given thread. While that query is still waiting for the
+// connection, it is stopped before it is sent, and the query ahead of it is left alone.
+- (void)cancelQueryOnThread:(NSThread *)thread;
 
 @end
 
