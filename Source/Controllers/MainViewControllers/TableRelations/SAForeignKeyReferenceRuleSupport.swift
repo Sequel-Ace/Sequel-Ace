@@ -78,6 +78,10 @@ import Foundation
     @objc let table: String
     @objc let database: String
 
+    /// ALTER TABLE clauses to run in the same statement as the field removal, such as
+    /// dropping the check constraints that use the field.
+    @objc var additionalAlterClauses: [String] = []
+
     private static let initialCancellationRetryDelay: TimeInterval = 0.025
     private static let maximumCancellationRetryDelay: TimeInterval = 1
 
