@@ -64,6 +64,7 @@ extension SPDatabaseDocument: SATaskControllerDelegate {}
 extension SPDatabaseDocument {
     @objc(loadSidebarColumnsForTable:completion:)
     func loadSidebarColumns(forTable table: String, completion: @escaping ([SASidebarColumn]?) -> Void) -> Bool {
+        // Capture the selected database before dispatch. It can change while the lookup is queued.
         guard let database = database() else { return false }
         let structure = databaseStructureRetrieval
         DispatchQueue.global(qos: .userInitiated).async {
@@ -74,6 +75,7 @@ extension SPDatabaseDocument {
     }
 
     private static func readSidebarColumns(table: String, database: String, from structure: SPDatabaseStructure) -> [SASidebarColumn]? {
+        // Qualify both identifiers because the metadata connection has its own session state.
         guard let quotedTable = (table as NSString).backtickQuoted(),
               let quotedDatabase = (database as NSString).backtickQuoted(),
               let connection = structure.connection(),

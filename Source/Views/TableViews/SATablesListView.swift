@@ -27,6 +27,7 @@ import AppKit
     private static let collapseImage = disclosureImage(named: "minus.square")
 
     @objc static let sidebarViewImage: NSImage? = {
+        // Resize a copy so view and table titles align without changing the shared image.
         let artwork = NSImage(named: "table-view-small")
         guard let width = expandImage?.size.width, let image = artwork?.copy() as? NSImage else {
             return artwork
@@ -54,6 +55,7 @@ import AppKit
         var labels = [SATablesListView.loadingColumns]
     }
 
+    // A pinned table can appear twice. Both rows share one expansion and metadata request.
     private var expandedTables: [String: SAExpandedTable] = [:]
 
     // Selecting a row starts loading its table, so the selection is only
@@ -271,6 +273,7 @@ import AppKit
         dispatchRowCommand(event)
     }
 
+    // Immediate and deferred key events both arrive here after type-ahead resolves its selection.
     private func dispatchRowCommand(_ event: NSEvent) {
         if (event.keyCode == 123 || event.keyCode == 124),
            event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
@@ -338,6 +341,7 @@ import AppKit
     }
 
     override func drawRow(_ row: Int, clipRect: NSRect) {
+        // An expanded table is one tall AppKit row. Limit the highlight to its title line.
         if isRowSelected(row) {
             var title = rect(ofRow: row).insetBy(dx: 9, dy: 0)
             title.size.height = min(title.height, rowHeight + intercellSpacing.height)
@@ -420,10 +424,12 @@ import AppKit
 
         let expansion = SAExpandedTable()
         let started = tablesList.loadSidebarColumns(forTable: name) { [weak self] columns in
+            // The same table may have been closed and reopened while this request was running.
             guard let self, self.expandedTables[name]?.requestID == expansion.requestID else { return }
             self.expandedTables[name]?.labels = columns?.map { "\($0.name) · \($0.type)" } ?? [Self.unavailableColumns]
             self.redrawTable(named: name)
         }
+        // Only show the loading row after the controller accepts the request.
         if started {
             expandedTables[name] = expansion
             redrawTable(named: name)
@@ -1099,6 +1105,7 @@ import AppKit
         ]
         let left = cellFrame.minX + 26
         let width = max(0, cellFrame.maxX - left - 5)
+        // Large tables can span several screens. Only lay out labels that intersect the viewport.
         let first = min(columnLabels.count, Int((visibleDetails.minY - detailFrame.minY) / table.rowHeight))
         let end = min(columnLabels.count, Int(ceil((visibleDetails.maxY - detailFrame.minY) / table.rowHeight)))
         for row in first..<end {
@@ -1115,6 +1122,7 @@ import AppKit
             return
         }
 
+        // AppKit reuses this cell. Restore its title attributes before it draws another row.
         let originalStyle = backgroundStyle
         let originalTitle = attributedStringValue
         defer {

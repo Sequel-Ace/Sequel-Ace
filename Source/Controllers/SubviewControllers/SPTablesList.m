@@ -1415,6 +1415,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (BOOL)loadSidebarColumnsForTable:(NSString *)table completion:(void (^)(NSArray<SASidebarColumn *> *))completion
 {
 	SPDatabaseDocument *document = tableDocumentInstance;
+	// Expanding a row leaves the current edit in place, so check the task lock without ending editing.
 	if (!tableListIsSelectable || [document isWorking]) return NO;
 	return [document loadSidebarColumnsForTable:table completion:completion];
 }
