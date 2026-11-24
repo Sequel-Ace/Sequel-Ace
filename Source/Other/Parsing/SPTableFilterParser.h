@@ -53,6 +53,7 @@
 @property BOOL caseSensitive;
 @property(copy) NSString *currentField;
 @property(copy) NSString *argument;
+@property BOOL quoteEachValue;
 @property(copy) NSString *firstBetweenArgument;
 @property(copy) NSString *secondBetweenArgument;
 

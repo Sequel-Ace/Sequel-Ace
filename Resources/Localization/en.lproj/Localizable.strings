@@ -2321,6 +2321,9 @@
 /* quote label for color table (Prefs > Editor) */
 "Quote" = "Quote";
 
+/* Content filter checkbox for a comma-separated list of text values */
+"Quote each value" = "Quote each value";
+
 /* databsse rename unsupported informative message */
 "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
 

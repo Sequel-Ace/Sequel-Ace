@@ -248,7 +248,7 @@ enum SARuleFilterContextMenu {
         }
         let values = editor.displayValues(forRow: row)
         guard let checkbox = values.first as? NSButton, checkbox.state == .off else { return false }
-        let fields = values.compactMap { $0 as? NSTextField }
+        let fields = values.compactMap(SAFilterListInput.field(forDisplayValue:))
         return !fields.isEmpty && fields.allSatisfy { $0.stringValue.isEmpty }
     }
 }

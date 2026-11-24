@@ -313,6 +313,8 @@
 		<dict>
 			<key>MenuLabel</key>
 			<string>IN</string>
+			<key>OffersQuotedList</key>
+			<true/>
 			<key>NumberOfArguments</key>
 			<integer>1</integer>
 			<key>Clause</key>
@@ -323,6 +325,8 @@
 		<dict>
 			<key>MenuLabel</key>
 			<string>NOT IN __ OR NULL</string>
+			<key>OffersQuotedList</key>
+			<true/>
 			<key>NumberOfArguments</key>
 			<integer>1</integer>
 			<key>SuppressLeadingFieldPlaceholder</key>
