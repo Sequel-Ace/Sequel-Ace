@@ -23,6 +23,41 @@ import AppKit
 
     private let typeAhead = SATypeAheadMatcher(resetInterval: SATablesListView.typeAheadResetInterval)
 
+    private static let expandImage = disclosureImage(named: "plus.square")
+    private static let collapseImage = disclosureImage(named: "minus.square")
+
+    @objc static let sidebarViewImage: NSImage? = {
+        // Resize a copy so view and table titles align without changing the shared image.
+        let artwork = NSImage(named: "table-view-small")
+        guard let width = expandImage?.size.width, let image = artwork?.copy() as? NSImage else {
+            return artwork
+        }
+        let height = (image.size.height * width / image.size.width).rounded()
+        image.size = NSSize(width: width, height: height)
+        return image
+    }()
+
+    private static let loadingColumns = NSLocalizedString("Loading columns…", comment: "Expanded table sidebar while fetching columns")
+    private static let unavailableColumns = NSLocalizedString("Columns unavailable", comment: "Expanded table sidebar when its columns cannot be read")
+    private static let sidebarBackground = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
+            return .underPageBackgroundColor
+        }
+        var gray = NSColor.unemphasizedSelectedContentBackgroundColor
+        appearance.performAsCurrentDrawingAppearance {
+            gray = gray.blended(withFraction: 0.15, of: .underPageBackgroundColor) ?? gray
+        }
+        return gray
+    }
+
+    private struct SAExpandedTable {
+        let requestID = UUID()
+        var labels = [SATablesListView.loadingColumns]
+    }
+
+    // A pinned table can appear twice. Both rows share one expansion and metadata request.
+    private var expandedTables: [String: SAExpandedTable] = [:]
+
     // Selecting a row starts loading its table, so the selection is only
     // committed once the sequence settles (see commitPendingSelection). The
     // matched row's identity is kept alongside its index because the list can
@@ -78,6 +113,10 @@ import AppKit
 
     override func awakeFromNib() {
         super.awakeFromNib()
+        // Use one title-only selection renderer regardless of the height of a row.
+        style = .inset
+        backgroundColor = Self.sidebarBackground
+        selectionHighlightStyle = .none
         // The type-ahead below replaces the built-in single-letter type select.
         allowsTypeSelect = false
 
@@ -231,6 +270,20 @@ import AppKit
             }
         }
 
+        dispatchRowCommand(event)
+    }
+
+    // Immediate and deferred key events both arrive here after type-ahead resolves its selection.
+    private func dispatchRowCommand(_ event: NSEvent) {
+        if (event.keyCode == 123 || event.keyCode == 124),
+           event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
+           numberOfSelectedRows == 1, let name = tableName(at: selectedRow) {
+            let shouldExpand = event.keyCode == 124 // Right opens, Left closes.
+            if shouldExpand != (expandedTables[name] != nil) {
+                toggleColumns(for: name)
+            }
+            return
+        }
         super.keyDown(with: event)
     }
 
@@ -252,12 +305,142 @@ import AppKit
         // A click picks its own row; a pending match must not load a table on
         // top of it once the timer fires.
         cancelTypeAhead()
+
+        let point = convert(event.locationInWindow, from: nil)
+        let row = row(at: point)
+        if let name = tableName(at: row) {
+            guard !isColumnArea(point, row: row, table: name) else { return }
+            if let image = sidebarDisclosureImage(forTable: name) {
+                let title = titleFrame(at: row)
+                // ImageAndTextCell draws the icon at this offset within the title cell.
+                let icon = NSRect(
+                    origin: NSPoint(x: title.minX + 3, y: title.minY + ceil((title.height - image.size.height) / 2)),
+                    size: image.size
+                )
+                if icon.contains(point) {
+                    toggleColumns(for: name)
+                    return
+                }
+            }
+        }
         super.mouseDown(with: event)
     }
 
     override func rightMouseDown(with event: NSEvent) {
         cancelTypeAhead()
         super.rightMouseDown(with: event)
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let point = convert(event.locationInWindow, from: nil)
+        let row = row(at: point)
+        if let name = tableName(at: row), isColumnArea(point, row: row, table: name) {
+            return nil
+        }
+        return super.menu(for: event)
+    }
+
+    override func drawRow(_ row: Int, clipRect: NSRect) {
+        // An expanded table is one tall AppKit row. Limit the highlight to its title line.
+        if isRowSelected(row) {
+            var title = rect(ofRow: row).insetBy(dx: 9, dy: 0)
+            title.size.height = min(title.height, rowHeight + intercellSpacing.height)
+            let color: NSColor = emphasizesSidebarSelection
+                ? .selectedContentBackgroundColor : .quaternaryLabelColor
+            color.setFill()
+            NSBezierPath(roundedRect: title, xRadius: 8, yRadius: 8).fill()
+        }
+        super.drawRow(row, clipRect: clipRect)
+    }
+
+    fileprivate var emphasizesSidebarSelection: Bool {
+        window?.isKeyWindow == true && (window?.firstResponder === self || currentEditor() != nil)
+    }
+
+    override func scrollRowToVisible(_ row: Int) {
+        if let name = tableName(at: row), expandedTables[name] != nil {
+            scrollToVisible(titleFrame(at: row))
+        } else {
+            super.scrollRowToVisible(row)
+        }
+    }
+
+    @objc func resetSidebarColumns() {
+        expandedTables.removeAll()
+    }
+
+    @objc(sidebarHeightForRow:baseHeight:)
+    func sidebarHeight(forRow row: Int, baseHeight: CGFloat) -> CGFloat {
+        guard !expandedTables.isEmpty, let name = tableName(at: row),
+              let expansion = expandedTables[name] else { return baseHeight }
+        return baseHeight + CGFloat(expansion.labels.count) * rowHeight
+    }
+
+    @objc(sidebarDisclosureImageForTable:)
+    func sidebarDisclosureImage(forTable table: String) -> NSImage? {
+        expandedTables[table] == nil ? Self.expandImage : Self.collapseImage
+    }
+
+    fileprivate func columnLabels(forCellFrame frame: NSRect) -> [String] {
+        guard !expandedTables.isEmpty,
+              let name = tableName(at: row(forCellFrame: frame)) else { return [] }
+        return expandedTables[name]?.labels ?? []
+    }
+
+    fileprivate func row(forCellFrame frame: NSRect) -> Int {
+        row(at: NSPoint(x: frame.midX, y: frame.minY + 1))
+    }
+
+    private static func disclosureImage(named symbol: String) -> NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+            .applying(.init(paletteColors: [.labelColor]))
+        return NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration)
+    }
+
+    private func tableName(at row: Int) -> String? {
+        guard let tablesList = delegate as? SPTablesList,
+              tablesList.tableType(atRow: row) == SPTableTypeTable else { return nil }
+        return dataSource?.tableView?(self, objectValueFor: tableColumns.first, row: row) as? String
+    }
+
+    private func isColumnArea(_ point: NSPoint, row: Int, table: String) -> Bool {
+        expandedTables[table] != nil
+            && point.y >= rect(ofRow: row).minY + rowHeight + intercellSpacing.height
+    }
+
+    private func titleFrame(at row: Int) -> NSRect {
+        var frame = frameOfCell(atColumn: 0, row: row)
+        frame.size.height = rowHeight
+        return frame
+    }
+
+    private func toggleColumns(for name: String) {
+        if expandedTables.removeValue(forKey: name) != nil {
+            redrawTable(named: name)
+            return
+        }
+        guard let tablesList = delegate as? SPTablesList else { return }
+
+        let expansion = SAExpandedTable()
+        let started = tablesList.loadSidebarColumns(forTable: name) { [weak self] columns in
+            // The same table may have been closed and reopened while this request was running.
+            guard let self, self.expandedTables[name]?.requestID == expansion.requestID else { return }
+            self.expandedTables[name]?.labels = columns?.map { "\($0.name) · \($0.type)" } ?? [Self.unavailableColumns]
+            self.redrawTable(named: name)
+        }
+        // Only show the loading row after the controller accepts the request.
+        if started {
+            expandedTables[name] = expansion
+            redrawTable(named: name)
+        }
+    }
+
+    private func redrawTable(named name: String) {
+        // Pinned tables can appear in both sidebar sections.
+        let rows = IndexSet((0..<numberOfRows).filter { tableName(at: $0) == name })
+        noteHeightOfRows(withIndexesChanged: rows)
+        needsDisplay = true
     }
 
     override func resignFirstResponder() -> Bool {
@@ -350,7 +533,7 @@ import AppKit
         }
 
         deferredRowCommand = nil
-        super.keyDown(with: event)
+        dispatchRowCommand(event)
     }
 
     private func cancelDeferredRowCommand() {
@@ -887,6 +1070,97 @@ import AppKit
         }
 
         return rows
+    }
+}
+
+/// Keeps table names and their editor on the first line of each sidebar row.
+@objc(SASidebarTableCell) final class SASidebarTableCell: SPTableTextFieldCell {
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        guard let table = controlView as? SATablesListView else {
+            super.draw(withFrame: cellFrame, in: controlView)
+            return
+        }
+        let columnLabels = table.columnLabels(forCellFrame: cellFrame)
+        let title = columnLabels.isEmpty ? cellFrame : titleFrame(in: cellFrame, lineHeight: table.rowHeight)
+        drawTitle(withFrame: title, in: table)
+
+        guard !columnLabels.isEmpty else { return }
+        let detailFrame = NSRect(x: table.bounds.minX, y: title.maxY,
+                                 width: table.bounds.width, height: cellFrame.maxY - title.maxY)
+        let visibleDetails = detailFrame.intersection(table.visibleRect)
+        guard !visibleDetails.isEmpty else { return }
+
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        visibleDetails.clip()
+
+        let fieldFont = NSFont.systemFont(ofSize: max(1, (font?.pointSize ?? NSFont.systemFontSize) - 1))
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: fieldFont,
+            .foregroundColor: NSColor.secondaryLabelColor,
+            .paragraphStyle: paragraph
+        ]
+        let left = cellFrame.minX + 26
+        let width = max(0, cellFrame.maxX - left - 5)
+        // Large tables can span several screens. Only lay out labels that intersect the viewport.
+        let first = min(columnLabels.count, Int((visibleDetails.minY - detailFrame.minY) / table.rowHeight))
+        let end = min(columnLabels.count, Int(ceil((visibleDetails.maxY - detailFrame.minY) / table.rowHeight)))
+        for row in first..<end {
+            let y = detailFrame.minY + CGFloat(row) * table.rowHeight
+            let frame = NSRect(x: left, y: y + 1, width: width, height: table.rowHeight - 1)
+            let label = columnLabels[row].components(separatedBy: .newlines).joined(separator: " ")
+            (label as NSString).draw(in: frame, withAttributes: attributes)
+        }
+    }
+
+    private func drawTitle(withFrame frame: NSRect, in table: SATablesListView) {
+        guard table.isRowSelected(table.row(forCellFrame: frame)) else {
+            super.draw(withFrame: frame, in: table)
+            return
+        }
+
+        // AppKit reuses this cell. Restore its title attributes before it draws another row.
+        let originalStyle = backgroundStyle
+        let originalTitle = attributedStringValue
+        defer {
+            backgroundStyle = originalStyle
+            attributedStringValue = originalTitle
+        }
+        backgroundStyle = table.emphasizesSidebarSelection ? .emphasized : .normal
+        if let font {
+            let boldFont = NSFontManager.shared.convert(font, toHaveTrait: .boldFontMask)
+            let title = NSMutableAttributedString(attributedString: originalTitle)
+            title.addAttribute(.font, value: boldFont, range: NSRange(location: 0, length: title.length))
+            attributedStringValue = title
+        }
+        super.draw(withFrame: frame, in: table)
+    }
+
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
+                       delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: editorFrame(in: rect, view: controlView), in: controlView,
+                   editor: textObj, delegate: delegate, event: event)
+    }
+
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
+                         delegate: Any?, start: Int, length: Int) {
+        super.select(withFrame: editorFrame(in: rect, view: controlView), in: controlView,
+                     editor: textObj, delegate: delegate, start: start, length: length)
+    }
+
+    private func editorFrame(in frame: NSRect, view: NSView) -> NSRect {
+        guard let table = view as? SATablesListView,
+              !table.columnLabels(forCellFrame: frame).isEmpty else { return frame }
+        return titleFrame(in: frame, lineHeight: table.rowHeight)
+    }
+
+    private func titleFrame(in frame: NSRect, lineHeight: CGFloat) -> NSRect {
+        var title = frame
+        title.size.height = min(title.height, lineHeight)
+        return title
     }
 }
 

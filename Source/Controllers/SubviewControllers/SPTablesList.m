@@ -220,6 +220,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	tableListIsSelectable = previousTableListIsSelectable;
 	SPMainQSync(^{
 		//this has to be executed en-block on the main queue, otherwise the table view might have a chance to access released memory before we tell it to throw away everything.
+		[(SATablesListView *)self->tablesListView resetSidebarColumns];
 		[self->tables removeAllObjects];
 		[self->tableTypes removeAllObjects];
 		[self->tablesListView reloadData];
@@ -1411,6 +1412,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	return [tableDocumentInstance allDatabaseNames];
 }
 
+- (BOOL)loadSidebarColumnsForTable:(NSString *)table completion:(void (^)(NSArray<SASidebarColumn *> *))completion
+{
+	SPDatabaseDocument *document = tableDocumentInstance;
+	// Expanding a row leaves the current edit in place, so check the task lock without ending editing.
+	if (!tableListIsSelectable || [document isWorking]) return NO;
+	return [document loadSidebarColumnsForTable:table completion:completion];
+}
+
 - (NSString *)selectedDatabase
 {
 	return [tableDocumentInstance database];
@@ -1817,6 +1826,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (void)tableViewSelectionDidChange:(NSNotification *)aNotification
 {
+	[tablesListView setNeedsDisplay:YES];
 	if ([tablesListView numberOfSelectedRows] != 1) {
 
 		// Ensure the state is cleared
@@ -1943,11 +1953,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		switch([[filteredTableTypes safeObjectAtIndex:rowIndex] integerValue]) {
 			case SPTableTypeView:
-				[aCell setImage:[NSImage imageNamed:@"table-view-small"]];
+				[aCell setImage:[SATablesListView sidebarViewImage]];
 				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeTable:
-				[aCell setImage:[NSImage imageNamed:@"table-small"]];
+				[aCell setImage:[(SATablesListView *)aTableView sidebarDisclosureImageForTable:item]];
 				[aCell setIndentationLevel:0];
 				break;
 			case SPTableTypeProc:
@@ -1982,7 +1992,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return 25;
 	} else {
 		NSFont *tableFont = [NSUserDefaults getFont];
-		return 4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
+		CGFloat baseHeight = 4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
+		return [(SATablesListView *)tableView sidebarHeightForRow:row baseHeight:baseHeight];
 	}
 }
 

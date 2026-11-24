@@ -29,6 +29,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+@class SASidebarColumn;
 @class SPHistoryController;
 @class SPTableView;
 @class SPMySQLConnection;
@@ -176,6 +177,10 @@
 - (nonnull NSArray *)allDatabaseNames;
 - (nonnull NSArray *)allSystemDatabaseNames;
 - (nullable NSString *)selectedDatabase;
+// Returns YES when a lookup starts. Its completion is delivered asynchronously on the main queue.
+- (BOOL)loadSidebarColumnsForTable:(nonnull NSString *)table
+                       completion:(void (^ _Nonnull)(NSArray<SASidebarColumn *> * _Nullable columns))completion
+    NS_SWIFT_NAME(loadSidebarColumns(forTable:completion:));
 
 - (BOOL)hasViews;
 - (BOOL)hasFunctions;

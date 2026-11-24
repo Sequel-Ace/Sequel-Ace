@@ -1944,6 +1944,12 @@
 /* Loading table data string */
 "Loading table data..." = "Loading table data...";
 
+/* Expanded table sidebar while fetching columns */
+"Loading columns…" = "Loading columns…";
+
+/* Expanded table sidebar when its columns cannot be read */
+"Columns unavailable" = "Columns unavailable";
+
 /* Low memory export summary */
 "Low memory" = "Low memory";
 
