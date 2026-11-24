@@ -532,7 +532,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)setTableDetails:(NSDictionary *)tableDetails {
     SPLog(@"tableDetails: %@", tableDetails);
-	self.pendingRowReload = nil;
 
 	NSString *newTableName;
 	NSArray *columnNames;
@@ -577,6 +576,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		// Another table is a fresh start for the automatic reload budget.
 		[self.reloadCoordinator resetAll];
+		self.pendingRowReload = nil;
 
         if (newTableName){
             SPLog(@"new table: %@", newTableName);
