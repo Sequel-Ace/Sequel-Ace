@@ -94,11 +94,10 @@
                                                         <rect key="frame" x="0.0" y="0.0" width="214" height="308"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
-                                                            <tableView identifier="TablesListTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="sourceList" selectionHighlightStyle="sourceList" columnReordering="NO" autosaveColumns="NO" rowHeight="25" id="22" customClass="SATablesListView">
+                                                            <tableView identifier="TablesListTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" columnReordering="NO" autosaveColumns="NO" rowHeight="25" id="22" customClass="SATablesListView">
                                                                 <rect key="frame" x="0.0" y="0.0" width="214" height="308"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <size key="intercellSpacing" width="3" height="2"/>
-                                                                <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                                                 <tableColumns>
                                                                     <tableColumn identifier="tables" width="182" minWidth="50" maxWidth="3000" id="23">
@@ -106,7 +105,7 @@
                                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
                                                                         </tableHeaderCell>
-                                                                        <textFieldCell key="dataCell" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" title="Text Cell" id="4015" customClass="SPTableTextFieldCell">
+                                                                        <textFieldCell key="dataCell" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" title="Text Cell" id="4015" customClass="SASidebarTableCell">
                                                                             <font key="font" metaFont="system"/>
                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

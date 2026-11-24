@@ -49,6 +49,48 @@ extension SPDatabaseDocument: SATaskManaging {}
 // connection and the parent window controller).
 extension SPDatabaseDocument: SATaskControllerDelegate {}
 
+// MARK: - Sidebar Columns
+
+@objc(SASidebarColumn) final class SASidebarColumn: NSObject {
+    let name: String
+    let type: String
+
+    init(name: String, type: String) {
+        self.name = name
+        self.type = type
+    }
+}
+
+extension SPDatabaseDocument {
+    @objc(loadSidebarColumnsForTable:completion:)
+    func loadSidebarColumns(forTable table: String, completion: @escaping ([SASidebarColumn]?) -> Void) -> Bool {
+        guard let database = database() else { return false }
+        let structure = databaseStructureRetrieval
+        DispatchQueue.global(qos: .userInitiated).async {
+            let columns = Self.readSidebarColumns(table: table, database: database, from: structure)
+            DispatchQueue.main.async { completion(columns) }
+        }
+        return true
+    }
+
+    private static func readSidebarColumns(table: String, database: String, from structure: SPDatabaseStructure) -> [SASidebarColumn]? {
+        guard let quotedTable = (table as NSString).backtickQuoted(),
+              let quotedDatabase = (database as NSString).backtickQuoted(),
+              let connection = structure.connection(),
+              let result = connection.queryString("SHOW COLUMNS FROM \(quotedTable) FROM \(quotedDatabase)") else {
+            return nil
+        }
+
+        result.returnDataAsStrings = true
+        var columns: [SASidebarColumn] = []
+        while let row = result.getRowAsDictionary() {
+            guard let name = row["Field"] as? String, let type = row["Type"] as? String else { continue }
+            columns.append(SASidebarColumn(name: name, type: type))
+        }
+        return columns.isEmpty ? nil : columns
+    }
+}
+
 // MARK: - Save Accessory
 
 extension SPDatabaseDocument {
