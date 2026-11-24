@@ -36,6 +36,7 @@
 #import "SPFunctions.h"
 #import "SPTableFilterParser.h"
 #import "SPTableContent.h"
+#import <SPMySQL/SPMySQL.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -116,6 +117,9 @@ const NSString * const SerFilterExprDefinition = @"_filterDefinition";
  * Is the filter expression enabled for filtering?
  */
 const NSString * const SerFilterExprEnabled = @"enabled";
+/** Absent in legacy filters, whose list items are already SQL. */
+static NSString * const SerFilterExprQuoteEachValue = @"quoteEachValue";
+static NSString * const SAQuoteEachFilterValuePreference = @"SAQuoteEachFilterValue";
 /**
  * Expression Nodes only:
  * Is this a row seeded empty - for a newly selected table, or as a new AND/OR group's only row -
@@ -168,6 +172,7 @@ const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
  * This method is only a shortcut to `-[[node filter] objectForKey:@"MenuLabel"]`
  */
 - (NSString *)name;
+- (BOOL)offersQuotedList;
 @end
 
 @interface ArgNode : RuleNode {
@@ -178,6 +183,8 @@ const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 @property (copy, nonatomic) NSString *initialValue;
 @property (strong, nonatomic) NSDictionary *filter;
 @property (assign, nonatomic) NSUInteger argIndex;
+/** nil for ordinary arguments; otherwise the initial state of the list checkbox. */
+@property (strong, nonatomic) NSNumber *quoteEachValue;
 @end
 
 @interface ConnectorNode : RuleNode {
@@ -237,6 +244,8 @@ const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 
 #pragma mark -
 
+typedef NSString *(^SAFilterListItemQuoter)(NSString *value);
+
 @interface SPRuleFilterController () <NSRuleEditorDelegate, NSTextFieldDelegate, SPFilterRuleEditorDropHandler>
 
 @property (readwrite, assign, nonatomic) CGFloat preferredHeight;
@@ -254,7 +263,7 @@ const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 + (NSDictionary *)_flattenSerializedFilter:(NSDictionary *)in;
 static BOOL SerIsGroup(NSDictionary *dict);
 - (NSDictionary *)_serializedFilterIncludingFilterDefinition:(BOOL)includeDefinition withDisabled:(BOOL)includeDisabled;
-+ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY error:(NSError **)err;
++ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err;
 - (NSMutableDictionary *)_restoreSerializedFilter:(NSDictionary *)serialized;
 static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (ColumnNode *)_columnForName:(NSString *)name;
@@ -412,8 +421,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	//if we are a simple row we might have an input field ourself, otherwise search among our children
 	if([[dict objectForKey:@"rowType"] unsignedIntegerValue] == NSRuleEditorRowTypeSimple) {
 		for(id obj in [dict objectForKey:@"displayValues"]) {
-			if([obj isKindOfClass:[NSTextField class]]) {
-				[[(NSTextField *)obj window] makeFirstResponder:obj];
+			NSTextField *field = [SAFilterListInput fieldForDisplayValue:obj];
+			if (field) {
+				[[field window] makeFirstResponder:field];
 				return YES;
 			}
 		}
@@ -565,6 +575,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 				ArgNode *arg = [[ArgNode alloc] init];
 				[arg setFilter:filter];
 				[arg setArgIndex:0];
+				if ([(OpNode *)criterion offersQuotedList]) arg.quoteEachValue = @([[NSUserDefaults standardUserDefaults] boolForKey:SAQuoteEachFilterValuePreference]);
 				return arg;
 			}
 		}
@@ -709,6 +720,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			//adjust width, to make the field wider
 			frame.size.width = 500; //TODO determine a good width (possibly from the field type size) - how to access the rule editors bounds?
 			[textField setFrame:frame];
+			if (node.quoteEachValue) {
+				return [[SAFilterListInput alloc] initWithField:textField checked:node.quoteEachValue.boolValue
+														target:self action:@selector(_quoteValuesChanged:)];
+			}
 			return textField;
 		}
 		case RuleNodeTypeConnector: {
@@ -731,7 +746,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[event type] == NSEventTypeKeyDown &&
 		([event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == NSEventModifierFlagShift
 	) {
-		NSInteger row = [filterRuleEditor rowForDisplayValue:control];
+		NSInteger row = [filterRuleEditor rowForDisplayValue:[SAFilterListInput displayValueForControl:control]];
 
 		if(row != NSNotFound) {
 			// we'll do the actual processing async, because we are currently in the stack of the object which will be dropped by this action.
@@ -753,6 +768,16 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 
 	return NO;
+}
+
+- (IBAction)_quoteValuesChanged:(NSButton *)sender
+{
+	NSInteger row = [filterRuleEditor rowForDisplayValue:[SAFilterListInput displayValueForControl:sender]];
+	ArgNode *arg = [[filterRuleEditor criteriaForRow:row] lastObject];
+	arg.quoteEachValue = @(sender.state == NSControlStateValueOn);
+	[[NSUserDefaults standardUserDefaults] setBool:arg.quoteEachValue.boolValue forKey:SAQuoteEachFilterValuePreference];
+	[self _enablePendingStarterInRow:row];
+	[self _updateFilterPreview];
 }
 
 - (IBAction)_checkboxClicked:(id)sender
@@ -960,7 +985,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)controlTextDidChange:(NSNotification *)notification
 {
 	// Typing into the unchecked starter row means filtering by it.
-	[self _enablePendingStarterInRow:[filterRuleEditor rowForDisplayValue:[notification object]]];
+	[self _enablePendingStarterInRow:[filterRuleEditor rowForDisplayValue:[SAFilterListInput displayValueForControl:[notification object]]]];
 	[self _updateFilterPreview];
 }
 
@@ -976,9 +1001,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		if (!self->dropBox) return;
 		NSString *clause = nil;
 		if (![self isEmpty]) {
-			NSError *err = nil;
-			clause = [self sqlWhereExpressionWithBinary:NO error:&err];
-			if (err) clause = nil;
+			clause = [self _sqlWhereExpressionWithBinary:NO listItemQuoter:^NSString *(NSString *value) {
+				return [[self->tableDocumentInstance getConnection] quotedStringForPreview:value];
+			} error:NULL];
 		}
 		[self->dropBox setPreviewClause:clause];
 	});
@@ -1068,6 +1093,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		// make the next possible object after the opnode the new next responder (since the previous one is gone now)
 		for (NSUInteger j = nodeIndex + 1; j < [displayValues count]; ++j) {
 			id obj = [displayValues objectAtIndex:j];
+			obj = [SAFilterListInput fieldForDisplayValue:obj] ?: obj;
 			if([obj respondsToSelector:@selector(acceptsFirstResponder)] && [obj acceptsFirstResponder]) {
 				[[filterRuleEditor window] makeFirstResponder:obj];
 				break;
@@ -1102,8 +1128,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// try to restore the value from the previous displayValue for input fields
 	RuleNode *oldCriterion = [oldCriteria firstObject];
 	if([curCriterion type] == RuleNodeTypeArgument && oldCriterion && [curCriterion type] == [oldCriterion type]) {
-		NSTextField *oldField = [oldDisplayValues firstObject];
-		if(oldField) [display setStringValue:[oldField stringValue]];
+		NSTextField *oldField = [SAFilterListInput fieldForDisplayValue:[oldDisplayValues firstObject]];
+		if(oldField) [[SAFilterListInput fieldForDisplayValue:display] setStringValue:[oldField stringValue]];
 	}
 	[displayValues addObject:display];
 
@@ -1123,6 +1149,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			NSString *opName = [(OpNode *)nextOldCriterion name];
 			OpNode *op = [self _operatorNamed:opName forColumn:(ColumnNode *)curCriterion];
 			if(op) nextCriterion = op;
+		}
+		else if ([nextOldCriterion type] == RuleNodeTypeArgument && [(RuleNode *)nextCriterion type] == RuleNodeTypeArgument) {
+			// Editing a list keeps the row's own choice, even when another row changed the default.
+			ArgNode *arg = nextCriterion;
+			NSNumber *previousChoice = [(ArgNode *)nextOldCriterion quoteEachValue];
+			if (arg.quoteEachValue && previousChoice) arg.quoteEachValue = previousChoice;
 		}
 		[criteria addObject:nextCriterion];
 
@@ -1734,8 +1766,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		[self _updateButtonStates];
 		[self _updateFilterPreview];
 		for (id value in values) {
-			if ([value isKindOfClass:[NSTextField class]]) {
-				[[(NSTextField *)value window] makeFirstResponder:value];
+			NSTextField *field = [SAFilterListInput fieldForDisplayValue:value];
+			if (field) {
+				[[field window] makeFirstResponder:field];
 				break;
 			}
 		}
@@ -1774,6 +1807,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err
 {
+	return [self _sqlWhereExpressionWithBinary:isBINARY listItemQuoter:^NSString *(NSString *value) {
+		return [[self->tableDocumentInstance getConnection] escapeString:value includingQuotes:YES];
+	} error:err];
+}
+
+- (NSString *)_sqlWhereExpressionWithBinary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err
+{
 	NSMutableString *filterString = [[NSMutableString alloc] init];
 	NSError *innerError = nil;
 
@@ -1782,7 +1822,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		NSDictionary *filterTree = [[self class] _flattenSerializedFilter:[self _serializedFilterIncludingFilterDefinition:YES withDisabled:NO]];
 
 		// build it recursively
-		[[self class] _writeFilterTree:filterTree toString:filterString wrapInParenthesis:NO binary:isBINARY error:&innerError];
+		[[self class] _writeFilterTree:filterTree toString:filterString wrapInParenthesis:NO binary:isBINARY listItemQuoter:quoter error:&innerError];
 
 		 // carry the error (if any) outside of the scope of the autoreleasepool
 	}
@@ -1856,28 +1896,26 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		NSMutableArray *filterValues = [[NSMutableArray alloc] initWithCapacity:2];
 		for (NSUInteger i = 3; i < [criteria count]; ++i) { // see above for first three
 			if([(RuleNode *)[criteria objectAtIndex:i] type] != RuleNodeTypeArgument) continue;
-			// if we found an argument, the displayValue will be an NSTextField we can ask for the value
-			NSString *value = [(NSTextField *)[displayValues objectAtIndex:i] stringValue];
+			NSString *value = [[SAFilterListInput fieldForDisplayValue:displayValues[i]] stringValue];
 			[filterValues addObject:value];
 		}
-		NSDictionary *out = @{
+		NSMutableDictionary *out = [@{
 			SerFilterClass: SerFilterClassExpression,
 			SerFilterExprColumn: [col name],
 			SerFilterExprType: [[op settings] objectForKey:@"filterType"],
 			SerFilterExprComparison: [op name],
 			SerFilterExprValues: filterValues,
 			SerFilterExprEnabled: @(isEnabled),
-		};
+		} mutableCopy];
+		SAFilterListInput *input = [displayValues lastObject];
+		if ([input isKindOfClass:[SAFilterListInput class]] && input.checked) out[SerFilterExprQuoteEachValue] = @YES;
 		// Keep the seeded starter row recognisable, so a reload or a return to this table restores
 		// it waiting for its first edit instead of as a plain unchecked row.
 		if ([self.pendingStarter isCheckbox:[displayValues objectAtIndex:0]]) {
-			NSMutableDictionary *marked = [out mutableCopy];
-			[marked setObject:@YES forKey:SerFilterExprPendingStarter];
-			out = marked;
+			[out setObject:@YES forKey:SerFilterExprPendingStarter];
 		}
 		if(includeDefinition) {
-			out = [NSMutableDictionary dictionaryWithDictionary:out];
-			[(NSMutableDictionary *)out setObject:[op filter] forKey:SerFilterExprDefinition];
+			[out setObject:[op filter] forKey:SerFilterExprDefinition];
 		}
 		return out;
 	}
@@ -2020,6 +2058,7 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 			[arg setArgIndex:i];
 			[arg setFilter:[op filter]];
 			[arg setInitialValue:[values objectAtIndex:i]];
+			if ([op offersQuotedList]) arg.quoteEachValue = @([serialized[SerFilterExprQuoteEachValue] boolValue]);
 			[criteria addObject:arg];
 		}
 		
@@ -2133,7 +2172,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 	};
 }
 
-+ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY error:(NSError **)err
++ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err
 {
 	NSError *myErr = nil;
 	
@@ -2157,7 +2196,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 			else {
 				if(wrap && [children count] == 1) wrapChild = NO;
 			}
-			[self _writeFilterTree:child toString:out wrapInParenthesis:wrapChild binary:isBINARY error:&myErr];
+			[self _writeFilterTree:child toString:out wrapInParenthesis:wrapChild binary:isBINARY listItemQuoter:quoter error:&myErr];
 			if(myErr) {
 				if(err) *err = myErr;
 				return;
@@ -2193,6 +2232,9 @@ BOOL SerIsGroup(NSDictionary *dict)
 		SPTableFilterParser *parser = [[SPTableFilterParser alloc] initWithFilterClause:[filter objectForKey:@"Clause"]
 		                                                              numberOfArguments:[[filter objectForKey:@"NumberOfArguments"] integerValue]];
 		[parser setArgument:[values firstObject]];
+		if ([in[SerFilterExprQuoteEachValue] boolValue]) {
+			parser.listItemQuoter = quoter;
+		}
 		[parser setFirstBetweenArgument:[values firstObject]];
 		[parser setSecondBetweenArgument:[values safeObjectAtIndex:1]];
 		[parser setSuppressLeadingTablePlaceholder:[[filter objectForKey:@"SuppressLeadingFieldPlaceholder"] boolValue]];
@@ -2345,6 +2387,11 @@ BOOL SerIsGroup(NSDictionary *dict)
 - (NSString *)name
 {
 	return [filter objectForKey:@"MenuLabel"];
+}
+
+- (BOOL)offersQuotedList
+{
+	return [filter[@"OffersQuotedList"] boolValue] && [SACellFilterOperator isTextGrouping:parentColumn.typegrouping];
 }
 
 @end

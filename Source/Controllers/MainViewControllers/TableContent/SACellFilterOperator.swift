@@ -152,6 +152,11 @@ import Foundation
     }
 
     private static let numberTypeGroupings: Set<String> = ["bit", "integer", "float"]
+    @objc(isTextGrouping:)
+    public static func isTextGrouping(_ grouping: String) -> Bool {
+        stringTypeGroupings.contains(grouping)
+    }
+
     private static let stringTypeGroupings: Set<String> = ["string", "textdata", "enum"]
 
     private static let supportedTypeGroupings = [

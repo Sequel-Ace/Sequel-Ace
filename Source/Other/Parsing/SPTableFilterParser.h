@@ -53,6 +53,8 @@
 @property BOOL caseSensitive;
 @property(copy) NSString *currentField;
 @property(copy) NSString *argument;
+/** Set only for a text list. Quotes each item using the connection that will execute the query. */
+@property(copy) NSString *(^listItemQuoter)(NSString *value);
 @property(copy) NSString *firstBetweenArgument;
 @property(copy) NSString *secondBetweenArgument;
 

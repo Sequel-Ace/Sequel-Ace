@@ -95,3 +95,45 @@ import Cocoa
         super.init(coder: coder)
     }
 }
+
+/// A single display value lets NSRuleEditor give the input the rest of the row.
+@objcMembers public final class SAFilterListInput: NSView {
+    public let field: NSTextField
+    private let checkbox: NSButton
+    public var checked: Bool { checkbox.state == .on }
+
+    @objc(initWithField:checked:target:action:)
+    public init(field: NSTextField, checked: Bool, target: AnyObject, action: Selector) {
+        self.field = field
+        let title = NSLocalizedString("Quote each value", comment: "Content filter checkbox for a comma-separated list of text values")
+        checkbox = NSButton(checkboxWithTitle: title, target: target, action: action)
+        super.init(frame: field.frame)
+        setAccessibilityRole(.group)
+        setAccessibilityChildren([field, checkbox])
+        checkbox.controlSize = .small
+        checkbox.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        checkbox.state = checked ? .on : .off
+        for view in [field, checkbox] as [NSView] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(view)
+            view.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+        }
+        NSLayoutConstraint.activate([
+            field.leadingAnchor.constraint(equalTo: leadingAnchor),
+            checkbox.leadingAnchor.constraint(equalTo: field.trailingAnchor, constant: 6),
+            // Leave space before the rule editor’s remove/add buttons.
+            checkbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            checkbox.widthAnchor.constraint(equalToConstant: ceil(checkbox.fittingSize.width) + 2),
+        ])
+    }
+
+    public required init?(coder: NSCoder) { nil }
+
+    public static func field(forDisplayValue value: Any?) -> NSTextField? {
+        (value as? SAFilterListInput)?.field ?? value as? NSTextField
+    }
+
+    public static func displayValue(forControl control: NSControl) -> NSView {
+        control.superview as? SAFilterListInput ?? control
+    }
+}

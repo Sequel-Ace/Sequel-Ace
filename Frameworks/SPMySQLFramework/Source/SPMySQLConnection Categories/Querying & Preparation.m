@@ -110,6 +110,19 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 		return nil;
 	}
 
+	return [self _escapeString:theString includingQuotes:includeQuotes sessionIsBeingReplaced:(sessionForEscaping == SAEscapingSessionTheReplacement)];
+}
+
+- (NSString *)quotedStringForPreview:(NSString *)theString
+{
+	if (!theString || state != SPMySQLConnected || [self sessionReplacementMark] != SASessionReplacementMarkNotMarked) return nil;
+
+	[self _validateThreadSetup];
+	return [self _escapeString:theString includingQuotes:YES sessionIsBeingReplaced:NO];
+}
+
+- (NSString *)_escapeString:(NSString *)theString includingQuotes:(BOOL)includeQuotes sessionIsBeingReplaced:(BOOL)sessionIsBeingReplaced
+{
 	// Perform a lossy conversion to bytes, using NSData to do the hard work.  Preserves
 	// nul characters correctly.
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
@@ -144,7 +157,6 @@ static const NSStringEncoding SAStringEncodingOfTheSession = 0;
 	NSString *transportCharacterSet = encodingUsesLatin1Transport
 		? @"latin1"
 		: (sqlInputEncoding ?: encoding);
-	BOOL sessionIsBeingReplaced = (sessionForEscaping == SAEscapingSessionTheReplacement);
 	NSInteger escapedLength = [valueEscaper escapeBytes:[cData bytes]
 	                                             length:cDataLength
 	                                               into:escBuffer+1

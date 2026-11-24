@@ -33,6 +33,8 @@
 // Data preparation
 - (NSString *)escapeAndQuoteString:(NSString *)theString;
 - (NSString *)escapeString:(NSString *)theString includingQuotes:(BOOL)includeQuotes;
+/** Display only. Returns nil when there is no settled session; never checks or restores the connection. */
+- (NSString *)quotedStringForPreview:(NSString *)theString;
 - (NSString *)escapeAndQuoteData:(NSData *)theData;
 - (NSString *)escapeData:(NSData *)theData includingQuotes:(BOOL)includeQuotes;
 

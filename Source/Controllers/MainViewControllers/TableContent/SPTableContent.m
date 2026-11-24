@@ -952,6 +952,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// If no table is selected, return
 	if (!selectedTable) return;
 
+	NSString *filterString = [[self onMainThread] validatedTableFilterString];
+	if (filterString) [self loadTableValuesWithFilter:filterString];
+}
+
+- (void)loadTableValuesWithFilter:(NSString *)filterString
+{
+	if (!selectedTable) return;
+
 	// Count this load as running, so a reload task finishing beside it does not
 	// take its note while it is still working. Filtering, paging, sorting and
 	// the refresh after an edit come straight here with no -loadTable: around
@@ -962,7 +970,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	NSMutableString *queryString;
 	NSString *queryStringBeforeLimit = nil;
-	NSString *filterString;
 	SPMySQLStreamingResultStore *resultStore;
 	NSString *databaseName = [tableDocumentInstance database];
 	NSInteger rowsToLoad = [[tableDataInstance statusValueForKey:@"Rows"] integerValue];
@@ -972,12 +979,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Notify any listeners that a query has started
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
-	// Add a filter string if appropriate
-	filterString = [[self onMainThread] tableFilterString];
-	
 	// Start construction of the query string
 	queryString = [NSMutableString stringWithFormat:@"SELECT %@%@ FROM %@", 
-			(activeFilter == SPTableContentFilterSourceTableFilter && filterString && [filterTableController isDistinct]) ? @"DISTINCT " :
+			(activeFilter == SPTableContentFilterSourceTableFilter && [filterString length] && [filterTableController isDistinct]) ? @"DISTINCT " :
 			@"",
 			[self fieldListForQuery], [selectedTable backtickQuotedString]];
 
@@ -1286,12 +1290,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 /**
  * Returns the query string for the current filter settings,
- * ready to be dropped into a WHERE clause, or nil if no filtering
- * is active.
+ * ready to use in a WHERE clause. An empty string means no filter;
+ * nil means the filter was invalid and the error has been reported.
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
-- (NSString *)tableFilterString
+- (NSString *)validatedTableFilterString
 {
 
 	// If filter command was passed by sequelace url scheme
@@ -1301,7 +1305,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	// Call did come from filter table and is filter table window still open?
 	if(activeFilter == SPTableContentFilterSourceTableFilter && [[filterTableController window] isVisible]) {
-		return [filterTableController tableFilterString];
+		return [filterTableController tableFilterString] ?: @"";
 	}
 	if(activeFilter == SPTableContentFilterSourceRuleFilter && showFilterRuleEditor) {
 		// If the clause has the placeholder $BINARY that placeholder will be replaced
@@ -1315,10 +1319,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Filter", @"table content : apply filter : invalid filter message title") message:[err localizedDescription] callback:nil];
 			return nil;
 		}
-		return ([filter length] ? filter : nil);
+		return filter ?: @"";
 	}
 
-	return nil;
+	return @"";
 }
 
 /**
@@ -1634,9 +1638,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	if ([tableDocumentInstance isWorking]) return;
 
+	NSString *filterString = [[self onMainThread] validatedTableFilterString];
+	if (!filterString) {
+		[[paginationViewController onMainThread] setPage:@(contentPage)];
+		return;
+	}
+
 	// If the filter field is being cleared by deleting the contents, and there's no current filter,
 	// don't trigger a reload.
-	if (deleteTriggeringFilter && !isFiltered && ![self tableFilterString]) {
+	if (deleteTriggeringFilter && !isFiltered && ![filterString length]) {
 		return;
 	}
 
@@ -1663,7 +1673,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		contentPage = paginationViewPage;
 	}
 
-	if ([self tableFilterString]) {
+	if ([filterString length]) {
 		taskString = NSLocalizedString(@"Filtering table...", @"Filtering table task description");
 	} else if (contentPage == 1) {
 		taskString = [NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), selectedTable];
@@ -1676,14 +1686,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ([NSThread isMainThread]) {
 		[NSThread detachNewThreadWithName:SPCtxt(@"SPTableContent filter table task", tableDocumentInstance)
 		                           target:self
-		                         selector:@selector(filterTableTask)
-		                           object:nil];
+		                         selector:@selector(filterTableTaskWithFilter:)
+		                           object:filterString];
 	} else {
-		[self filterTableTask];
+		[self filterTableTaskWithFilter:filterString];
 	}
 }
 
-- (void)filterTableTask
+- (void)filterTableTaskWithFilter:(NSString *)filterString
 {
 	@autoreleasepool {
 		// Update history
@@ -1693,7 +1703,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[self setSelectionToRestore:[[self onMainThread] selectionDetailsAllowingIndexSelection:NO]];
 		previousTableRowsCount = 0;
 		[self clearTableValues];
-		[self loadTableValues];
+		[self loadTableValuesWithFilter:filterString];
 		[[tableContentView onMainThread] scrollRowToVisible:0];
 
 		[tableDocumentInstance endTask];
@@ -1766,6 +1776,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			return;
 		}
 
+		NSString *filterString = [[self onMainThread] validatedTableFilterString];
+		if (!filterString) {
+			[tableDocumentInstance endTask];
+			return;
+		}
+
 		NSEventModifierFlags modifierFlags = [[[NSApp onMainThread] currentEvent] modifierFlags];
 
 		// Sets column order as tri-state descending, ascending, no sort, descending, ascending etc. order if the same
@@ -1821,7 +1837,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		previousTableRowsCount = tableRowsCount;
 		[self setSelectionToRestore:[self selectionDetailsAllowingIndexSelection:NO]];
 		[[tableContentView onMainThread] selectRowIndexes:[NSIndexSet indexSet] byExtendingSelection:NO];
-		[self loadTableValues];
+		[self loadTableValuesWithFilter:filterString];
 
 		if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [mySQLConnection lastErrorMessage]] callback:nil];

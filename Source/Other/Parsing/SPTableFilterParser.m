@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPTableFilterParser.h"
+#import "sequel-ace-Swift.h"
 #import "RegexKitLite.h"
 
 @interface SPTableFilterParser ()
@@ -128,7 +129,11 @@
 		                           [[self class] escapeFilterArgument:firstBetweenArgument againstClause:clause],
 		                           [[self class] escapeFilterArgument:secondBetweenArgument againstClause:clause]];
 	} else if (numArgs == 1) {
-		[filterString appendFormat:clause, [[self class] escapeFilterArgument:argument againstClause:clause]];
+		NSString *sqlArgument = self.listItemQuoter
+			? [SAFilterValueList quotedSQLFromInput:argument quote:self.listItemQuoter]
+			: [[self class] escapeFilterArgument:argument againstClause:clause];
+		if (!sqlArgument) return nil;
+		[filterString appendFormat:clause, sqlArgument];
 	} else {
 		[filterString appendString:clause];
 	}
