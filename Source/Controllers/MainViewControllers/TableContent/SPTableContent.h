@@ -179,6 +179,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (void)setTableDetails:(NSDictionary *)tableDetails;
 - (void)clearTableValues;
 - (void)loadTableValues;
+- (NSString *)tableFilterString;
 - (void)updateCountText;
 - (void)initTableLoadTimer;
 - (void)clearTableLoadTimer;
@@ -190,7 +191,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (IBAction)filterTable:(id)sender;
 - (IBAction)toggleRuleEditorVisible:(id)sender;
 - (void)applyCellFilterForColumn:(NSString *)columnName operator:(NSString *)operatorName values:(NSArray *)values isNull:(BOOL)isNull;
-- (void)filterTableTaskWithFilter:(NSString *)filterString;
+- (void)filterTableTask;
 - (void)setUsedQuery:(NSString *)query;
 - (NSString *)selectedTable;
 

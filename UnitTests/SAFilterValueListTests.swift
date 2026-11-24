@@ -1,56 +1,29 @@
 import AppKit
-import SPMySQL
 import XCTest
 
 final class SAFilterValueListTests: XCTestCase {
-    func testQuotedListPassesEachTrimmedItemToConnectionQuoter() {
-        var received: [String] = []
-        let result = SAFilterValueList.quotedSQL(from: "abc, 001, O'Brien, ,") { value in
-            received.append(value)
-            return "'\(value.replacingOccurrences(of: "'", with: "''"))'"
-        }
-        XCTAssertEqual(received, ["abc", "001", "O'Brien", "", ""])
-        XCTAssertEqual(result, "'abc', '001', 'O''Brien', '', ''")
+    func testQuotedListPreservesEmptyItemsAndNumericLookingText() {
+        XCTAssertEqual(SAFilterValueList.quotedSQL(from: "abc, 001, O'Brien, ,"),
+                       "'abc', '001', 'O''Brien', '', ''")
     }
 
-    func testOneUnquotableValueRefusesTheWholeList() {
-        XCTAssertNil(SAFilterValueList.quotedSQL(from: "a,b") { $0 == "a" ? "'a'" : nil })
-    }
-}
-
-private final class SAListFilterTestConnection: SPMySQLConnection {
-    var connectionChecks = 0
-    var checkedOnMainThread = false
-
-    override func checkIfNecessary() -> Bool {
-        connectionChecks += 1
-        checkedOnMainThread = checkedOnMainThread || Thread.isMainThread
-        return true
-    }
-}
-
-private final class SAListFilterTestDocument: NSObject {
-    let connection = SAListFilterTestConnection()
-
-    override init() {
-        super.init()
-        connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
+    func testModeAndEncodingSensitiveTextUsesCharacterLiterals() {
+        XCTAssertEqual(SAFilterValueList.quotedSQL(from: "a,\u{0301}b"), "'a', _utf8mb4 X'CC8162'")
+        XCTAssertEqual(SAFilterValueList.quotedSQL(from: "a\\b, a\u{0}b, 한, 😀"),
+                       "_utf8mb4 X'615C62', _utf8mb4 X'610062', _utf8mb4 X'ED959C', _utf8mb4 X'F09F9880'")
     }
 
-    deinit { connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state") }
+    func testEmptyInputProducesAnEmptyStringLiteral() {
+        XCTAssertEqual(SAFilterValueList.quotedSQL(from: ""), "''")
+        XCTAssertEqual(SAFilterValueList.quotedSQL(from: ", ,"), "'', '', ''")
+    }
 
-    @objc var fileURL: URL? { nil }
-    @objc func getConnection() -> SPMySQLConnection { connection }
-}
-
-extension SAFilterValueListTests {
-    private func makeEditor(group: String, document: SAListFilterTestDocument) throws -> (NSObject, NSRuleEditor) {
+    private func makeEditor(group: String) throws -> (NSObject, NSRuleEditor) {
         let controllerType = try XCTUnwrap(NSClassFromString("SPRuleFilterController") as? NSObject.Type)
         let controller = controllerType.init()
         let editor = NSRuleEditor(frame: NSRect(x: 0, y: 0, width: 700, height: 120))
         editor.delegate = controller as? NSRuleEditorDelegate
         controller.setValue(editor, forKey: "filterRuleEditor")
-        controller.setValue(document, forKey: "tableDocumentInstance")
         let columns = ["code", "label"].map { ["name": $0, "typegrouping": group] }
         controller.perform(NSSelectorFromString("setColumns:"), with: columns)
         controller.perform(NSSelectorFromString("awakeFromNib"))
@@ -63,8 +36,7 @@ extension SAFilterValueListTests {
         let previous = defaults.object(forKey: key)
         defer { defaults.set(previous, forKey: key) }
 
-        let document = SAListFilterTestDocument()
-        let (controller, editor) = try makeEditor(group: "string", document: document)
+        let (controller, editor) = try makeEditor(group: "string")
         defer { editor.unbind(NSBindingName("rows")) }
         func chooseOperator(_ title: String) throws {
             let current = try XCTUnwrap(editor.displayValues(forRow: 0)[2] as? NSMenuItem)
@@ -90,10 +62,17 @@ extension SAFilterValueListTests {
             XCTAssertEqual(list.checked, checked)
             XCTAssertEqual(list.field.stringValue, input)
 
+            let checkbox = try XCTUnwrap(list.subviews.compactMap { $0 as? NSButton }.first)
+            checkbox.performClick(nil)
+            XCTAssertEqual(list.checked, !checked)
+            XCTAssertEqual(defaults.bool(forKey: key), !checked)
+            checkbox.performClick(nil)
+            XCTAssertEqual(defaults.bool(forKey: key), checked)
+
             try chooseOperator("=")
             XCTAssertNil(editor.displayValues(forRow: 0).last as? SAFilterListInput)
             try chooseOperator("IN")
-            XCTAssertEqual((editor.displayValues(forRow: 0).last as? SAFilterListInput)?.checked, !checked)
+            XCTAssertEqual((editor.displayValues(forRow: 0).last as? SAFilterListInput)?.checked, checked)
         }
     }
 
@@ -107,55 +86,26 @@ extension SAFilterValueListTests {
         return sql
     }
 
-    func testTypingQuotesOfflineAndApplyChecksTheConnectionAgain() throws {
-        let document = SAListFilterTestDocument()
-        let (controller, editor) = try makeEditor(group: "string", document: document)
+    func testPreviewAndApplyFormatTheSameListWithoutCheckingTheConnection() throws {
+        let (controller, editor) = try makeEditor(group: "string")
         defer { editor.unbind(NSBindingName("rows")) }
         let box = try XCTUnwrap(controller.value(forKey: "dropBox") as? SPRuleFilterDropBox)
         let leaf: [String: Any] = ["filterClass": "expressionNode", "column": "code", "filterComparison": "IN",
                                    "filterValues": ["abc"], "quoteEachValue": true]
         controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: leaf)
         let field = try XCTUnwrap((editor.displayValues(forRow: 0).last as? SAFilterListInput)?.field)
-        field.stringValue = #"O'Brien, a\b"#
         let edit = Notification(name: NSControl.textDidChangeNotification, object: field)
-        controller.perform(NSSelectorFromString("controlTextDidChange:"), with: edit)
-        let clause = #"`code` IN ('O\'Brien', 'a\\b')"#
-        XCTAssertEqual(box.toolTip?.components(separatedBy: "\n").first, "WHERE " + clause)
-
-        document.connection.setValue(SASessionReplacementMark.whenNothingIsOpen.rawValue, forKey: "sessionReplacement")
-        controller.perform(NSSelectorFromString("controlTextDidChange:"), with: edit)
-        XCTAssertFalse(box.isShowingPreview)
-        document.connection.setValue(SASessionReplacementMark.notMarked.rawValue, forKey: "sessionReplacement")
-
-        // Losing the session clears the last preview without trying to reconnect.
-        document.connection.setValue(SPMySQLConnectionLostInBackground.rawValue, forKey: "state")
-        controller.perform(NSSelectorFromString("controlTextDidChange:"), with: edit)
-        XCTAssertFalse(box.isShowingPreview)
-        XCTAssertEqual(document.connection.connectionChecks, 0)
-
-        document.connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
-        let selector = NSSelectorFromString("filterRequestWithBinary:")
-        typealias Capture = @convention(c) (NSObject, Selector, Bool) -> SATableFilterRequest
-        let capture = unsafeBitCast(controller.method(for: selector), to: Capture.self)
-        let request = capture(controller, selector, false)
-        XCTAssertTrue(request.requiresConnection)
-        XCTAssertEqual(document.connection.connectionChecks, 0)
-        field.stringValue = "edited after Apply"
-
-        let rendered = expectation(description: "Filter rendered on the load thread")
-        DispatchQueue.global().async {
-            var error: NSError?
-            XCTAssertEqual(request.sql(error: &error), clause)
-            XCTAssertNil(error)
-            rendered.fulfill()
+        for (input, list) in [(#"O'Brien, a\b"#, #"'O''Brien', _utf8mb4 X'615C62'"#),
+                              ("😀", "_utf8mb4 X'F09F9880'"), (",,", "'', '', ''")] {
+            field.stringValue = input
+            controller.perform(NSSelectorFromString("controlTextDidChange:"), with: edit)
+            let clause = "`code` IN (\(list))"
+            XCTAssertEqual(try whereClause(of: controller), clause)
+            XCTAssertEqual(box.toolTip?.components(separatedBy: "\n").first, "WHERE " + clause)
         }
-        wait(for: [rendered], timeout: 5)
-        XCTAssertGreaterThan(document.connection.connectionChecks, 0)
-        XCTAssertFalse(document.connection.checkedOnMainThread)
     }
 
     func testRestoredRulesUseTheirOwnQuoteSettingAndColumnType() throws {
-        let document = SAListFilterTestDocument()
         let defaults = UserDefaults.standard
         let previous = defaults.object(forKey: "SAQuoteEachFilterValue")
         defer { defaults.set(previous, forKey: "SAQuoteEachFilterValue") }
@@ -164,11 +114,14 @@ extension SAFilterValueListTests {
         for (group, op, saved, expectedBox) in [
             ("string", "IN", nil as Bool?, false as Bool?),
             ("textdata", "NOT IN __ OR NULL", true, true),
+            ("enum", "NOT IN __ OR NULL", true, true),
+            ("binary", "IN", true, nil),
             ("string", "=", true, nil),
             ("integer", "IN", true, nil),
             ("blobdata", "IN", true, nil),
         ] {
-            let (controller, editor) = try makeEditor(group: group, document: document)
+            let (controller, editor) = try makeEditor(group: group)
+            defer { editor.unbind(NSBindingName("rows")) }
             let input = saved == nil ? "'abc,def,ghi'" : "abc, O'Brien"
             var leaf: [String: Any] = ["filterClass": "expressionNode", "column": "code", "filterComparison": op, "filterValues": [input]]
             leaf["quoteEachValue"] = saved
@@ -180,7 +133,7 @@ extension SAFilterValueListTests {
             if let expectedBox {
                 let sql = try whereClause(of: controller)
                 XCTAssertEqual(sql, expectedBox
-                               ? #"(`code` NOT IN ('abc', 'O\'Brien') OR `code` IS NULL)"#
+                               ? #"(`code` NOT IN ('abc', 'O''Brien') OR `code` IS NULL)"#
                                : "`code` IN ('abc,def,ghi')")
             }
         }

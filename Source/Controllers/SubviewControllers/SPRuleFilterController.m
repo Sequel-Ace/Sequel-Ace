@@ -36,7 +36,6 @@
 #import "SPFunctions.h"
 #import "SPTableFilterParser.h"
 #import "SPTableContent.h"
-#import <SPMySQL/SPMySQL.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -244,8 +243,6 @@ const NSString * const SerFilterExprPendingStarter = @"pendingStarter";
 
 #pragma mark -
 
-typedef NSString *(^SAFilterListItemQuoter)(NSString *value);
-
 @interface SPRuleFilterController () <NSRuleEditorDelegate, NSTextFieldDelegate, SPFilterRuleEditorDropHandler>
 
 @property (readwrite, assign, nonatomic) CGFloat preferredHeight;
@@ -263,7 +260,7 @@ typedef NSString *(^SAFilterListItemQuoter)(NSString *value);
 + (NSDictionary *)_flattenSerializedFilter:(NSDictionary *)in;
 static BOOL SerIsGroup(NSDictionary *dict);
 - (NSDictionary *)_serializedFilterIncludingFilterDefinition:(BOOL)includeDefinition withDisabled:(BOOL)includeDisabled;
-+ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err;
++ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY error:(NSError **)err;
 - (NSMutableDictionary *)_restoreSerializedFilter:(NSDictionary *)serialized;
 static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (ColumnNode *)_columnForName:(NSString *)name;
@@ -721,8 +718,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			frame.size.width = 500; //TODO determine a good width (possibly from the field type size) - how to access the rule editors bounds?
 			[textField setFrame:frame];
 			if (node.quoteEachValue) {
-				return [[SAFilterListInput alloc] initWithField:textField checked:node.quoteEachValue.boolValue
-														target:self action:@selector(_quoteValuesChanged:)];
+				return [[SAFilterListInput alloc] initWithField:textField checked:node.quoteEachValue.boolValue target:self action:@selector(_quoteValuesChanged:)];
 			}
 			return textField;
 		}
@@ -1001,7 +997,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		if (!self->dropBox) return;
 		NSString *clause = nil;
 		if (![self isEmpty]) {
-			clause = [self sqlWhereExpressionWithBinary:NO error:NULL];
+			NSError *err = nil;
+			clause = [self sqlWhereExpressionWithBinary:NO error:&err];
+			if (err) clause = nil;
 		}
 		[self->dropBox setPreviewClause:clause];
 	});
@@ -1803,36 +1801,31 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self _updateButtonStates];
 }
 
-- (NSDictionary *)_filterTreeForSQL
-{
-	return [[self class] _flattenSerializedFilter:[self _serializedFilterIncludingFilterDefinition:YES withDisabled:NO]];
-}
-
 - (NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err
 {
-	return [[self class] _sqlForFilterTree:[self _filterTreeForSQL] binary:isBINARY listItemQuoter:^NSString *(NSString *value) {
-		return [[self->tableDocumentInstance getConnection] quotedStringForPreview:value];
-	} error:err];
-}
+	NSMutableString *filterString = [[NSMutableString alloc] init];
+	NSError *innerError = nil;
 
-- (SATableFilterRequest *)filterRequestWithBinary:(BOOL)isBINARY
-{
-	NSDictionary *tree = [self _filterTreeForSQL];
-	SPMySQLConnection *connection = [tableDocumentInstance getConnection];
-	return [[SATableFilterRequest alloc] initWithFilterTree:tree render:^NSString *(NSError **error) {
-		return [SPRuleFilterController _sqlForFilterTree:tree binary:isBINARY listItemQuoter:^NSString *(NSString *value) {
-			return [connection escapeString:value includingQuotes:YES];
-		} error:error];
-	}];
-}
+	@autoreleasepool {
+		//get the serialized filter and try to optimise it
+		NSDictionary *filterTree = [[self class] _flattenSerializedFilter:[self _serializedFilterIncludingFilterDefinition:YES withDisabled:NO]];
 
-+ (NSString *)_sqlForFilterTree:(NSDictionary *)tree binary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err
-{
-	NSMutableString *filterString = [NSMutableString string];
-	NSError *error = nil;
-	[self _writeFilterTree:tree toString:filterString wrapInParenthesis:NO binary:isBINARY listItemQuoter:quoter error:&error];
-	if (err) *err = error;
-	return error ? nil : [filterString copy];
+		// build it recursively
+		[[self class] _writeFilterTree:filterTree toString:filterString wrapInParenthesis:NO binary:isBINARY error:&innerError];
+
+		 // carry the error (if any) outside of the scope of the autoreleasepool
+	}
+
+	if(innerError) {
+		if(err) *err = innerError;
+		return nil;
+	}
+
+	if(err) *err = nil;
+
+	NSString *out = [filterString copy];
+
+	return out;
 }
 
 - (NSDictionary *)serializedFilter
@@ -2168,7 +2161,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 	};
 }
 
-+ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err
++ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY error:(NSError **)err
 {
 	NSError *myErr = nil;
 	
@@ -2192,7 +2185,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 			else {
 				if(wrap && [children count] == 1) wrapChild = NO;
 			}
-			[self _writeFilterTree:child toString:out wrapInParenthesis:wrapChild binary:isBINARY listItemQuoter:quoter error:&myErr];
+			[self _writeFilterTree:child toString:out wrapInParenthesis:wrapChild binary:isBINARY error:&myErr];
 			if(myErr) {
 				if(err) *err = myErr;
 				return;
@@ -2228,9 +2221,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 		SPTableFilterParser *parser = [[SPTableFilterParser alloc] initWithFilterClause:[filter objectForKey:@"Clause"]
 		                                                              numberOfArguments:[[filter objectForKey:@"NumberOfArguments"] integerValue]];
 		[parser setArgument:[values firstObject]];
-		if ([in[SerFilterExprQuoteEachValue] boolValue]) {
-			parser.listItemQuoter = quoter;
-		}
+		parser.quoteEachValue = [in[SerFilterExprQuoteEachValue] boolValue];
 		[parser setFirstBetweenArgument:[values firstObject]];
 		[parser setSecondBetweenArgument:[values safeObjectAtIndex:1]];
 		[parser setSuppressLeadingTablePlaceholder:[[filter objectForKey:@"SuppressLeadingFieldPlaceholder"] boolValue]];

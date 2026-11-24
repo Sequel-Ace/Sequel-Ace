@@ -129,10 +129,9 @@
 		                           [[self class] escapeFilterArgument:firstBetweenArgument againstClause:clause],
 		                           [[self class] escapeFilterArgument:secondBetweenArgument againstClause:clause]];
 	} else if (numArgs == 1) {
-		NSString *sqlArgument = self.listItemQuoter
-			? [SAFilterValueList quotedSQLFromInput:argument quote:self.listItemQuoter]
+		NSString *sqlArgument = self.quoteEachValue
+			? [SAFilterValueList quotedSQLFromInput:argument]
 			: [[self class] escapeFilterArgument:argument againstClause:clause];
-		if (!sqlArgument) return nil;
 		[filterString appendFormat:clause, sqlArgument];
 	} else {
 		[filterString appendString:clause];
