@@ -106,6 +106,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
+/** Main-thread only. A save can be part of an action that will already reload the rows. */
+@property (strong, nonatomic) SATableFilterRequest *pendingRowReload;
 @property (strong, nonatomic) SAComboBoxSelectionTracker *comboBoxSelectionTracker;
 @property (strong, nonatomic) SATableReloadCoordinator *reloadCoordinator;
 
@@ -344,6 +346,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [self->filterTableController setAction:@selector(filterTable:)];
 
 
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(schedulePendingRowReload:)
+                                                 name:NSControlTextDidEndEditingNotification object:tableContentView];
+
     // Add observers for document task activity
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(startDocumentTaskForTab:)
@@ -527,6 +532,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)setTableDetails:(NSDictionary *)tableDetails {
     SPLog(@"tableDetails: %@", tableDetails);
+	self.pendingRowReload = nil;
 
 	NSString *newTableName;
 	NSArray *columnNames;
@@ -952,8 +958,61 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// If no table is selected, return
 	if (!selectedTable) return;
 
-	NSString *filterString = [[self onMainThread] validatedTableFilterString];
-	if (filterString) [self loadTableValuesWithFilter:filterString];
+	[self loadTableValuesForRequest:[[self onMainThread] tableFilterRequest] endingEditTask:NO];
+}
+
+/** A row save can finish inside Apply, a sort, or a table switch. Let that action take the reload. */
+- (void)reloadTableValuesAfterRowChange
+{
+	if (!selectedTable) return;
+	SATableFilterRequest *request = [[self onMainThread] tableFilterRequest];
+	if (![NSThread isMainThread] || !request.requiresConnection) {
+		[self loadTableValuesForRequest:request endingEditTask:NO];
+		return;
+	}
+
+	self.pendingRowReload = request;
+	[self schedulePendingRowReload:nil];
+}
+
+/** Resume after AppKit has finished the event that saved, abandoned, or moved the editor. */
+- (void)schedulePendingRowReload:(NSNotification *)notification
+{
+	if (self.pendingRowReload) {
+		dispatch_async(dispatch_get_main_queue(), ^{ [self startPendingRowReloadIfIdle]; });
+	}
+}
+
+- (void)startPendingRowReloadIfIdle
+{
+	SATableFilterRequest *request = self.pendingRowReload;
+	if (!request || [tableDocumentInstance isWorking] || isEditingRow || (tableContentView && tableContentView.editedRow >= 0)) return;
+
+	self.pendingRowReload = nil;
+	[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Reloading data...", @"Reloading data task description")];
+	[NSThread detachNewThreadWithName:SPCtxt(@"SPTableContent row reload", tableDocumentInstance)
+	                           target:self selector:@selector(reloadEditedRowsWithRequest:) object:request];
+}
+
+- (void)loadTableValuesForRequest:(SATableFilterRequest *)request endingEditTask:(BOOL)endingEditTask
+{
+	NSError *error = nil;
+	NSString *sql = [request SQLWithError:&error];
+	if (sql) [self loadTableValuesWithFilter:sql];
+
+	if (endingEditTask || error) {
+		SPMainQSync(^{
+			if (endingEditTask) [self->tableDocumentInstance endTask];
+			if (error) {
+				if (self.deferRecordViewRefreshUntilTableLoadCompletes) {
+					// No load will refresh the detail panel. Restore the cached row before showing the alert.
+					self.deferRecordViewRefreshUntilTableLoadCompletes = NO;
+					[self _updateRecordView];
+				}
+				[self showInvalidFilterError:error];
+			}
+		});
+	}
 }
 
 - (void)loadTableValuesWithFilter:(NSString *)filterString
@@ -1288,24 +1347,20 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	});
 }
 
-/**
- * Returns the query string for the current filter settings,
- * ready to use in a WHERE clause. An empty string means no filter;
- * nil means the filter was invalid and the error has been reported.
- *
- * MUST BE CALLED ON THE UI THREAD!
- */
-- (NSString *)validatedTableFilterString
+/** Snapshots the current filter settings, including Shift, on the UI thread. */
+- (SATableFilterRequest *)tableFilterRequest
 {
+	// This load takes precedence over a refresh queued by a row that was just saved.
+	self.pendingRowReload = nil;
 
 	// If filter command was passed by sequelace url scheme
 	if(activeFilter == SPTableContentFilterSourceURLScheme) {
-		if(schemeFilter) return schemeFilter;
+		if(schemeFilter) return [[SATableFilterRequest alloc] initWithSQL:schemeFilter];
 	}
 
 	// Call did come from filter table and is filter table window still open?
 	if(activeFilter == SPTableContentFilterSourceTableFilter && [[filterTableController window] isVisible]) {
-		return [filterTableController tableFilterString] ?: @"";
+		return [[SATableFilterRequest alloc] initWithSQL:[filterTableController tableFilterString] ?: @""];
 	}
 	if(activeFilter == SPTableContentFilterSourceRuleFilter && showFilterRuleEditor) {
 		// If the clause has the placeholder $BINARY that placeholder will be replaced
@@ -1313,16 +1368,22 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// replaced by @"".
 		BOOL caseSensitive = (([[NSApp currentEvent] modifierFlags] & NSEventModifierFlagShift) > 0);
 
-		NSError *err = nil;
-		NSString *filter = [ruleFilterController sqlWhereExpressionWithBinary:caseSensitive error:&err];
-		if(err) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Filter", @"table content : apply filter : invalid filter message title") message:[err localizedDescription] callback:nil];
-			return nil;
-		}
-		return filter ?: @"";
+		return [ruleFilterController filterRequestWithBinary:caseSensitive];
 	}
+	return [[SATableFilterRequest alloc] initWithSQL:@""];
+}
 
-	return @"";
+- (NSString *)validatedSQLForFilter:(SATableFilterRequest *)request
+{
+	NSError *err = nil;
+	NSString *sql = [request SQLWithError:&err];
+	if (err) [self showInvalidFilterError:err];
+	return sql;
+}
+
+- (void)showInvalidFilterError:(NSError *)error
+{
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Filter", @"table content : apply filter : invalid filter message title") message:error.localizedDescription callback:nil];
 }
 
 /**
@@ -1634,24 +1695,67 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		resetPaging = YES;
 	}
 
-	NSString *taskString;
-
 	if ([tableDocumentInstance isWorking]) return;
 
-	NSString *filterString = [[self onMainThread] validatedTableFilterString];
+	SATableFilterRequest *request = [[self onMainThread] tableFilterRequest];
+	BOOL (^prepare)(NSString *) = ^BOOL(NSString *sql) {
+		return [[self onMainThread] prepareFilter:sql sender:sender deleteTriggeringFilter:deleteTriggeringFilter resetPaging:resetPaging];
+	};
+	// Ordinary filters retain their immediate validation and paging behavior.
+	NSString *filterString = request.requiresConnection ? nil : [self validatedSQLForFilter:request];
+	if (!request.requiresConnection && !prepare(filterString)) return;
+
+	NSString *taskString;
+	if (request.requiresConnection || filterString.length) {
+		taskString = NSLocalizedString(@"Filtering table...", @"Filtering table task description");
+	} else if (contentPage == 1) {
+		taskString = [NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), selectedTable];
+	} else {
+		taskString = [NSString stringWithFormat:NSLocalizedString(@"Loading page %lu...", @"Loading table page task string"), (unsigned long)contentPage];
+	}
+
+	[tableDocumentInstance startTaskWithDescription:taskString];
+
+	void (^load)(void) = ^{
+		NSString *sql = filterString;
+		if (request.requiresConnection) {
+			NSError *error = nil;
+			sql = [request SQLWithError:&error];
+			if (!prepare(sql)) {
+				[self->tableDocumentInstance endTask];
+				if (error) [self showInvalidFilterError:error];
+				return;
+			}
+		}
+		[self filterTableTaskWithFilter:sql];
+	};
+	if ([NSThread isMainThread]) {
+		NSString *name = SPCtxt(@"SPTableContent filter table task", tableDocumentInstance);
+		[NSThread detachNewThreadWithBlock:^{
+			NSThread.currentThread.name = name;
+			load();
+		}];
+	} else {
+		load();
+	}
+}
+
+- (BOOL)prepareFilter:(NSString *)filterString sender:(id)sender deleteTriggeringFilter:(BOOL)deleteTriggeringFilter resetPaging:(BOOL)resetPaging
+{
 	if (!filterString) {
-		[[paginationViewController onMainThread] setPage:@(contentPage)];
-		return;
+		[paginationViewController setPage:@(contentPage)];
+		return NO;
 	}
 
 	// If the filter field is being cleared by deleting the contents, and there's no current filter,
 	// don't trigger a reload.
 	if (deleteTriggeringFilter && !isFiltered && ![filterString length]) {
-		return;
+		return NO;
 	}
 
 	// Check whether a save of the current row is required, restoring focus afterwards if appropriate
-	if (![self saveRowOnDeselect]) return;
+	if (![self saveRowOnDeselect]) return NO;
+	self.pendingRowReload = nil; // Apply will fetch the rows saved above.
 	if (deleteTriggeringFilter) {
 		[sender becomeFirstResponder];
 	}
@@ -1673,24 +1777,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		contentPage = paginationViewPage;
 	}
 
-	if ([filterString length]) {
-		taskString = NSLocalizedString(@"Filtering table...", @"Filtering table task description");
-	} else if (contentPage == 1) {
-		taskString = [NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), selectedTable];
-	} else {
-		taskString = [NSString stringWithFormat:NSLocalizedString(@"Loading page %lu...", @"Loading table page task string"), (unsigned long)contentPage];
-	}
-
-	[tableDocumentInstance startTaskWithDescription:taskString];
-
-	if ([NSThread isMainThread]) {
-		[NSThread detachNewThreadWithName:SPCtxt(@"SPTableContent filter table task", tableDocumentInstance)
-		                           target:self
-		                         selector:@selector(filterTableTaskWithFilter:)
-		                           object:filterString];
-	} else {
-		[self filterTableTaskWithFilter:filterString];
-	}
+	return YES;
 }
 
 - (void)filterTableTaskWithFilter:(NSString *)filterString
@@ -1776,13 +1863,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			return;
 		}
 
-		NSString *filterString = [[self onMainThread] validatedTableFilterString];
+		NSEventModifierFlags modifierFlags = [[[NSApp onMainThread] currentEvent] modifierFlags];
+
+		NSString *filterString = [self validatedSQLForFilter:[[self onMainThread] tableFilterRequest]];
 		if (!filterString) {
 			[tableDocumentInstance endTask];
 			return;
 		}
-
-		NSEventModifierFlags modifierFlags = [[[NSApp onMainThread] currentEvent] modifierFlags];
 
 		// Sets column order as tri-state descending, ascending, no sort, descending, ascending etc. order if the same
 		// header is clicked several times
@@ -2283,7 +2370,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             self->isEditingRow = NO;
             self->currentlyEditingRow = -1;
             // reload
-            [self loadTableValues];
+            [self reloadTableValuesAfterRowChange];
             retCode = NO;
         }
 	}
@@ -2560,7 +2647,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         // Refresh table content
         if (errors || reloadAfterRemovingRow) {
             previousTableRowsCount = tableRowsCount;
-            [self loadTableValues];
+            [self reloadTableValuesAfterRowChange];
         }
         else {
             for ( i = tableRowsCount - 1; i >= 0; i--)
@@ -2974,7 +3061,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 }
 
                 previousTableRowsCount = tableRowsCount;
-                [self loadTableValues];
+                [self reloadTableValuesAfterRowChange];
             }
 			else {
 				// Set the insertId for fields with auto_increment
@@ -2999,7 +3086,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 }
 
                 previousTableRowsCount = tableRowsCount;
-                [self loadTableValues];
+                [self reloadTableValuesAfterRowChange];
             }
         }
         currentlyEditingRow = -1;
@@ -3151,6 +3238,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (BOOL)saveRowToTable
 {
+	[self schedulePendingRowReload:nil];
 	// Only handle tables - views should be handled per-cell.
 	if ([tablesListInstance tableType] == SPTableTypeView) return NO;
 
@@ -3197,7 +3285,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 self->isSavingRow = NO;
 				self->currentlyEditingRow = -1;
 				// reload
-				[self loadTableValues];
+				[self reloadTableValuesAfterRowChange];
 				returnCode = YES;
 			}];
 		}
@@ -3207,7 +3295,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             isSavingRow = NO;
 			currentlyEditingRow = -1;
 			// reload
-			[self loadTableValues];
+			[self reloadTableValuesAfterRowChange];
 			returnCode = YES;
 		}
 	}
@@ -3222,7 +3310,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             isSavingRow = NO;
             currentlyEditingRow = -1;
             // reload
-            [self loadTableValues];
+            [self reloadTableValuesAfterRowChange];
             returnCode = YES;
         }
 	}
@@ -3271,6 +3359,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (BOOL)cancelRowEditing
 {
+	[self schedulePendingRowReload:nil];
 	[[tableContentView window] makeFirstResponder:tableContentView];
 
 	if (!isEditingRow) return NO;
@@ -3717,9 +3806,24 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 	self.deferRecordViewRefreshUntilTableLoadCompletes = YES;
-	[tableDocumentInstance endTask];
+	SATableFilterRequest *request = [[self onMainThread] tableFilterRequest];
+	if (!request.requiresConnection) {
+		[tableDocumentInstance endTask];
+		[self loadTableValuesForRequest:request endingEditTask:NO];
+	} else if ([NSThread isMainThread]) {
+		// Keep the document's edit task active until the filtered rows are ready.
+		[NSThread detachNewThreadWithName:SPCtxt(@"SPTableContent view edit reload", tableDocumentInstance)
+		                           target:self selector:@selector(reloadEditedRowsWithRequest:) object:request];
+	} else {
+		[self reloadEditedRowsWithRequest:request];
+	}
+}
 
-	[self loadTableValues];
+- (void)reloadEditedRowsWithRequest:(SATableFilterRequest *)request
+{
+	@autoreleasepool {
+		[self loadTableValuesForRequest:request endingEditTask:YES];
+	}
 }
 
 #pragma mark -
@@ -4215,6 +4319,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
 	isWorking = NO;
+	[self schedulePendingRowReload:aNotification];
 	[self _resumeDeferredComboBoxEdit];
 
 	// Only proceed if this view is selected.
@@ -4247,6 +4352,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
     if ([notification.object isKindOfClass:[SPDatabaseDocument class]]) {
         SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
         if (tableDocumentInstance == document) {
+            self.pendingRowReload = nil;
             // if a result load is in progress we must stop the timer or it may try to call invalid IBOutlets
             [self clearTableLoadTimer];
             [_comboBoxSelectionTracker discardPendingSelection];

@@ -1001,9 +1001,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		if (!self->dropBox) return;
 		NSString *clause = nil;
 		if (![self isEmpty]) {
-			clause = [self _sqlWhereExpressionWithBinary:NO listItemQuoter:^NSString *(NSString *value) {
-				return [[self->tableDocumentInstance getConnection] quotedStringForPreview:value];
-			} error:NULL];
+			clause = [self sqlWhereExpressionWithBinary:NO error:NULL];
 		}
 		[self->dropBox setPreviewClause:clause];
 	});
@@ -1805,38 +1803,36 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self _updateButtonStates];
 }
 
+- (NSDictionary *)_filterTreeForSQL
+{
+	return [[self class] _flattenSerializedFilter:[self _serializedFilterIncludingFilterDefinition:YES withDisabled:NO]];
+}
+
 - (NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err
 {
-	return [self _sqlWhereExpressionWithBinary:isBINARY listItemQuoter:^NSString *(NSString *value) {
-		return [[self->tableDocumentInstance getConnection] escapeString:value includingQuotes:YES];
+	return [[self class] _sqlForFilterTree:[self _filterTreeForSQL] binary:isBINARY listItemQuoter:^NSString *(NSString *value) {
+		return [[self->tableDocumentInstance getConnection] quotedStringForPreview:value];
 	} error:err];
 }
 
-- (NSString *)_sqlWhereExpressionWithBinary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err
+- (SATableFilterRequest *)filterRequestWithBinary:(BOOL)isBINARY
 {
-	NSMutableString *filterString = [[NSMutableString alloc] init];
-	NSError *innerError = nil;
+	NSDictionary *tree = [self _filterTreeForSQL];
+	SPMySQLConnection *connection = [tableDocumentInstance getConnection];
+	return [[SATableFilterRequest alloc] initWithFilterTree:tree render:^NSString *(NSError **error) {
+		return [SPRuleFilterController _sqlForFilterTree:tree binary:isBINARY listItemQuoter:^NSString *(NSString *value) {
+			return [connection escapeString:value includingQuotes:YES];
+		} error:error];
+	}];
+}
 
-	@autoreleasepool {
-		//get the serialized filter and try to optimise it
-		NSDictionary *filterTree = [[self class] _flattenSerializedFilter:[self _serializedFilterIncludingFilterDefinition:YES withDisabled:NO]];
-
-		// build it recursively
-		[[self class] _writeFilterTree:filterTree toString:filterString wrapInParenthesis:NO binary:isBINARY listItemQuoter:quoter error:&innerError];
-
-		 // carry the error (if any) outside of the scope of the autoreleasepool
-	}
-
-	if(innerError) {
-		if(err) *err = innerError;
-		return nil;
-	}
-
-	if(err) *err = nil;
-
-	NSString *out = [filterString copy];
-
-	return out;
++ (NSString *)_sqlForFilterTree:(NSDictionary *)tree binary:(BOOL)isBINARY listItemQuoter:(SAFilterListItemQuoter)quoter error:(NSError **)err
+{
+	NSMutableString *filterString = [NSMutableString string];
+	NSError *error = nil;
+	[self _writeFilterTree:tree toString:filterString wrapInParenthesis:NO binary:isBINARY listItemQuoter:quoter error:&error];
+	if (err) *err = error;
+	return error ? nil : [filterString copy];
 }
 
 - (NSDictionary *)serializedFilter

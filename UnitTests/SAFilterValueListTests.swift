@@ -20,9 +20,11 @@ final class SAFilterValueListTests: XCTestCase {
 
 private final class SAListFilterTestConnection: SPMySQLConnection {
     var connectionChecks = 0
+    var checkedOnMainThread = false
 
     override func checkIfNecessary() -> Bool {
         connectionChecks += 1
+        checkedOnMainThread = checkedOnMainThread || Thread.isMainThread
         return true
     }
 }
@@ -132,8 +134,24 @@ extension SAFilterValueListTests {
         XCTAssertEqual(document.connection.connectionChecks, 0)
 
         document.connection.setValue(SPMySQLConnected.rawValue, forKey: "state")
-        XCTAssertEqual(try whereClause(of: controller), clause)
+        let selector = NSSelectorFromString("filterRequestWithBinary:")
+        typealias Capture = @convention(c) (NSObject, Selector, Bool) -> SATableFilterRequest
+        let capture = unsafeBitCast(controller.method(for: selector), to: Capture.self)
+        let request = capture(controller, selector, false)
+        XCTAssertTrue(request.requiresConnection)
+        XCTAssertEqual(document.connection.connectionChecks, 0)
+        field.stringValue = "edited after Apply"
+
+        let rendered = expectation(description: "Filter rendered on the load thread")
+        DispatchQueue.global().async {
+            var error: NSError?
+            XCTAssertEqual(request.sql(error: &error), clause)
+            XCTAssertNil(error)
+            rendered.fulfill()
+        }
+        wait(for: [rendered], timeout: 5)
         XCTAssertGreaterThan(document.connection.connectionChecks, 0)
+        XCTAssertFalse(document.connection.checkedOnMainThread)
     }
 
     func testRestoredRulesUseTheirOwnQuoteSettingAndColumnType() throws {

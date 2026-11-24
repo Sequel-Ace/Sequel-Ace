@@ -33,6 +33,7 @@
 @class SPTablesList;
 @class SPContentFilterManager;
 @class SPRuleFilterDropBox;
+@class SATableFilterRequest;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -95,7 +96,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
 - (void)setColumns:(nullable NSArray *)dataColumns;
 
 /**
- * Converts the current filter expression displayed in the UI into an
+ * Converts the current filter expression displayed in the UI into a preview
  * SQL string suitable for use in a WHERE clause.
  *
  * @param isBINARY Indicates that the filter should use the BINARY qualifier for ignoring
@@ -108,6 +109,9 @@ NSString * const SPRuleFilterHeightChangedNotification;
  * MUST BE CALLED ON THE UI THREAD!
  */
 - (nullable NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err;
+
+/** Capture the editor on the main thread before building SQL on the table load's thread. */
+- (SATableFilterRequest *)filterRequestWithBinary:(BOOL)isBINARY;
 
 /**
  * Returns the current filter configuration in a serialized form that can be exported and
