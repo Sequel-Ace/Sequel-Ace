@@ -3422,9 +3422,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	if ([menuItem action] == @selector(selectCurrentQuery:)) {
 		return ([self isEditable] && [[self delegate] isKindOfClass:[SPCustomQuery class]]);
 	}
-	// Disable "Copy with Column Names" and "Copy as SQL INSERT"
+	// Disable "Copy with Column Names" and the "Copy as SQL" commands
 	// in the main menu
-    if ([menuItem tag] == SPEditMenuCopyWithColumns || [menuItem tag] == SPEditMenuCopyAsSQL || [menuItem tag] == SPEditMenuCopyAsSQLNoAutoInc) {
+    if ([menuItem tag] == SPEditMenuCopyWithColumns || [menuItem tag] == SPEditMenuCopyAsSQL || [menuItem tag] == SPEditMenuCopyAsSQLNoAutoInc || [menuItem tag] == SPEditMenuCopyAsSQLUpdate) {
         return NO;
     }
 

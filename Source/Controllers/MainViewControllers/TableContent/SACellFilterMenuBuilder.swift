@@ -106,6 +106,17 @@ import AppKit
         tableContentIsWorking || customQueryIsWorking
     }
 
+    /// Index just below the last item whose tag is in `copyCommandTags`, or the
+    /// end of the menu when there is none. The order of the Copy commands does
+    /// not matter, so adding one needs no change here.
+    @nonobjc public static func insertionIndex(
+        menuItemTags: [Int],
+        copyCommandTags: Set<Int>
+    ) -> Int {
+        let lastCopyIndex = menuItemTags.lastIndex { copyCommandTags.contains($0) }
+        return lastCopyIndex.map { $0 + 1 } ?? menuItemTags.count
+    }
+
     private static func makeMenuItemDescriptors(
         columnName: String?,
         rawValues: [String],

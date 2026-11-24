@@ -141,9 +141,10 @@ import AppKit
         )
         guard !descriptors.isEmpty else { return }
 
-        var insertionIndex = menu.indexOfItem(withTag: SPEditMenuCopyAsSQLNoAutoInc)
-        if insertionIndex == -1 { insertionIndex = menu.numberOfItems - 1 }
-        insertionIndex += 1
+        var insertionIndex = SACellValueCopyMenuBuilder.insertionIndex(
+            menuItemTags: menu.items.map(\.tag),
+            copyCommandTags: Self.copyCommandTags
+        )
         for descriptor in descriptors {
             let action: SACellValueCopyAction
             if descriptor.isSQL,
@@ -168,6 +169,15 @@ import AppKit
             insertionIndex += 1
         }
     }
+
+    /// The table's Copy commands, in any order.
+    private static let copyCommandTags: Set<Int> = [
+        SPEditMenuCopy,
+        SPEditMenuCopyWithColumns,
+        SPEditMenuCopyAsSQL,
+        SPEditMenuCopyAsSQLNoAutoInc,
+        SPEditMenuCopyAsSQLUpdate,
+    ]
 
     private static func sqlLiteral(
         value: Any,

@@ -220,6 +220,12 @@
                                     <action selector="copy:" target="-1" id="01y-O6-uCb"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Copy as SQL UPDATE" tag="2005" id="Uvx-9k-Qm1">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="copy:" target="-1" id="Rt7-2d-Ka4"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Paste" keyEquivalent="v" id="171">
                                 <connections>
                                     <action selector="paste:" target="-1" id="176"/>
