@@ -1033,7 +1033,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	NSString *databaseName = [tableDocumentInstance database];
 	NSInteger rowsToLoad = [[tableDataInstance statusValueForKey:@"Rows"] integerValue];
 
-	[[countText onMainThread] setStringValue:NSLocalizedString(@"Loading table data...", @"Loading table data string")];
+	SPMainQSync(^{
+		// This validated load will fetch any row saved just before it.
+		self.pendingRowReload = nil;
+		[self->countText setStringValue:NSLocalizedString(@"Loading table data...", @"Loading table data string")];
+	});
 
 	// Notify any listeners that a query has started
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
@@ -1350,9 +1354,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 /** Snapshots the current filter settings, including Shift, on the UI thread. */
 - (SATableFilterRequest *)tableFilterRequest
 {
-	// This load takes precedence over a refresh queued by a row that was just saved.
-	self.pendingRowReload = nil;
-
 	// If filter command was passed by sequelace url scheme
 	if(activeFilter == SPTableContentFilterSourceURLScheme) {
 		if(schemeFilter) return [[SATableFilterRequest alloc] initWithSQL:schemeFilter];
@@ -1755,7 +1756,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	// Check whether a save of the current row is required, restoring focus afterwards if appropriate
 	if (![self saveRowOnDeselect]) return NO;
-	self.pendingRowReload = nil; // Apply will fetch the rows saved above.
 	if (deleteTriggeringFilter) {
 		[sender becomeFirstResponder];
 	}
@@ -3281,10 +3281,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			}
 							 cancelButtonHandler:^{
 				SPLog(@"Cancel pressed");
-				self->isEditingRow = NO;
-                self->isSavingRow = NO;
-				self->currentlyEditingRow = -1;
-				// reload
+				// Restore the grid before another action can read the cancelled edit.
+				[self cancelRowEditing];
+				self->isSavingRow = NO;
 				[self reloadTableValuesAfterRowChange];
 				returnCode = YES;
 			}];
