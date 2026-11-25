@@ -121,6 +121,8 @@
 	<false/>
 	<key>DefaultEncodingTag</key>
 	<real>0</real>
+	<key>DefaultExportFormat</key>
+	<integer>0</integer>
 	<key>DefaultViewMode</key>
 	<integer>0</integer>
 	<key>deletedDefaultBundles</key>
