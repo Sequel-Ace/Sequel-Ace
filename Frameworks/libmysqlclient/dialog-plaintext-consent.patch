@@ -1,0 +1,29 @@
+--- dialog.cc
++++ dialog.cc
+@@ -298,7 +298,9 @@
+         authentication plugin on the client if the first question
+         asks for a password - which will be sent in clear text, by the way)
+       */
+-      reply = mysql->passwd;
++      // Sequel Ace: every answer requires the client callback, including TLS.
++      reply = ask(mysql, 2, "", reply_buf, sizeof(reply_buf));
++      if (!reply) return CR_ERROR;
+     } else {
+       cmd = *pkt++;
+ 
+@@ -310,11 +312,10 @@
+         asking for a password with an empty prompt means mysql->password
+         otherwise we ask the user and read the reply
+       */
+-      if ((cmd >> 1) == 2 && *pkt == 0)
+-        reply = mysql->passwd;
+-      else
+-        reply = ask(mysql, cmd >> 1, (const char *)pkt, reply_buf,
+-                    sizeof(reply_buf));
++      // Sequel Ace: encryption alone does not verify the server's identity.
++      // Never bypass consent by answering from the saved password.
++      reply = ask(mysql, cmd >> 1, (const char *)pkt, reply_buf,
++                  sizeof(reply_buf));
+       if (!reply) return CR_ERROR;
+     }
+     /* send the reply to the server */

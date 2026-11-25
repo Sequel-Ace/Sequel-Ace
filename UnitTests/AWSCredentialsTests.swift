@@ -223,6 +223,71 @@ final class AWSCredentialsTests: XCTestCase {
         }
     }
 
+    func testProfileLoadsDefaultFromProfilePrefixedConfigSection() throws {
+        let configContents = """
+        [sso-session my-org]
+        sso_start_url = https://my-org.awsapps.com/start
+        sso_region = eu-west-1
+
+        [profile default]
+        sso_session = my-org
+        sso_account_id = 123456789012
+        sso_role_name = DeveloperAccess
+        region = eu-west-1
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "default")
+
+            XCTAssertEqual(credentials.profileName, "default")
+            XCTAssertTrue(credentials.isSSOProfile)
+            XCTAssertEqual(credentials.ssoAccountID, "123456789012")
+            XCTAssertEqual(credentials.ssoRoleName, "DeveloperAccess")
+        }
+    }
+
+    func testDefaultConfigSectionIsFoundAfterProfilePrefixedDefaultAndOtherSections() throws {
+        let configContents = """
+        [profile default]
+        region = eu-west-1
+
+        [profile other]
+        region = us-east-1
+
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "default")
+
+            XCTAssertEqual(credentials.accessKeyId, "AKIADEFAULT0000000000")
+            XCTAssertEqual(credentials.secretAccessKey, "defaultSecret")
+        }
+    }
+
+    func testDefaultConfigSectionsAreNotMergedWhenBothSpellingsArePresent() throws {
+        let configContents = """
+        [profile default]
+        aws_access_key_id = AKIAPROFILEPREFIXED0
+        region = eu-west-1
+
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "default")
+
+            // [default] wins; nothing is taken from [profile default]
+            XCTAssertEqual(credentials.accessKeyId, "AKIADEFAULT0000000000")
+            XCTAssertEqual(credentials.secretAccessKey, "defaultSecret")
+            XCTAssertNil(credentials.region)
+        }
+    }
+
     func testProfileLoadsLoginSession() throws {
         let configContents = """
         [default]

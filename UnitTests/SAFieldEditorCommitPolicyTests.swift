@@ -331,4 +331,38 @@ final class SAFieldEditorCommitPolicyTests: XCTestCase {
             popupSelectionState: .deferred
         ))
     }
+
+    // MARK: - SAFieldEditorCompositionPolicy
+
+    private func composingFieldEditor() -> NSTextView {
+        let editor = NSTextView()
+        editor.setMarkedText(
+            "marked",
+            selectedRange: NSRange(location: 6, length: 0),
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        )
+        return editor
+    }
+
+    func testEditingCommandBelongsToCompositionWhileMarkedTextIsShown() {
+        let editor = composingFieldEditor()
+
+        XCTAssertTrue(editor.hasMarkedText())
+        XCTAssertTrue(SAFieldEditorCompositionPolicy.editingCommandBelongsToComposition(in: editor))
+    }
+
+    func testEditingCommandBelongsToSessionWithoutComposition() {
+        let editor = NSTextView()
+
+        XCTAssertFalse(editor.hasMarkedText())
+        XCTAssertFalse(SAFieldEditorCompositionPolicy.editingCommandBelongsToComposition(in: editor))
+    }
+
+    func testEditingCommandBelongsToSessionAfterCompositionWasCancelled() {
+        let editor = composingFieldEditor()
+        editor.unmarkText()
+
+        XCTAssertFalse(editor.hasMarkedText())
+        XCTAssertFalse(SAFieldEditorCompositionPolicy.editingCommandBelongsToComposition(in: editor))
+    }
 }

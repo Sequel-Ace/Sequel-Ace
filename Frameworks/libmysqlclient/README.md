@@ -8,6 +8,39 @@
 | `lib/libssl.3.dylib`, `lib/libcrypto.3.dylib` | `build-openssl.sh` | the OpenSSL release tarball |
 | `lib/libmysqlclient.24.dylib`, `include/`, `lib/mysqlplugins/` (auth plugins + the bundled libfido2 the WebAuthn plugin loads) | `build-libmysqlclient.sh` | the MySQL source tarball |
 
+One of those plugins is not Oracle's to give. MySQL compiles
+`plugin/auth/dialog.cc` only as a `TEST_ONLY` module and names it after its
+plugin directory entry (`auth`), while the client loader opens
+`<plugin name>.so` — so a community build ships no loadable `dialog` plugin
+even though every server asking for PAM authentication wants one. The recipe
+compiles that same source client-only under the name the loader looks for,
+with the flags `MYSQL_ADD_PLUGIN`'s `SERVER_AND_CLIENT` path uses. The plugin
+asks its questions through `mysql_authentication_dialog_ask`, which it finds
+with `dlsym(RTLD_DEFAULT, …)`; `SADialogAuthPrompt.swift` exports that symbol
+from the app, so the questions become an alert instead of the `fgets(stdin)`
+the plugin falls back to.
+
+It is the one source file here that is **not** shipped as Oracle wrote it.
+`dialog-plaintext-consent.patch` redirects the plugin's two unasked replies — the
+`mysql_change_user` packet and a password question with an empty prompt, both
+of which answer straight from `mysql->passwd` — through the client callback.
+Every dialog answer now requires user interaction, including over TLS:
+`mysql_get_ssl_cipher()` establishes encryption but does not verify the server's
+identity. The app warns on plaintext connections and on TLS connections without
+`SSL_MODE_VERIFY_IDENTITY`, and still lets the user proceed so no-TLS PAM remains
+usable. Cancelling sends no answer. The build applies the patch to a copy and
+fails if it does not apply. `test-dialog-plugin.swift` compiles for both slices
+and runs each architecture supported by the build host through the plugin ABI:
+empty and nonempty questions,
+change-user packets, cancellation, accepted answers, and long multibyte answers
+under both simulated transport states. This replaces the earlier symbol check,
+which could not prove that the saved-password bypass was closed.
+
+This is a dialog-specific consent policy. The app's existing `PREFERRED` and
+`REQUIRED` TLS modes do not verify peer identity, and MySQL's built-in SHA-256
+authentication plugins can still send a saved password on such a connection.
+The dialog change does not fix that separate, pre-existing client-wide policy.
+
 Both scripts are self-contained and **use nothing from Homebrew**. Every
 dependency is either bundled in the MySQL tarball (zlib, zstd, lz4, ICU,
 protobuf, libfido2, editline, libevent), part of the macOS SDK (SASL), or
@@ -49,15 +82,31 @@ version and the checksum together. The OpenSSL build sets
 `SOURCE_DATE_EPOCH`, so re-running it on the same toolchain reproduces the
 committed bytes exactly.
 
+## The compile-time prefix
+
+`CMAKE_INSTALL_PREFIX` is baked into the client as its plugin, share, etc and
+data directories, so it is fixed at MySQL's conventional `/usr/local/mysql`
+and `DESTDIR` redirects the install into the work directory. `__FILE__` from
+`assert`/`DBUG` macros is mapped with `-ffile-prefix-map` for the same reason.
+Without both, whatever directory the recipe happened to run in ships inside
+the dylib and is what a user reads out of a plugin-loading error — which is
+how a build scratch directory came to be quoted in #2773. The verification
+step fails the build if either leaks back in, so a rebuild anywhere
+reproduces the same strings.
+
 ## Layout inside the framework
 
 `SPMySQL.framework/Versions/A` holds `SPMySQL` next to the three dylibs, all
 referring to each other as `@loader_path/<name>`. `SPMySQLConnection` sets
 `MYSQL_PLUGIN_DIR` to the framework's `PlugIns` directory, one level below,
 which is why the plugins reference the OpenSSL pair as
-`@loader_path/../lib*.dylib`. Packaging the plugins into that directory is
-not wired up yet (see #2590); the built plugins are kept in
-`lib/mysqlplugins/` ready for it.
+`@loader_path/../lib*.dylib`. The framework target copies them there from
+`lib/mysqlplugins/` ("Copy MySQL Client Plugins", code-signed on copy) and
+then links `PlugIns` at the bundle's top level: `NSBundle` resolves
+`builtInPlugInsPath` to `<bundle>/PlugIns`, never to
+`Versions/Current/PlugIns`, so a versioned framework needs that symlink the
+same way it needs one for `Resources`, or the plugins are invisible at
+runtime.
 
 ## While a bundled `.dylib` is modified in the working tree
 
