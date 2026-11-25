@@ -89,6 +89,10 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse);
 
 @property (assign) NSUInteger taskCount;
 
+// YES while a forced highlighting pass scheduled by a color change is waiting to run.
+@property (assign) BOOL forcedHighlightPending;
+- (void)runPendingForcedHighlight;
+
 @end
 
 // some helper functions for handling rectangles and points
@@ -337,6 +341,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
     SPLog("%@ changed.", keyPath);
 
+    // One theme load writes several color keys: run a single forced pass for all of them.
+    if (self.forcedHighlightPending) {
+        return;
+    }
+    self.forcedHighlightPending = YES;
+
     unsigned long strLen = self.string.length;
 
     NSTimeInterval delay = 0.1;
@@ -351,8 +361,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
         // wait a bit longer than 0.1s, so the progress window can display
         delay = 2.0;
     }
-    [self performSelector:@selector(doSyntaxHighlightingWithForce:) withObject:@(YES) afterDelay:delay];
+    [self performSelector:@selector(runPendingForcedHighlight) withObject:nil afterDelay:delay];
 
+}
+
+- (void)runPendingForcedHighlight {
+    self.forcedHighlightPending = NO;
+    [self doSyntaxHighlightingWithForce:YES];
 }
 
 /**

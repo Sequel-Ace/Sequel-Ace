@@ -128,9 +128,13 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     NSMutableDictionary *preferenceDefaults = [NSMutableDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:SPPreferenceDefaultsFile ofType:@"plist"]];
     // Register application defaults
     [prefs registerDefaults:preferenceDefaults];
+    [SAEditorDefaults registerDefaults];
 
     // Upgrade prefs before any other parts of the app pick up on the values
     SPApplyRevisionChanges();
+
+    // One-time editor font and theme-matching updates, after the revision upgrades (which can reset the font).
+    [SAEditorDefaults runOneTimeUpdates];
 }
 
 /**
@@ -193,6 +197,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  * Initialisation stuff after launch is complete
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
+
+    [SADesignToolbarMenu install];
 
     [SAAnalyticsConsentPolicy requestConsentIfNeeded];
     [SAAnalyticsConsentPolicy applyAnalyticsConsent];
@@ -268,6 +274,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     [SPBundleManager.shared reloadBundles:self];
     [self _copyDefaultThemes];
+
+    // The editor theme follows the app's light/dark appearance when the user wants it to.
+    NSString *themesDirectory = [[NSFileManager defaultManager] applicationSupportDirectoryForSubDirectory:SPThemesSupportFolder error:nil];
+    if (themesDirectory) {
+        [[SAEditorAppearanceThemeSwitcher shared] startWithThemesDirectory:themesDirectory];
+    }
 
     // Start the embedded MCP server if enabled in preferences.
     [self setupMCPServer];
@@ -850,6 +862,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             NSBeep();
             return;
         }
+
+        [SAEditorAppearanceThemeSwitcher themeListDidChange];
     }
     else {
         [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while installing color theme file", @"error while installing color theme file")] message:[NSString stringWithFormat:NSLocalizedString(@"The color theme ‘%@’ already exists.", @"the color theme ‘%@’ already exists."), [filePath lastPathComponent]] callback:nil];

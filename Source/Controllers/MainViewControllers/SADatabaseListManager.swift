@@ -250,7 +250,7 @@ import AppKit
 
     /// Tag carried by the popup's header command items ("Add Database...",
     /// "Refresh Databases"). Database items keep the default tag of 0, so
-    /// `SADatabasePickerModel` can separate the two without relying on
+    /// code reading the menu can separate the two without relying on
     /// their position or on the popup cell's private item actions.
     @objc static let commandMenuItemTag: Int = 0x5344_4243
 
@@ -312,7 +312,7 @@ import AppKit
         let refreshItem = popup.menu?.addItem(withTitle: NSLocalizedString("Refresh Databases", comment: "menu item to refresh databases"),
                                               action: refreshDatabasesSelector,
                                               keyEquivalent: "")
-        // Lets the searchable picker tell commands apart from databases.
+        // Lets the database card (`SADesignMenuCardModel.databaseEntries`) tell commands apart from databases.
         addItem?.tag = commandMenuItemTag
         refreshItem?.tag = commandMenuItemTag
 

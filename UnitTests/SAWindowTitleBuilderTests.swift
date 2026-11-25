@@ -4,8 +4,7 @@
 //
 //  Pins the byte-exact format of -[SPDatabaseDocument updateWindowTitle:]
 //  and -[SPDatabaseDocument displayName] after the Phase A4 extraction.
-//  The em dash, the trailing space after "(MySQL X)", and the slash
-//  separators are all load-bearing — the strings are user-visible in the
+//  The em dash and the slash separators are all load-bearing — the strings are user-visible in the
 //  window chrome and the tab.
 //
 
@@ -25,9 +24,7 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "host",
             database: "mydb",
-            table: "mytable",
-            mySQLVersion: "8.0",
-            showServerVersionInTitle: true
+            table: "mytable"
         )
         XCTAssertEqual(result.windowTitle, "Connecting…")
         XCTAssertEqual(result.tabTitle, "Connecting…")
@@ -43,9 +40,7 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "ignored",
             database: nil,
-            table: nil,
-            mySQLVersion: nil,
-            showServerVersionInTitle: false
+            table: nil
         )
         XCTAssertEqual(result.windowTitle, bundleName)
         XCTAssertEqual(result.tabTitle, bundleName)
@@ -59,9 +54,7 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "ignored",
             database: nil,
-            table: nil,
-            mySQLVersion: nil,
-            showServerVersionInTitle: false
+            table: nil
         )
         XCTAssertEqual(result.windowTitle, "work.spf — Sequel Ace")
         XCTAssertEqual(result.tabTitle, "work.spf — Sequel Ace")
@@ -77,9 +70,7 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "ignored",
             database: nil,
-            table: nil,
-            mySQLVersion: nil,
-            showServerVersionInTitle: false
+            table: nil
         )
         XCTAssertEqual(result.windowTitle, bundleName)
     }
@@ -94,9 +85,7 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "production",
             database: nil,
-            table: nil,
-            mySQLVersion: "8.0.32",
-            showServerVersionInTitle: false
+            table: nil
         )
         XCTAssertEqual(result.windowTitle, "production")
         XCTAssertEqual(result.tabTitle, "production")
@@ -110,9 +99,7 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "production",
             database: "orders",
-            table: nil,
-            mySQLVersion: nil,
-            showServerVersionInTitle: false
+            table: nil
         )
         XCTAssertEqual(result.windowTitle, "production/orders")
         XCTAssertEqual(result.tabTitle, "production/orders")
@@ -126,51 +113,13 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "production",
             database: "orders",
-            table: "customers",
-            mySQLVersion: nil,
-            showServerVersionInTitle: false
+            table: "customers"
         )
         XCTAssertEqual(result.windowTitle, "production/orders/customers")
         XCTAssertEqual(result.tabTitle, "production/orders/customers")
     }
 
-    /// Server-version preamble is window-only — the tab stays compact so
-    /// the version doesn't waste the limited tab real estate.
-    func testConnectedShowServerVersionAffectsOnlyWindowTitle() {
-        let result = SAWindowTitleBuilder.buildTitle(
-            connectionState: .connected,
-            filePath: nil,
-            isUntitled: false,
-            bundleName: bundleName,
-            connectionName: "production",
-            database: "orders",
-            table: nil,
-            mySQLVersion: "8.0.32",
-            showServerVersionInTitle: true
-        )
-        XCTAssertEqual(result.windowTitle, "(MySQL 8.0.32) production/orders")
-        XCTAssertEqual(result.tabTitle, "production/orders")
-    }
-
-    func testConnectedShowServerVersionWithMissingVersionIsOmitted() {
-        // Defensive: -mySQLVersion can briefly be nil before the
-        // post-connect handshake stores it. We must not render
-        // "(MySQL (null)) " in the title.
-        let result = SAWindowTitleBuilder.buildTitle(
-            connectionState: .connected,
-            filePath: nil,
-            isUntitled: false,
-            bundleName: bundleName,
-            connectionName: "production",
-            database: nil,
-            table: nil,
-            mySQLVersion: nil,
-            showServerVersionInTitle: true
-        )
-        XCTAssertEqual(result.windowTitle, "production")
-    }
-
-    func testConnectedFilePathAndServerVersionStackInOrder() {
+    func testConnectedFilePathPrefixesOnlyTheWindowTitle() {
         let result = SAWindowTitleBuilder.buildTitle(
             connectionState: .connected,
             filePath: "/Users/x/work.spf",
@@ -178,13 +127,11 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "production",
             database: "orders",
-            table: "customers",
-            mySQLVersion: "8.0.32",
-            showServerVersionInTitle: true
+            table: "customers"
         )
-        // Pin the exact preamble order: filename — (MySQL X) host/db/table
-        XCTAssertEqual(result.windowTitle, "work.spf — (MySQL 8.0.32) production/orders/customers")
-        // Tab stays compact (no file prefix, no version)
+        // Pin the exact preamble: filename — host/db/table
+        XCTAssertEqual(result.windowTitle, "work.spf — production/orders/customers")
+        // Tab stays compact (no file prefix)
         XCTAssertEqual(result.tabTitle, "production/orders/customers")
     }
 
@@ -201,9 +148,7 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName,
             connectionName: "production",
             database: "",
-            table: "",
-            mySQLVersion: nil,
-            showServerVersionInTitle: false
+            table: ""
         )
         XCTAssertEqual(result.windowTitle, "production")
         XCTAssertEqual(result.tabTitle, "production")
@@ -251,5 +196,14 @@ final class SAWindowTitleBuilderTests: XCTestCase {
             bundleName: bundleName
         )
         XCTAssertEqual(name, "")
+    }
+
+    func testSubtitleCarriesTheServerVersionOnlyWhenConnectedAndEnabled() {
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "MySQL 9.6.0")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "9.6.0", showServerVersionInTitle: false), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: nil, showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connected, mySQLVersion: "", showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .disconnected, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
+        XCTAssertEqual(SAWindowTitleBuilder.subtitle(connectionState: .connecting, mySQLVersion: "9.6.0", showServerVersionInTitle: true), "")
     }
 }

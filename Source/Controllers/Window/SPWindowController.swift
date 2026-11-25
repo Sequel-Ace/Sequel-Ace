@@ -50,6 +50,7 @@ import SnapKit
         setupFramePersistence()
         setupAppearance()
         observeTitlebarTintPreference()
+        window?.toolbarStyle = .unified
     }
 
     /// The favourite colour of the connection in this tab, or `nil` when it has
@@ -183,6 +184,12 @@ private extension SPWindowController {
         }
         
         tabAccessoryView.setTitle(title: tabTitle)
+    }
+
+    /// `updateWindow(title:tabTitle:)` plus the window's subtitle (the MySQL version, when shown).
+    func updateWindow(title: String, tabTitle: String, subtitle: String) {
+        updateWindow(title: title, tabTitle: tabTitle)
+        if window?.subtitle != subtitle { window?.subtitle = subtitle }
     }
 
     /// Reflect the connection this tab holds in the window chrome: the colour
