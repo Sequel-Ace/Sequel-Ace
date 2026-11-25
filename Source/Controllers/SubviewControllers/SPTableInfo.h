@@ -32,6 +32,7 @@
 @class SPTablesList;
 @class SPTableData;
 @class SPDatabaseDocument;
+@class SATableInfoTableDelegate;
 
 @interface SPTableInfo : NSObject 
 {
@@ -43,6 +44,8 @@
 	IBOutlet NSTableView *infoTable;
 	IBOutlet NSTableView *activitiesTable;
 	IBOutlet NSScrollView *tableInfoScrollView;
+
+	SATableInfoTableDelegate *infoTableDelegate;
 
 	NSMutableArray *info;
 	NSMutableArray *activities;

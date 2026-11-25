@@ -38,8 +38,6 @@
 #import "SPTableInfo.h"
 #import "SPDataImport.h"
 #import "SPTableView.h"
-#import "ImageAndTextCell.h"
-#import "SPTableTextFieldCell.h"
 #import "RegexKitLite.h"
 #import "SPDatabaseData.h"
 #import "SPNavigatorController.h"
@@ -123,6 +121,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Configure the table information pane
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 
+	// The bottom bar uses borderless symbol buttons. The window's sidebar divider
+	// extends its drag area over the bar's image view, which loses its grip image.
+	[SASidebarBottomBar styleWithAddButton:toolbarAddButton
+	                         actionsButton:toolbarActionsButton
+	                          reloadButton:toolbarReloadButton
+	                            infoToggle:[tableListSplitView collapseToggleButton]
+	                            dragHandle:[[tableDocumentInstance contentViewSplitter] additionalDragHandleView]];
+
     // Collapse the pane if the last state was collapsed
     // after a delay - to fix #719
     if(user_defaults_get_bool_ud(SPTableInformationPanelCollapsed, prefs) == YES){
@@ -138,8 +144,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Disable tab edit behaviour in the tables list
 	[tablesListView setTabEditingDisabled:YES];
 
-	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
-	
 	// Add observers for document task activity
 	[[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(startDocumentTaskForTab:)
@@ -155,36 +159,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
-
-	NSFont *tableFont = [NSUserDefaults getFont];
-	[tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
-
-	for (NSTableColumn *column in [tablesListView tableColumns]) {
-		[[column dataCell] setFont:tableFont];
-	}
-}
-
-#pragma mark -
-#pragma mark KVO methods
-
-/**
- * This method is called as part of Key Value Observing which is used to watch for prefernce changes which effect the interface.
- */
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
-{
-	// Table font preference changed
-	if ([keyPath isEqualToString:SPGlobalFontSettings]) {
-		NSFont *tableFont = [NSUserDefaults getFont];
-		[tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
-		[tablesListView setFont:tableFont];
-		[tablesListView reloadData];
-		// Force a visual refresh of the table list
-		[tablesListView setNeedsDisplay:YES];
-		[tablesListView displayIfNeeded];
-	}
-	else {
-		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-	}
 }
 
 #pragma mark -
@@ -1755,7 +1729,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 #pragma mark TableView delegate methods
 
 /**
- * Traps enter and esc and edit/cancel without entering next row
+ * In the filter field, the up and down arrows move the selection in the list.
+ * In the name fields of the add-table and copy-table sheets, Return commits the
+ * typed name and keeps the field focused, and Escape abandons the edit.
  */
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)command
 {
@@ -1778,12 +1754,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 	}
 	else {
-		// When enter/return is used, save the row.
+		// Return commits the typed name and keeps the field focused.
 		if ( [textView methodForSelector:command] == [textView methodForSelector:@selector(insertNewline:)] ) {
 			[[control window] makeFirstResponder:control];
 			return YES;
 		}
-		// When the escape key is used, abort the rename.
+		// Escape abandons the edit.
 		else if ( [[control window] methodForSelector:command] == [[control window] methodForSelector:@selector(cancelOperation:)] ||
 				   [textView methodForSelector:command] == [textView methodForSelector:@selector(complete:)] ) {
 			
@@ -1919,71 +1895,30 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 /**
  * Table view delegate method
  */
-- (void)tableView:(NSTableView *)aTableView  willDisplayCell:(SPTableTextFieldCell
- *)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+- (NSView *)tableView:(NSTableView *)aTableView viewForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
-	// Cells are reused for tables without comments and for group headings.
-	[aCell setNote:@""];
+	BOOL isGroupRow = [self tableView:aTableView isGroupRow:rowIndex];
+	id name = [self tableView:aTableView objectValueForTableColumn:aTableColumn row:rowIndex];
+	SPTableType tableType = SPTableTypeNone;
+	NSString *comment = nil;
 
-	if (rowIndex > 0 && rowIndex < (NSInteger)[filteredTableTypes count] && [[aTableColumn identifier] isEqualToString:@"tables"]) {
+	id item = [filteredTables safeObjectAtIndex:rowIndex];
 
-		id item = [filteredTables safeObjectAtIndex:rowIndex];
+	if (!isGroupRow && rowIndex < (NSInteger)[filteredTableTypes count] && [item isKindOfClass:[NSString class]]) {
+		tableType = (SPTableType)[[filteredTableTypes safeObjectAtIndex:rowIndex] integerValue];
 
-		if(![item isKindOfClass:[NSString class]]) {
-			[aCell setImage:nil];
-			[aCell setIndentationLevel:0];
-			return;
+		id tableComment = [tableComments objectForKey:item];
+
+		if ([tableComment isKindOfClass:[NSString class]] && [prefs boolForKey:SPDisplayCommentsInTablesList]) {
+			comment = tableComment;
 		}
-		
-		id comment = [tableComments objectForKey:item];
-		
-		if([comment isKindOfClass:[NSString class]] && [prefs boolForKey:SPDisplayCommentsInTablesList]) {
-			[aCell setNote:comment];
-		}
-
-		switch([[filteredTableTypes safeObjectAtIndex:rowIndex] integerValue]) {
-			case SPTableTypeView:
-				[aCell setImage:[NSImage imageNamed:@"table-view-small"]];
-				[aCell setIndentationLevel:0];
-				break;
-			case SPTableTypeTable:
-				[aCell setImage:[NSImage imageNamed:@"table-small"]];
-				[aCell setIndentationLevel:0];
-				break;
-			case SPTableTypeProc:
-				[aCell setImage:[NSImage imageNamed:@"proc-small"]];
-				[aCell setIndentationLevel:0];
-				break;
-			case SPTableTypeFunc:
-				[aCell setImage:[NSImage imageNamed:@"func-small"]];
-				[aCell setIndentationLevel:0];
-				break;
-			case SPTableTypeNone:
-				[aCell setImage:nil];
-				[aCell setIndentationLevel:0];
-				break;
-			default:
-				[aCell setIndentationLevel:0];
-		}
-
-	} 
-	else {
-		[aCell setImage:nil];
-		[aCell setIndentationLevel:0];
 	}
-}
 
-/**
- * Table view delegate method
- */
-- (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
-{
-	if (row == 0) {
-		return 25;
-	} else {
-		NSFont *tableFont = [NSUserDefaults getFont];
-		return 4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
-	}
+	return [SATablesListCellView makeInTableView:aTableView
+									  isGroupRow:isGroupRow
+											name:([name isKindOfClass:[NSString class]] ? name : @"")
+							   tableTypeRawValue:tableType
+										 comment:comment];
 }
 
 - (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
@@ -3035,7 +2970,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
 	
     NSLog(@"Dealloc called %s", __FILE_NAME__);
 }

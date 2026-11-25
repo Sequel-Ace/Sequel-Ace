@@ -57,12 +57,23 @@
 // Collapsing/expanding
 - (void)setCollapsibleSubviewIndex:(NSUInteger)subviewIndex;
 - (void)setToggleCollapseButton:(NSButton *)aButton;
+
+/**
+ * The button that collapses and expands the collapsible subview, if any.
+ */
+@property (nonatomic, readonly) NSButton *collapseToggleButton;
+
 - (BOOL)isCollapsibleSubviewCollapsed;
 - (IBAction)toggleCollapse:(id)sender;
 - (void)setCollapsibleSubviewCollapsed:(BOOL)shouldCollapse animate:(BOOL)shouldAnimate;
 
 // Additional drag handle
 - (void)setAdditionalDragHandleView:(NSView *)aView;
+
+/**
+ * The view that extends the divider's drag area, if any.
+ */
+@property (nonatomic, readonly) NSView *additionalDragHandleView;
 
 // Constraints
 - (void)setMinSize:(CGFloat)newMinSize ofSubviewAtIndex:(NSUInteger)subviewIndex;

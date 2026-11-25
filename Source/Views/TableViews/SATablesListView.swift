@@ -76,10 +76,21 @@ import AppKit
     // stale and must not conceal feedback that was re-shown mid-animation.
     private var feedbackVisibilityGeneration = 0
 
+    #if DEBUG
+    private var hasCheckedViewBasedRows = false
+    #endif
+
     override func awakeFromNib() {
         super.awakeFromNib()
         // The type-ahead below replaces the built-in single-letter type select.
         allowsTypeSelect = false
+
+        // A native sidebar: rows, text and icons follow the Sidebar icon size
+        // in System Settings. Rows touch, as in Finder; the nib's 2 pt vertical
+        // spacing would add a gap between them.
+        style = .sourceList
+        rowSizeStyle = .default
+        intercellSpacing = NSSize(width: 3, height: 0)
 
         // A nil queue preserves NotificationCenter's synchronous delivery.
         // The start observer must run inside selectRowIndexes(_:)'s delegate
@@ -246,6 +257,31 @@ import AppKit
         default:
             return false
         }
+    }
+
+    #if DEBUG
+    override func layout() {
+        super.layout()
+        // Rows are SATablesListCellViews built in code; a cell-based table
+        // would never show them and draw its nib data cell instead. Checked
+        // once, after the first layout that shows rows, without creating views.
+        let visibleRows = rows(in: visibleRect)
+        if !hasCheckedViewBasedRows, visibleRows.length > 0 {
+            hasCheckedViewBasedRows = true
+            assert(view(atColumn: 0, row: visibleRows.location, makeIfNecessary: false) != nil, "The tables list must be view-based")
+        }
+    }
+    #endif
+
+    /// A click into a row's name starts renaming it without going through the
+    /// checks that Return and the Rename menu item use, so apply them here
+    /// too: only the single selected row, and never while the document works.
+    override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
+        if let textField = responder as? NSTextField, textField.isEditable,
+           !SATablesListCellView.canRename(row: row(for: textField), in: self) {
+            return false
+        }
+        return super.validateProposedFirstResponder(responder, for: event)
     }
 
     override func mouseDown(with event: NSEvent) {
