@@ -525,9 +525,18 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             return SPMySQLConnectionLostDisconnect
         }
 
+        /// How long the wait for connection work may take before the test fails rather than hangs:
+        /// a regression that leaves the two threads waiting for each other is reported, not waited out.
+        static let waitDeadline: TimeInterval = 20
+
         @objc(connection:waitForConnectionWorkUntilFinished:)
         func connection(_ connection: Any, waitForConnectionWorkUntilFinished isFinished: @escaping () -> Bool) {
+            let deadline = Date(timeIntervalSinceNow: Self.waitDeadline)
             while !isFinished() {
+                if Date() >= deadline {
+                    XCTFail("the connection work was not finished after \(Self.waitDeadline) s; the wait returns so that the test can end")
+                    return
+                }
                 RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
             }
         }

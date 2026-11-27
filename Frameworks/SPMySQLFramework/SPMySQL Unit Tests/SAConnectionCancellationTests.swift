@@ -46,6 +46,18 @@ private final class SACancellationHost: NSObject, SAConnectionCancellationHost {
         lock.unlock()
     }
 
+    /// How long a blocked kill waits to be let go before the host answers on its own, so that a
+    /// stop which regresses to waiting for the server fails its assertion instead of hanging the run.
+    static let blockedKillDeadline: TimeInterval = 10
+    private var blockedKillsRunOut = 0
+
+    /// Whether a blocked kill was answered by the deadline rather than by the test letting it go.
+    var aBlockedKillRanOutOfTime: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return blockedKillsRunOut > 0
+    }
+
     func killQuery(onServerThread serverThread: UInt) -> Bool {
         note("kill \(serverThread)")
         killWasAsked.signal()
@@ -55,11 +67,20 @@ private final class SACancellationHost: NSObject, SAConnectionCancellationHost {
         case .refused:
             return false
         case .blockedThenAccepted:
-            letTheKillReturn.wait()
+            waitToBeLetGo()
             return true
         case .blockedThenRefused:
-            letTheKillReturn.wait()
+            waitToBeLetGo()
             return false
+        }
+    }
+
+    /// Waits for the test to let the blocked kill go, or for the deadline, noting which it was.
+    private func waitToBeLetGo() {
+        if letTheKillReturn.wait(timeout: .now() + Self.blockedKillDeadline) == .timedOut {
+            lock.lock()
+            blockedKillsRunOut += 1
+            lock.unlock()
         }
     }
 
@@ -379,6 +400,7 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertTrue(outcome.wasAbandoned, "the work was given up on")
         XCTAssertEqual(theWorkerWasLetGoWhenTheStopReturned, true, "and its thread let go by the time the stop returned")
         XCTAssertEqual(theStopReturnedBeforeTheKillWasAnswered, true, "without waiting for the server")
+        XCTAssertFalse(host.aBlockedKillRanOutOfTime, "and the kill is still blocked, for the test to let go")
         XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success, "which was asked all the same")
         XCTAssertTrue(host.recordedCalls().contains("kill 42"))
         XCTAssertFalse(host.recordedCalls().contains("marked"),
@@ -476,6 +498,52 @@ final class SAConnectionCancellationTests: XCTestCase {
 
         XCTAssertFalse(hold.holdsTheQuery)
         XCTAssertEqual(hold.query, 0)
+    }
+
+    /// A token names one piece of work in the whole process. A query begun on this session by
+    /// another coordinator's work - a thread running another connection's work and calling this
+    /// connection inline - carries that coordinator's token; a stop of this connection's own work,
+    /// whose coordinator counts separately, must not take that query for the stopped work's.
+    func testTheUsersStopLeavesAQueryAnotherCoordinatorsWorkBeganAlone() {
+        let anotherConnectionsCoordinator = SAConnectionWorkCoordinator()
+        let coordinator = SAConnectionWorkCoordinator()
+        let theOtherQueryBegan = DispatchSemaphore(value: 0)
+        let letTheOtherWorkEnd = DispatchSemaphore(value: 0)
+        let theOtherWorkEnded = DispatchSemaphore(value: 0)
+        defer {
+            letTheOtherWorkEnd.signal()
+            _ = theOtherWorkEnded.wait(timeout: .now() + 2)
+        }
+
+        // Another connection's work begins the native query on this session, on its own worker.
+        Thread.detachNewThread { [host] in
+            _ = anotherConnectionsCoordinator.run({
+                host.sessionAccess.beginNativeQuery()
+                theOtherQueryBegan.signal()
+                letTheOtherWorkEnd.wait()
+                return nil
+            }, whenSlow: { isFinished in
+                while !isFinished() {
+                    usleep(1_000)
+                }
+            })
+            theOtherWorkEnded.signal()
+        }
+        XCTAssertEqual(theOtherQueryBegan.wait(timeout: .now() + 2), .success)
+
+        let outcome = coordinator.run({
+            while !Thread.current.isCancelled {
+                usleep(1_000)
+            }
+            return nil
+        }, whenSlow: { _ in
+            cancellation.userStoppedWaiting(forWorkOf: coordinator)
+        })
+
+        XCTAssertTrue(outcome.wasAbandoned, "the work was given up on")
+        XCTAssertNotEqual(host.killWasAsked.wait(timeout: .now() + 0.3), .success,
+                          "the query another coordinator's work began was not taken for the stopped work's, and not killed")
+        XCTAssertEqual(host.recordedCalls(), [], "nor marked")
     }
 
 }

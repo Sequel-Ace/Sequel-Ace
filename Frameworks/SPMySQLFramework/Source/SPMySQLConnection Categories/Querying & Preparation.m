@@ -460,6 +460,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	// Whether the statement reached the server and was carried out, which a stop that lands
 	// afterwards does not undo.
 	BOOL theStatementWasCarriedOut = NO;
+	BOOL theStopLandedBeforeTheRowsWereStored = NO;
 
 	// The bytes of the attempt under way, held while they are sent.
 	NSData *queryData = nil;
@@ -621,6 +622,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				// update the affected row count.
 				case SPMySQLResultAsResult:
 					mysqlResult = mysql_store_result(mySQLConnection);
+					// A stop that has landed by now - after the server answered, before its rows were
+					// stored - ends the statement for its caller, however whole the rows came: a result
+					// set undoes nothing, so nothing is tried twice, and a run of statements stopped on
+					// this report runs no further.
+					theStopLandedBeforeTheRowsWereStored = self.sessionAccess.currentQueryWasCancelled;
 					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding version:self.serverMajorVersion];
 					theAffectedRowCount = mysql_affected_rows(mySQLConnection);
 					break;
@@ -652,8 +658,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 			// A result the server could not deliver whole - the query killed while its rows were
-			// being stored - was not carried out, whatever the send said.
-			if (theErrorID != 0) theStatementWasCarriedOut = NO;
+			// being stored - was not carried out, whatever the send said; nor was a statement whose
+			// stop had landed by the time its rows were stored.
+			if (theErrorID != 0 || theStopLandedBeforeTheRowsWereStored) theStatementWasCarriedOut = NO;
 		} else {
 			theResult = [[SPMySQLEmptyResult alloc] init];
 		}

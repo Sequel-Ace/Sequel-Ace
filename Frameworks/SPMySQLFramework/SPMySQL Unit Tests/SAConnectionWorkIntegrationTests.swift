@@ -36,10 +36,18 @@ private final class SAWaitingDelegate: NSObject {
             self.onceWhileWaiting = nil
             onceWhileWaiting(isFinished)
         }
+        let deadline = Date(timeIntervalSinceNow: Self.waitDeadline)
         while !isFinished() {
+            if Date() >= deadline {
+                XCTFail("the connection work was not finished after \(Self.waitDeadline) s; the wait returns so that the test can end")
+                return
+            }
             RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
         }
     }
+
+    /// How long the wait for connection work may take before the test fails rather than hangs.
+    static let waitDeadline: TimeInterval = 20
 
     @objc func connectionLost(_ connection: Any) -> SPMySQLConnectionLostDecision {
         SPMySQLConnectionLostDisconnect
@@ -136,7 +144,18 @@ private final class SAFailingCheckConnection: SPMySQLConnection {
 final class SAConnectionWorkIntegrationTests: XCTestCase {
 
     /// Connects with a delegate that shows the wait, or skips when no local server is configured.
+    /// The delegates of the connections a test opened, kept for the test's lifetime: a connection
+    /// holds its delegate weakly but remembers that it shows the wait, so a delegate let go early
+    /// would leave slow work waited for by nobody - and given up on.
+    private var delegatesOfOpenConnections: [SAWaitingDelegate] = []
+
+    override func tearDown() {
+        delegatesOfOpenConnections.removeAll()
+        super.tearDown()
+    }
+
     private func connected<T: SPMySQLConnection>(_ connection: T, delegate: SAWaitingDelegate) throws -> T {
+        delegatesOfOpenConnections.append(delegate)
         try configureForTheLocalServer(connection)
         connection.perform(NSSelectorFromString("setDelegate:"), with: delegate)
         if !connection.connect() {
@@ -422,6 +441,35 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(affectedRows, 1)
         XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT COUNT(*) FROM mysql.sa_carried_out") as? NSString)?.integerValue, 1,
                        "the write stands")
+    }
+
+    /// A stop that lands before a result's rows are stored - after the server answered the
+    /// statement, before the connection stored its rows - is reported as a stop, however whole the
+    /// rows came: a result set undoes nothing, so nothing is tried twice, and a run of statements
+    /// stopped on this report runs no further.
+    func testAStopThatLandsBeforeTheRowsAreStoredReportsTheStatementCancelled() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAStoppedOnceCarriedOutConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+
+        let returned = expectation(description: "the statement returned")
+        var wasCancelled = false
+        var errored = false
+        var errorID: UInt = 0
+        Thread.detachNewThread {
+            connection.stopsOnceTheNextStatementIsCarriedOut = true
+            _ = connection.queryString("SELECT 1 AS stored_after_the_stop")
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            returned.fulfill()
+        }
+        wait(for: [returned], timeout: 10)
+
+        XCTAssertFalse(connection.stopsOnceTheNextStatementIsCarriedOut, "the stop landed")
+        XCTAssertTrue(wasCancelled, "a statement stopped before its rows were stored is reported cancelled")
+        XCTAssertTrue(errored)
+        XCTAssertEqual(errorID, 1317)
     }
 
     /// A fast streaming statement downloads on a thread of its own from the moment its result

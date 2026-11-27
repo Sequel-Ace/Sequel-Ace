@@ -142,8 +142,21 @@ public final class SAConnectionWorkCoordinator: NSObject {
     private var inFlight: [(outcome: SAConnectionWorkOutcome, askedOn: ObjectIdentifier, token: UInt64)] = []
     private let inFlightLock = NSLock()
 
-    /// The token the next piece of work gets. Guarded by `inFlightLock`.
-    private var nextWorkToken: UInt64 = 0
+    /// The token the next piece of work gets, counted once for the whole process rather than once
+    /// per coordinator: a lease records the token with the native query a piece of work begins and
+    /// tells the stopped work's query from every other by it - also from a query that another
+    /// connection's work began on this session, which another coordinator counted. Guarded by
+    /// `tokenLock`.
+    private static var nextWorkToken: UInt64 = 0
+    private static let tokenLock = NSLock()
+
+    /// Issues the next token: one no coordinator in this process has issued before.
+    private static func issueToken() -> UInt64 {
+        tokenLock.withLock {
+            nextWorkToken &+= 1
+            return nextWorkToken
+        }
+    }
 
     /// The key under which the worker thread carries the token of the work it is running.
     private static let workTokenKey = "SAConnectionWorkCoordinator.workToken"
@@ -289,10 +302,7 @@ public final class SAConnectionWorkCoordinator: NSObject {
                     whenSlow waitForFinish: (_ isFinished: @escaping () -> Bool) -> Void) -> SAConnectionWorkOutcome {
         let outcome = SAConnectionWorkOutcome()
         let workFinished = DispatchSemaphore(value: 0)
-        inFlightLock.lock()
-        nextWorkToken &+= 1
-        let token = nextWorkToken
-        inFlightLock.unlock()
+        let token = Self.issueToken()
         let item = SAConnectionWorkItem(token: token) {
             outcome.storeResult(work())
             workFinished.signal()
