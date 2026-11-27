@@ -251,7 +251,10 @@ public final class SAConnectionWorkCoordinator: NSObject {
     /// own. Work the main thread would hand over while a question is out to it is refused before
     /// anything is enqueued, and marked as refused, so the statement path reports it as never
     /// sent. Work the user stopped waiting for is recorded as cancelled, and nothing is returned
-    /// for it: whatever it returns afterwards is not an answer.
+    /// for it: whatever it returns afterwards is not an answer - unless the server had answered
+    /// its statement already with nothing left to fetch, which the lease knows: such work is
+    /// settling, ends within moments, and its result - a write the server applied - is the
+    /// caller's, not a stop's.
     /// - Parameters:
     ///   - work: The work to run. It must not expect to be on the thread that asked for it.
     ///   - host: The connection the work is for.
@@ -282,6 +285,8 @@ public final class SAConnectionWorkCoordinator: NSObject {
 
         let outcome = run(work, whenSlow: { isFinished in
             host.waitForWork(untilFinished: isFinished)
+        }, settling: { token in
+            lease.tokenOfWorkSettlingItsQuery == token
         })
         guard outcome.finished else {
             host.recordWorkAsCancelled()
@@ -289,6 +294,12 @@ public final class SAConnectionWorkCoordinator: NSObject {
         }
         return outcome.result
     }
+
+    /// How long the interface's thread waits for work that is settling its statement - the server
+    /// has answered it, nothing is left to fetch - once the interface's wait has ended: such work
+    /// ends within moments, and its result, a write the server applied, is kept rather than
+    /// reported as a stop. Work that outlives the grace is given up on like any other.
+    public static let settlingGrace: TimeInterval = 1
 
     /// Runs work off the calling thread, waiting for it quietly first and visibly afterwards.
     /// - Parameters:
@@ -300,6 +311,24 @@ public final class SAConnectionWorkCoordinator: NSObject {
     @objc(runWork:whenSlow:)
     public func run(_ work: @escaping () -> Any?,
                     whenSlow waitForFinish: (_ isFinished: @escaping () -> Bool) -> Void) -> SAConnectionWorkOutcome {
+        run(work, whenSlow: waitForFinish, settling: { _ in false })
+    }
+
+    /// Runs work off the calling thread, waiting for it quietly first and visibly afterwards, and
+    /// waits a moment longer for work that is settling its statement when the visible wait ends
+    /// before the work does.
+    /// - Parameters:
+    ///   - work: The work to run. It runs on the coordinator's thread, never on the caller's.
+    ///   - waitForFinish: Called only when the work outlasts the quiet wait. It receives a block
+    ///     that reports whether the work has finished, and is expected to keep the interface
+    ///     answering until that block says yes - or to return earlier, ending the wait.
+    ///   - workIsSettling: Asked, with the work's token, when the visible wait ended before the
+    ///     work did: whether the server has answered the work's statement with nothing left to
+    ///     fetch. Such work is waited for up to `settlingGrace` rather than given up on.
+    /// - Returns: What the work returned, and whether it finished before the waiting ended.
+    public func run(_ work: @escaping () -> Any?,
+                    whenSlow waitForFinish: (_ isFinished: @escaping () -> Bool) -> Void,
+                    settling workIsSettling: (_ token: UInt64) -> Bool) -> SAConnectionWorkOutcome {
         let outcome = SAConnectionWorkOutcome()
         let workFinished = DispatchSemaphore(value: 0)
         let token = Self.issueToken()
@@ -344,8 +373,14 @@ public final class SAConnectionWorkCoordinator: NSObject {
         }
 
         // Work nobody waited for to the end keeps running, and what it returns is nobody's
-        // answer any more - unless it finished in the very moment the waiting ended.
+        // answer any more - unless it finished in the very moment the waiting ended, or is
+        // settling a statement the server has answered: that ends within moments, and its
+        // result - a write the server applied - is the caller's, not a stop's.
         if !outcome.finished {
+            if workIsSettling(token), workFinished.wait(timeout: .now() + Self.settlingGrace) == .success {
+                outcome.finished = true
+                return outcome
+            }
             if outcome.abandon() {
                 // That work can hold this thread for as long as the server takes to answer, or
                 // for as long as the network takes to give up on it. The next piece of work gets
@@ -373,16 +408,23 @@ public final class SAConnectionWorkCoordinator: NSObject {
     ///
     /// Work that finished before the stop counts as finished, and its caller gets its result: a
     /// streaming statement among them still holds the session for its rows, and a stop that
-    /// reached its query would kill a download its caller was told succeeded.
-    /// - Returns: The tokens of the work given up on - none of the work that had finished.
+    /// reached its query would kill a download its caller was told succeeded. Work settling its
+    /// statement - the server has answered it, nothing is left to fetch - is left to finish too,
+    /// and keeps its thread for the moment it still needs, unless work queued behind it was given
+    /// up on: the thread would run that next, so it goes.
+    /// - Parameter settlingToken: The token of the work settling its statement, if any.
+    /// - Returns: The tokens of the work given up on - none of the work that had finished, nor the
+    ///   settling work's.
     @discardableResult
-    func abandonWorkForUserStopReturningAbandonedTokens() -> [UInt64] {
+    func abandonWorkForUserStopReturningAbandonedTokens(keeping settlingToken: UInt64? = nil) -> [UInt64] {
         inFlightLock.lock()
         let waitedFor = inFlight
         inFlightLock.unlock()
 
-        let abandoned = waitedFor.filter { $0.outcome.abandon() }.map { $0.token }
-        cancel()
+        let abandoned = waitedFor.filter { $0.token != settlingToken && $0.outcome.abandon() }.map { $0.token }
+        if settlingToken == nil || !abandoned.isEmpty {
+            cancel()
+        }
         return abandoned
     }
 

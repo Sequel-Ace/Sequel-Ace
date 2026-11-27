@@ -500,6 +500,37 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertEqual(hold.query, 0)
     }
 
+    /// The user's stop leaves work that is settling its statement - the server has answered a
+    /// write, nothing is left to fetch - to finish: nothing is given up on, nothing killed, the
+    /// thread stays for the moment the work still needs, and the result reaches the caller.
+    func testTheUsersStopLeavesWorkSettlingItsStatementToFinish() {
+        let coordinator = SAConnectionWorkCoordinator()
+        let theWorkIsSettling = DispatchSemaphore(value: 0)
+        let letTheWorkEnd = DispatchSemaphore(value: 0)
+        var theWorkerWasKept: Bool?
+
+        let outcome = coordinator.run({ [host] in
+            host.sessionAccess.beginNativeQuery()
+            host.sessionAccess.noteActiveNativeQueryIsSettling()
+            theWorkIsSettling.signal()
+            letTheWorkEnd.wait()
+            return "applied"
+        }, whenSlow: { _ in
+            XCTAssertEqual(theWorkIsSettling.wait(timeout: .now() + 2), .success)
+            cancellation.userStoppedWaiting(forWorkOf: coordinator)
+            theWorkerWasKept = coordinator.currentWorkerThread != nil
+            letTheWorkEnd.signal()
+        }, settling: { [host] token in
+            host.sessionAccess.tokenOfWorkSettlingItsQuery == token
+        })
+
+        XCTAssertEqual(theWorkerWasKept, true, "the thread stays for the moment the work still needs")
+        XCTAssertFalse(outcome.wasAbandoned, "nothing was given up on")
+        XCTAssertEqual(outcome.result as? String, "applied", "and the result reached the caller")
+        XCTAssertNotEqual(host.killWasAsked.wait(timeout: .now() + 0.3), .success, "nothing was killed")
+        XCTAssertEqual(host.recordedCalls(), [], "nor marked")
+    }
+
     /// A token names one piece of work in the whole process. A query begun on this session by
     /// another coordinator's work - a thread running another connection's work and calling this
     /// connection inline - carries that coordinator's token; a stop of this connection's own work,

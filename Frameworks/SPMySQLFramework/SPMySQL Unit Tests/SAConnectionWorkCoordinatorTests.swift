@@ -567,6 +567,34 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(databaseKept, "sa_restore_me", "with the saved state kept for the next reconnect")
     }
 
+    /// Work whose statement the server has answered, with nothing left to fetch, is settling: the
+    /// user's stop leaves it the moment it still needs, and its result - a write the server applied -
+    /// reaches its caller rather than a stop.
+    func testWorkSettlingItsStatementIsWaitedOutRatherThanGivenUpOn() {
+        let host = SAScriptedWorkHost()
+        let theWorkIsSettling = DispatchSemaphore(value: 0)
+        let letTheWorkEnd = DispatchSemaphore(value: 0)
+        host.whileWaiting = { _ in
+            // The user stops waiting as soon as the sheet is up - with the statement answered already;
+            // the statement takes a moment longer to settle.
+            XCTAssertEqual(theWorkIsSettling.wait(timeout: .now() + 2), .success)
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { letTheWorkEnd.signal() }
+        }
+
+        let result = coordinator.run({
+            host.sessionAccess.beginNativeQuery()
+            host.sessionAccess.noteActiveNativeQueryIsSettling()
+            theWorkIsSettling.signal()
+            letTheWorkEnd.wait()
+            host.sessionAccess.endNativeQuery()
+            return "applied"
+        }, on: host)
+
+        XCTAssertEqual(result as? String, "applied", "the result reached its caller")
+        XCTAssertEqual(host.cancelledWorkRecorded, 0, "and nothing was recorded as cancelled")
+        XCTAssertEqual(host.timesAskedToWait, 1)
+    }
+
     /// Work handed over forgets a refusal that was not about it: the mark is read by the statement
     /// path alone, and the connection's other work passes the same gate without reading it.
     func testWorkHandedOverForgetsARefusalThatWasNotAboutIt() {

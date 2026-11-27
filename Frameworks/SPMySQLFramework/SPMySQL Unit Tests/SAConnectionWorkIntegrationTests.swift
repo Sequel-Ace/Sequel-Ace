@@ -116,6 +116,28 @@ private final class SAStoppedOnceCarriedOutConnection: SPMySQLConnection {
     }
 }
 
+/// A connection on which the user's Stop Waiting lands the moment a write's send has been answered -
+/// the row changed, the statement settling: the statement holds there until the stop has landed.
+private final class SAStoppedWhileSettlingConnection: SPMySQLConnection {
+    let theSendWasAnswered = DispatchSemaphore(value: 0)
+    let letTheStatementSettle = DispatchSemaphore(value: 0)
+    /// Whether the next statement answered holds until the stop has landed.
+    var holdsTheNextStatementAnswered = false
+
+    @objc(_noteStatementCarriedOut:) func noteStatementCarriedOutAndHold(_ statement: String) {
+        let selector = NSSelectorFromString("_noteStatementCarriedOut:")
+        if let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector) {
+            typealias Note = @convention(c) (AnyObject, Selector, NSString) -> Void
+            unsafeBitCast(implementation, to: Note.self)(self, selector, statement as NSString)
+        }
+        if holdsTheNextStatementAnswered {
+            holdsTheNextStatementAnswered = false
+            theSendWasAnswered.signal()
+            _ = letTheStatementSettle.wait(timeout: .now() + 5)
+        }
+    }
+}
+
 /// A connection that takes a statement's report only once a streaming download that has ended
 /// already has let the session go - the shortest download there is, settled before the report.
 private final class SAFastStreamSettlingConnection: SPMySQLConnection {
@@ -481,6 +503,36 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertTrue(wasCancelled, "a statement stopped before its rows were stored is reported cancelled")
         XCTAssertTrue(errored)
         XCTAssertEqual(errorID, 1317)
+    }
+
+    /// Stop Waiting that lands once the server has answered a write - the row changed, the statement
+    /// settling - leaves the statement to finish and hands its caller the result, not a stop: told
+    /// "cancelled", the caller would try the write again.
+    func testStopWaitingAfterTheServerAnsweredAWriteHandsItsCallerTheResult() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAStoppedWhileSettlingConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_settling (i INT NOT NULL)")
+        _ = connection.queryString("INSERT INTO mysql.sa_settling (i) VALUES (1)")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        let waitsBefore = delegate.timesAskedToWait
+
+        delegate.onceWhileWaiting = { _ in
+            // The user presses Stop Waiting once the server has answered the write.
+            XCTAssertEqual(connection.theSendWasAnswered.wait(timeout: .now() + 5), .success)
+            connection.cancelCheck()
+            connection.letTheStatementSettle.signal()
+        }
+        connection.holdsTheNextStatementAnswered = true
+        let result = connection.queryString("UPDATE mysql.sa_settling SET i = 2")
+
+        XCTAssertNotNil(result, "the statement's own result reaches its caller")
+        XCTAssertFalse(connection.lastQueryWasCancelled, "not a stop")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 1)
+        XCTAssertEqual(delegate.timesAskedToWait - waitsBefore, 1, "the write was waited for once")
+        XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT i FROM mysql.sa_settling") as? NSString)?.integerValue, 2,
+                       "and the write stands")
     }
 
     /// A fast streaming statement downloads on a thread of its own from the moment its result
