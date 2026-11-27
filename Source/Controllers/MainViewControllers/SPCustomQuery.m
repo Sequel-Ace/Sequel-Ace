@@ -833,7 +833,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             
             // If this is the last query, retrieve and store the result; otherwise,
             // discard the result without fully loading.
-            if (totalQueriesRun == queryCount || [mySQLConnection lastQueryWasCancelled]) {
+            // The last statement, or the user stopped: a stop that landed once a write was carried
+            // out leaves that write its result and still ends the batch.
+            if (totalQueriesRun == queryCount || [mySQLConnection lastQueryWasCancelled] || [mySQLConnection stopWasRequested]) {
                 
                 // Retrieve and cache the column definitions for the result array
                 cqColumnDefinition = [resultStore fieldDefinitions];
@@ -975,8 +977,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
             // write errors to console
             [tableDocumentInstance queryGaveError:errors connection:nil];
-            // If the query was cancelled, end all queries.
-            if ([mySQLConnection lastQueryWasCancelled]) break;
+            // If the query was cancelled - or the user stopped once it was carried out - end all queries.
+            if ([mySQLConnection lastQueryWasCancelled] || [mySQLConnection stopWasRequested]) break;
         }
         // Reload table list if at least one query began with drop, alter, rename, or create
         if(tableListNeedsReload || databaseWasChanged) {

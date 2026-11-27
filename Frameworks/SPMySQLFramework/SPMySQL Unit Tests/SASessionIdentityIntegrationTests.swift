@@ -220,8 +220,13 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         connection.holdsTheNextCheck = true
         let returned = expectation(description: "the statement returned")
         var result: SPMySQLResult?
+        var wasCancelled = false
+        var errorID: UInt = 0
         Thread.detachNewThread {
             result = connection.queryString("INSERT INTO t (v) VALUES ('written')")
+            // The report is the caller's, read where the statement was asked for: this thread's.
+            wasCancelled = connection.lastQueryWasCancelled
+            errorID = connection.lastErrorID()
             returned.fulfill()
         }
         XCTAssertEqual(connection.checkStarted.wait(timeout: .now() + 5), .success, "the statement is in its check")
@@ -234,11 +239,14 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
 
         // The check answers: connectivity is there, and the statement could be sent. It is not.
         connection.letTheCheckAnswer.signal()
-        wait(for: [returned], timeout: 10)
+        guard XCTWaiter.wait(for: [returned], timeout: 10) == .completed else {
+            XCTFail("the statement did not return in time; its thread may still be writing its report")
+            return
+        }
 
         XCTAssertNil(result)
-        XCTAssertTrue(connection.lastQueryWasCancelled)
-        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertTrue(wasCancelled)
+        XCTAssertEqual(errorID, 1317)
         XCTAssertEqual(rowCount(observer), 0, "the write never reached the server")
 
         // And the stop was for that statement alone: the next one runs.
@@ -268,19 +276,27 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
         let statement = SASlowlySerialisedStatement(statement: "INSERT INTO t (v) VALUES ('written')")
         let returned = expectation(description: "the statement returned")
         var result: SPMySQLResult?
+        var wasCancelled = false
+        var errorID: UInt = 0
         Thread.detachNewThread {
             result = connection.queryString(statement as String)
+            // The report is the caller's, read where the statement was asked for: this thread's.
+            wasCancelled = connection.lastQueryWasCancelled
+            errorID = connection.lastErrorID()
             returned.fulfill()
         }
         XCTAssertEqual(statement.serialising.wait(timeout: .now() + 5), .success, "the statement is being serialised for the session it holds")
 
         connection.cancelCurrentQuery()
         statement.letItFinish.signal()
-        wait(for: [returned], timeout: 10)
+        guard XCTWaiter.wait(for: [returned], timeout: 10) == .completed else {
+            XCTFail("the statement did not return in time; its thread may still be writing its report")
+            return
+        }
 
         XCTAssertNil(result)
-        XCTAssertTrue(connection.lastQueryWasCancelled)
-        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertTrue(wasCancelled)
+        XCTAssertEqual(errorID, 1317)
         XCTAssertEqual(rowCount(observer), 0, "the write never reached the server")
     }
 

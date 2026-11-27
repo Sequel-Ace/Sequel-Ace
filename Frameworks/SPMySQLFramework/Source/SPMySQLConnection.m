@@ -40,7 +40,7 @@
 #import "SPMySQLMutableDictionaryAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
 
-@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost>
+@interface SPMySQLConnection () <SAConnectionCancellationHost, SASessionGateHost, SASessionReplacementHost, SAConnectionWorkHost, SAStatementCallHost>
 @end
 
 @interface SPMySQLConnection ()
@@ -115,18 +115,55 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 - (BOOL)lastQueryWasCancelled
 {
+	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	@synchronized (self) {
+		// An explicit stop of the connection's work reaches every caller until the next statement
+		// starts, whichever statement's report the caller holds - except a caller whose statement
+		// the server carried out before the stop landed: its result stands, and a statement
+		// reported cancelled would be tried again. A batch stops on -stopWasRequested instead.
+		if (handedBack) return handedBack.wasCancelled || (explicitlyCancelled && !handedBack.wasCarriedOut);
 		return lastQueryWasCancelled;
 	}
 }
 
+/**
+ * Whether the user stopped the connection's work since the current statement was asked for: a stop of
+ * everything, in effect for a batch whatever the statement's own report says, until the next statement.
+ */
+- (BOOL)stopWasRequested
+{
+	@synchronized (self) {
+		return explicitlyCancelled;
+	}
+}
+
+/**
+ * Notes that the user stopped the connection's work - a stop of everything - whether or not there is
+ * a query to kill: in effect for a batch until the next statement is asked for.
+ */
+- (void)noteStopOfEverythingRequested
+{
+	@synchronized (self) {
+		explicitlyCancelled = YES;
+	}
+}
+
+/**
+ * Marks the connection's work as stopped by the user - the document's stop, which kills the query through
+ * another connection and marks the stop here: in effect for every caller but one whose statement was
+ * carried out, and for a batch, until the next statement is asked for.
+ */
 - (void)setLastQueryWasCancelled:(BOOL)cancelled
 {
 	// Some callers issue KILL through another connection and mark cancellation here.
 	@synchronized (self) {
 		if (cancelled) [self.sessionAccess recordQueryCancellation];
 		lastQueryWasCancelled = cancelled;
+		explicitlyCancelled = cancelled;
 	}
+	// And the report of a statement that still holds the session - its rows being read - is
+	// stopped as its caller will read it.
+	if (cancelled) [[self _reportOfStatementHoldingTheSession] recordCancellation];
 }
 
 #pragma mark -
@@ -155,7 +192,14 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (void)markRunningQueryCancelled
 {
-	lastQueryWasCancelled = YES;
+	@synchronized (self) {
+		lastQueryWasCancelled = YES;
+		// A stop of everything: in effect for every caller - but one whose statement was carried
+		// out - and for a batch, until the next statement is asked for.
+		explicitlyCancelled = YES;
+	}
+	// And in the report of a statement that still holds the session: a download being stopped.
+	[[self _reportOfStatementHoldingTheSession] recordCancellation];
 }
 
 #pragma mark -
@@ -358,6 +402,164 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	[valueEscaper forgetSession];
 }
 
+#pragma mark -
+#pragma mark Connection work host
+
+/**
+ * Whether the delegate shows a wait for connection work and lets the user end it.
+ */
+- (BOOL)delegateShowsTheWait
+{
+	return delegateSupportsConnectionCheckProgress;
+}
+
+/**
+ * Whether the current thread is the one reconnecting, which sets the new session up itself.
+ */
+- (BOOL)currentThreadIsSettingUpTheSession
+{
+	return [self _currentThreadIsReconnecting];
+}
+
+/**
+ * Asks the delegate to wait for connection work in a way that keeps the interface answering.
+ */
+- (void)waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished
+{
+	[delegate connection:self waitForConnectionWorkUntilFinished:isFinished];
+}
+
+/**
+ * Records that work on this connection was given up on, in the same way a cancelled query is
+ * recorded, so that everything which asks the connection what happened gets the same answer.
+ */
+- (void)recordWorkAsCancelled
+{
+	[SAStatementCall recordWorkAsCancelledOn:self];
+}
+
+/**
+ * Records work the user stopped waiting for whose statement the server had answered already, and
+ * that did not settle within the grace: carried out, its result unread - not a stop.
+ */
+- (void)recordWorkAsCarriedOutButUnsettled
+{
+	[SAStatementCall recordWorkAsCarriedOutButUnsettledOn:self];
+}
+
+/**
+ * Records work the user stopped waiting for that was given up on after its statement had been sent:
+ * a stop, with a word that the server may have carried the statement out before the kill reached it.
+ */
+- (void)recordWorkAsCancelledAfterTheSend
+{
+	[SAStatementCall recordWorkAsCancelledAfterTheSendOn:self];
+}
+
+#pragma mark -
+#pragma mark What the statement call asks of the connection
+
+/**
+ * The report of the statement that still holds the session, which what the connection writes
+ * meanwhile goes into; nil once the session is released.
+ */
+- (SAStatementReport *)_reportOfStatementHoldingTheSession
+{
+	return statementReportHold.current;
+}
+
+/**
+ * The connection as the statement call sees it; the conformance is declared here, where the
+ * categories cannot see it.
+ */
+- (id<SAStatementCallHost>)_statementCallHost
+{
+	return self;
+}
+
+/**
+ * The insert ID the connection carries, as the last statement left it.
+ */
+- (unsigned long long)insertIDCarried
+{
+	return lastQueryInsertID;
+}
+
+/**
+ * Ends the reach of an explicit stop: a statement is being asked for, and the stop was of the
+ * work before it.
+ */
+- (void)forgetAnExplicitStop
+{
+	@synchronized (self) {
+		explicitlyCancelled = NO;
+	}
+}
+
+/**
+ * Runs the work through the hand-off that keeps the interface alive.
+ */
+- (id)runWorkKeepingInterfaceAlive:(id (^)(void))work
+{
+	return [self _runWorkKeepingInterfaceAlive:work];
+}
+
+/**
+ * Runs yes-or-no connection work through the same hand-off.
+ */
+- (BOOL)runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work
+{
+	return [self _runConnectionWorkKeepingInterfaceAlive:work];
+}
+
+/**
+ * A report of what the connection's fields say now.
+ */
+- (SAStatementReport *)reportFromTheConnectionsFields
+{
+	return [self _reportFromTheConnectionsFields];
+}
+
+/**
+ * Whether the current thread is the one reconnecting. The statements it sends set up the new
+ * session - its character set, its database - on the connection's own behalf.
+ */
+- (BOOL)_currentThreadIsReconnecting
+{
+	pthread_t thread = reconnectingThread;
+	return thread && pthread_equal(thread, pthread_self());
+}
+
+/**
+ * Runs connection work that may have to wait for a server, without freezing the interface:
+ * SAConnectionWorkCoordinator decides where it runs and who waits, this connection being its host.
+ *
+ * @param work The work to run. It must not expect to be on the thread that asked for it.
+ * @return What the work returned, or nil if it was refused or the waiting ended before it finished.
+ */
+- (id)_runWorkKeepingInterfaceAlive:(id (^)(void))work
+{
+	return [connectionWorkCoordinator runWork:work onHost:self];
+}
+
+/**
+ * Runs connection work whose answer is a plain yes or no. See -_runWorkKeepingInterfaceAlive:.
+ *
+ * @param work The work to run.
+ * @return What the work returned, or NO if the user stopped waiting before it finished.
+ */
+- (BOOL)_runConnectionWorkKeepingInterfaceAlive:(BOOL (^)(void))work
+{
+	NSNumber *result = [self _runWorkKeepingInterfaceAlive:^id{
+		return @(work());
+	}];
+
+	return [result boolValue];
+}
+
+/**
+ * Adds flags to the client flags the connection is made with.
+ */
 - (void)addClientFlags:(SPMySQLClientFlags)opts
 {
 	[self setClientFlags:([self clientFlags] | opts)];
@@ -596,6 +798,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		proxyStateChangeNotificationsIgnored = NO;
 		_proxyReconnectCoordinator = [[SAProxyReconnectCoordinator alloc] init];
 		_sessionAccess = [[SAConnectionSessionAccess alloc] init];
+		connectionWorkCoordinator = [[SAConnectionWorkCoordinator alloc] init];
+		statementReportHold = [[SAStatementReportHold alloc] init];
 
 		// Start with no selected database
 		database = nil;
@@ -691,6 +895,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// If a keepalive thread is active, cancel it
 	[self _cancelKeepAlives];
 
+	// Work still running on the connection's own thread is given up on with it
+	[connectionWorkCoordinator cancel];
+
 	// Disconnect if appropriate (which should also disconnect any proxy)
 	[self _disconnect];
 
@@ -722,6 +929,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
     SPLog(@"connect");
 
 	userTriggeredDisconnect = NO;
+	// A report an earlier statement handed to this thread would stand in front of a failed
+	// connect's error, which is written on the connection's own fields.
+	[SAStatementReport forgetReportHandedBackToThisThreadFor:self];
 	return [self _connect];
 }
 
@@ -792,6 +1002,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  * NOTE: In general -checkConnectionIfNecessary should be used instead!
  */
 - (BOOL)checkConnection
+{
+	return [SAStatementCall runCheck:^BOOL{ return [self _checkConnectionNow]; } handedOver:NO on:[self _statementCallHost]];
+}
+
+/**
+ * Checks the connection; a failed check writes its error on the connection, for `checkConnection`
+ * to hand to its caller.
+ */
+- (BOOL)_checkConnectionNow
 {
     SPLog(@"checkConnection");
 
@@ -898,7 +1117,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		                                                 openTransaction:[self sessionReportsOpenTransaction]]) {
 			[self _closeSessionMarkedForReplacement];
 			[self _unlockConnection];
-			return [self _reconnectAfterSessionLossAllowingRetries:YES];
+			// Through the statement call like the check: a reconnect the coordinator turns away is
+			// reported as refused, with the reason, and the marker taken.
+			return [SAStatementCall runCheck:^BOOL{ return [self _reconnectAfterSessionLossAllowingRetries:YES]; } handedOver:YES on:[self _statementCallHost]];
 		}
 		[self _unlockConnection];
 	}
@@ -907,7 +1128,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
         SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
-		return [self _reconnectAfterSessionLossAllowingRetries:YES];
+		return [SAStatementCall runCheck:^BOOL{ return [self _reconnectAfterSessionLossAllowingRetries:YES]; } handedOver:YES on:[self _statementCallHost]];
 	}
 	
 	// If the connection was recently used, return success - unless its socket
@@ -918,8 +1139,18 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		SPLog(@"connection socket reports the peer is gone; checking despite recent use");
 	}
 	
-	// Otherwise check the connection
-	return [self checkConnection];
+	// Otherwise check the connection - on the worker when asked for on the main thread, a failed
+	// check's error handed to this thread (SAStatementCall).
+	return [SAStatementCall runCheck:^BOOL{ return [self _checkConnectionNow]; } handedOver:YES on:[self _statementCallHost]];
+}
+
+/**
+ * Ends the interface's wait for connection work, and stops that work: the thread it runs on, and
+ * the query it may have waiting on the server. SAConnectionCancellation holds the sequence.
+ */
+- (void)cancelConnectionCheck
+{
+	[connectionCancellation userStoppedWaitingForWorkOf:connectionWorkCoordinator];
 }
 
 /**
@@ -1309,13 +1540,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 /**
  * Ends a setup phase, lifting its deadline.
- * @return Whether the session came through the phase: connected, no statement having lost it, and
- *         the deadline not having had to end a wait. Without a deadline, no.
+ * @return Whether the session came through the phase: connected, no statement having lost it, the
+ *         deadline not having had to end a wait, and this thread not given up on meanwhile - a
+ *         thread the user stopped waiting for sends nothing, so its session is not set up, whatever
+ *         the last of its statements reported. Without a deadline, no.
  */
 - (BOOL)_endSetupPhase:(SAConnectionSetupDeadline *)setupDeadline
 {
 	activeSetupDeadline = nil;
-	BOOL sessionCameThrough = [setupDeadline endPhaseWhileConnected:state == SPMySQLConnected];
+	BOOL sessionCameThrough = [setupDeadline endPhaseWhileConnected:state == SPMySQLConnected
+	                                                threadGivenUpOn:[[NSThread currentThread] isCancelled]];
 	if ([setupDeadline endedTheWaitOnTheSocket]) {
 		SPLog(@"session setup did not finish within its budget; the socket was shut down to end the wait");
 	}
@@ -1874,8 +2108,9 @@ asm(".desc ___crashreporter_info__, 0x10");
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
-			// A restore that lost the session along the way, or ran out of time at its end, did
-			// not restore it, whatever the last of its statements reported.
+			// A restore that lost the session along the way, ran out of time at its end, or whose
+			// thread was given up on meanwhile - its statements turned away - did not restore it,
+			// whatever the last of its statements reported.
 			if (![self _endSetupPhase:restoreDeadline]) reconnectSucceeded = NO;
             if (!reconnectSucceeded) {
                 // Never hand a session with the server's default time zone to a query.
@@ -1889,6 +2124,26 @@ asm(".desc ___crashreporter_info__, 0x10");
             databaseToRestore = nil;
             encodingToRestore = nil;
             encodingUsesLatin1TransportToRestore = NO;
+		}
+		// A session that came up after this thread was given up on - the user stopped waiting
+		// while the handshake was under way, which a cancelled thread does not interrupt - has
+		// nobody to set it up: left as it is, the next statement would run on the server's
+		// default database and time zone. It is retired like a session whose restore failed, and
+		// the next use reconnects and restores, with the saved state still there to restore from.
+		else if (state == SPMySQLConnected) {
+			[self _disconnectPreservingProxyReconnect:YES];
+			state = SPMySQLConnectionLostInBackground;
+			reconnectingThread = NULL;
+			return NO;
+		}
+		// A reconnect given up on while its session was being set up has closed that session already:
+		// the setup fails as an attempt that never came up. The connection stays recoverable all the
+		// same, like one whose restore failed - the next use reconnects and restores, with the saved
+		// state still there to restore from. A thread given up on does not retry here.
+		else if ([[NSThread currentThread] isCancelled] && state == SPMySQLDisconnected) {
+			state = SPMySQLConnectionLostInBackground;
+			reconnectingThread = NULL;
+			return NO;
 		}
 			// If the connection failed and the connection is permitted to retry,
 			// then retry the reconnection.

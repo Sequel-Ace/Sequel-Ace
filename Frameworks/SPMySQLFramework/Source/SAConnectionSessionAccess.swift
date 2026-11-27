@@ -21,6 +21,11 @@ import Darwin
     private var serverThreadID: UInt = 0
     private var nativeQueryGeneration: UInt = 0
     private var activeNativeQuery: UInt?
+    /// The thread that began the active native query, so that a stop meant for one thread's work
+    /// can tell whether the query running on the session is that work's.
+    private var threadOfActiveNativeQuery: ObjectIdentifier?
+    /// The token of the coordinator's work that began the active native query, if that work did.
+    private var workTokenOfActiveNativeQuery: UInt64?
     private var cancellingQuery: UInt?
     private var cancellingSocketGeneration: UInt = 0
     private var recoveryRequired = false
@@ -73,6 +78,11 @@ import Darwin
     }
 
     @objc public var currentQueryWasCancelled: Bool {
+        // A thread that was given up on - the worker the user stopped waiting for - is cancelled
+        // as a whole; its statement was never sent, or was killed, and is reported as cancelled.
+        if Thread.current.isCancelled {
+            return true
+        }
         guard let token = operationTokensOfThisThread.last else {
             return false
         }
@@ -127,10 +137,15 @@ import Darwin
     @discardableResult
     @objc public func beginNativeQuery() -> Bool {
         let token = operationTokensOfThisThread.last
+        let thread = Thread.current
         return socketLock.withLock {
             nativeQueryGeneration &+= 1
             activeNativeQuery = nativeQueryGeneration
-            return token.map { $0 == queryCancellationGeneration } ?? true
+            threadOfActiveNativeQuery = ObjectIdentifier(thread)
+            workTokenOfActiveNativeQuery = SAConnectionWorkCoordinator.tokenOfWorkOnThisThread
+            // A thread that was given up on never sends: the lease turns it away while it waits,
+            // and here once more should it already hold the session.
+            return !thread.isCancelled && (token.map { $0 == queryCancellationGeneration } ?? true)
         }
     }
 
@@ -141,6 +156,8 @@ import Darwin
                 queryWithAcceptedKill = nil
             }
             activeNativeQuery = nil
+            threadOfActiveNativeQuery = nil
+            workTokenOfActiveNativeQuery = nil
         }
     }
 
@@ -183,13 +200,66 @@ import Darwin
     ///   to another cancellation already under way for it, whose request may yet be accepted;
     ///   the caller then leaves that query's socket alone.
     @objc public func reserveCancellation() -> SACancellationHold {
+        reserveCancellation(of: nil)
+    }
+
+    /// Reserves a cancellation of the work the user stopped waiting for, and of nothing else.
+    ///
+    /// The work is the coordinator's, run on the worker thread. A native query that work began is
+    /// held and killed as any stop's would be; a query that is somebody else's - another thread's,
+    /// or an earlier piece of work's on the same worker, such as a streaming statement whose rows
+    /// are still being read while the stopped work waited behind it - is left alone, as are the
+    /// other operations waiting for the session. The stopped thread itself is cancelled by its
+    /// coordinator, and the lease turns a cancelled thread away rather than hand it the session, so
+    /// nothing of its is sent after this - which is why no stop is recorded against the pending
+    /// operations here.
+    /// - Parameters:
+    ///   - tokens: The tokens of the work stopped.
+    ///   - thread: The thread that work ran on, which stands in for a query begun outside any
+    ///     coordinator's work.
+    /// - Returns: A hold on the stopped work's native query, or one that holds nothing.
+    public func reserveCancellation(ofWork tokens: [UInt64], on thread: Thread) -> SACancellationHold {
+        reserveCancellation(of: (tokens: tokens, thread: ObjectIdentifier(thread)))
+    }
+
+    /// Reserves a cancellation: of whatever runs and waits (`scope` nil), or of the stopped work alone.
+    private func reserveCancellation(of scope: (tokens: [UInt64], thread: ObjectIdentifier)?) -> SACancellationHold {
         socketLock.withLock {
+            if let scope {
+                // The query the stopped work began, told from every other - an earlier piece of
+                // work's on the same worker thread included - by its token, and by its thread only
+                // where no coordinator's work began it.
+                let theQueryIsTheStoppedWorks: Bool
+                if activeNativeQuery == nil {
+                    theQueryIsTheStoppedWorks = false
+                } else if let token = workTokenOfActiveNativeQuery {
+                    theQueryIsTheStoppedWorks = scope.tokens.contains(token)
+                } else {
+                    theQueryIsTheStoppedWorks = threadOfActiveNativeQuery == scope.thread
+                }
+                if !theQueryIsTheStoppedWorks {
+                    // Nothing of the stopped work's is running on the server: nothing to kill,
+                    // and nothing of anybody else's to stop.
+                    return SACancellationHold(query: 0, session: 0, serverThread: 0,
+                                              holdsTheQuery: false, killWasAlreadyAccepted: false)
+                }
+                // With no session to send a request on, a stop of one piece of work has nothing
+                // to do: its thread is cancelled already, and the pending operations keep their
+                // turn - the stop of everything below records itself against them, this one not.
+                if cancellationSocket < 0 || serverThreadID == 0 {
+                    return SACancellationHold(query: 0, session: 0, serverThread: 0,
+                                              holdsTheQuery: false, killWasAlreadyAccepted: false)
+                }
+            }
             guard cancellingQuery == nil else {
                 // A request for the query is already on its way, and no second one is sent. The
                 // stop still reaches whatever is pending: an operation that began waiting for the
                 // session after the first stop, which that stop could not know of, must not send
-                // its statement once the request is answered and the session is free.
-                recordStopAgainstPendingOperations()
+                // its statement once the request is answered and the session is free. A stop of
+                // one piece of work reaches nothing else, its thread being cancelled already.
+                if scope == nil {
+                    recordStopAgainstPendingOperations()
+                }
                 return SACancellationHold(query: 0, session: 0, serverThread: 0,
                                           holdsTheQuery: false, killWasAlreadyAccepted: false)
             }
@@ -206,13 +276,19 @@ import Darwin
                 // what sending nothing used to amount to - would have the caller close the
                 // query's socket, ending the session and rolling back a transaction open in it.
                 // The stop still reaches what began waiting while the server ends the query.
-                recordStopAgainstPendingOperations()
+                if scope == nil {
+                    recordStopAgainstPendingOperations()
+                }
                 return SACancellationHold(query: query, session: socketGeneration, serverThread: 0,
                                           holdsTheQuery: true, killWasAlreadyAccepted: true)
             }
             cancellingQuery = query
             cancellingSocketGeneration = socketGeneration
-            queryCancellationGeneration &+= 1
+            // A stop of everything moves the generation past every operation pending; a stop of
+            // one piece of work leaves the others their turn.
+            if scope == nil {
+                queryCancellationGeneration &+= 1
+            }
             return SACancellationHold(query: query, session: socketGeneration, serverThread: serverThreadID,
                                       holdsTheQuery: true, killWasAlreadyAccepted: false)
         }
@@ -331,6 +407,52 @@ import Darwin
     /// Forgets a refusal recorded on this thread, so it cannot speak for a later call.
     private func forgetAnyRefusal() {
         Thread.current.threadDictionary[Self.refusalMarker] = false
+        Thread.current.threadDictionary[Self.refusedWhileWaitingMarker] = false
+    }
+
+    /// Forgets a refusal recorded on this thread, for work that reads none.
+    ///
+    /// The connection's other work - a check, a session replacement - passes the same gate as a
+    /// statement and reads no refusal; a mark one of those found standing would otherwise be read
+    /// by the next statement on the thread and reported as that statement's own.
+    @objc public func forgetAnyRefusalOfThisThread() {
+        forgetAnyRefusal()
+    }
+
+    /// Records that the call this thread is making was refused the session before it was handed
+    /// over, so that the statement path reports it as never sent - the way the lease records a
+    /// caller it turns away itself.
+    @objc public func noteThisThreadsCallWasRefused() {
+        noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: false)
+    }
+
+    /// Marks, for this thread only, that the refusal was for work asked for while the thread was
+    /// already waiting for earlier work on the connection.
+    private static let refusedWhileWaitingMarker = "SAConnectionSessionAccess.refusedWhileWaitingForEarlierWork"
+
+    /// Records a refusal, and why: a question out to the main thread, or earlier work this thread
+    /// is still waiting for. The statement path tells the caller the reason.
+    /// - Parameter whileWaitingForEarlierWork: Whether the call came in during this thread's wait
+    ///   for earlier work on the connection.
+    @objc(noteThisThreadsCallWasRefusedWhileWaitingForEarlierWork:)
+    public func noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: Bool) {
+        Thread.current.threadDictionary[Self.refusalMarker] = true
+        Thread.current.threadDictionary[Self.refusedWhileWaitingMarker] = whileWaitingForEarlierWork
+    }
+
+    /// Whether the refusal this thread's last call met was for work asked for during its wait for
+    /// earlier work. Read with ``takeTheRefusalOfThisThreadsLastCall()``, which takes both.
+    @objc public var thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork: Bool {
+        (Thread.current.threadDictionary[Self.refusedWhileWaitingMarker] as? Bool) ?? false
+    }
+
+    /// Whether a question about this connection is out to the main thread and still unanswered.
+    ///
+    /// The lease turns a main-thread caller away while that is so; work handed to a worker on the
+    /// main thread's behalf has to be turned away before it is handed over, where the caller still
+    /// looks like the main thread.
+    @objc public var aQuestionAwaitsTheMainThread: Bool {
+        socketLock.withLock { questionsAwaitingTheMainThread > 0 }
     }
 
     /// Records that a question about this connection has gone to the main thread.

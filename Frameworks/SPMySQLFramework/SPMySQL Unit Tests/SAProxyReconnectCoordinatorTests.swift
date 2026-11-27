@@ -39,9 +39,51 @@ private final class SAHandshakeFailingConnection: SPMySQLConnection {
     }
 }
 
+/// A proxy that records the thread it was told to disconnect on.
+private final class SADisconnectRecordingProxy: NSObject, SPMySQLConnectionProxy {
+    private(set) var disconnectedOn: Thread?
+
+    func connect() {}
+    func disconnect() { disconnectedOn = Thread.current }
+    func state() -> SPMySQLConnectionProxyState { SPMySQLProxyConnected }
+    func localPort() -> UInt { 3306 }
+    func setConnectionStateChange(_ theStateChangeSelector: Selector!, delegate theDelegate: Any!) -> Bool { true }
+}
+
 /// Which proxy a reconnect goes through as it stands, and which it waits for and connects again.
 final class SAProxyReconnectCoordinatorTests: XCTestCase {
     private let coordinator = SAProxyReconnectCoordinator()
+
+    /// A proxy is told to go on the main thread even while the main queue is busy: the reconnect
+    /// that tells it runs on the connection's own thread, and the main thread can be waiting for
+    /// that reconnect from inside a block on the main queue - as it is when a row is saved from a
+    /// main-queue block and the connection has to come back first. The main run loop keeps turning
+    /// during such a wait; the main queue does not.
+    func testAProxyIsDisconnectedThroughTheMainRunLoopWhileTheMainQueueIsBusy() {
+        let proxy = SADisconnectRecordingProxy()
+        let teardownReturned = DispatchSemaphore(value: 0)
+        let mainQueueBlockEnded = expectation(description: "the main-queue block ended")
+        var returnedWhileTheMainQueueWasBusy = false
+
+        DispatchQueue.main.async { [coordinator] in
+            // The main queue is busy with this block, which waits for the reconnect the way the
+            // wait sheet does: by turning the main run loop.
+            Thread.detachNewThread {
+                coordinator.disconnect(proxy: proxy, preservingReconnect: false)
+                teardownReturned.signal()
+            }
+            let giveUp = Date(timeIntervalSinceNow: 3)
+            while !returnedWhileTheMainQueueWasBusy && Date() < giveUp {
+                returnedWhileTheMainQueueWasBusy = teardownReturned.wait(timeout: .now()) == .success
+                RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+            }
+            mainQueueBlockEnded.fulfill()
+        }
+
+        wait(for: [mainQueueBlockEnded], timeout: 5)
+        XCTAssertTrue(returnedWhileTheMainQueueWasBusy, "the teardown did not wait for the main queue")
+        XCTAssertTrue(proxy.disconnectedOn?.isMainThread ?? false, "and ran on the main thread")
+    }
 
     /// A session replaced over a tunnel that stayed up is reconnected through it as it stands -
     /// and so is the retry after a handshake that failed: nothing asked the tunnel to go in

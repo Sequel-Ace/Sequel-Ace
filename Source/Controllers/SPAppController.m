@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPAppController.h"
+#import "SPQueryController.h"
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPDatabaseDocument.h"
 #import "SPPreferenceController.h"
@@ -193,6 +194,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  * Initialisation stuff after launch is complete
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
+	// The query console is created here, on the main thread, before any connection runs a
+	// statement: a connection's worker logs statements and errors to it, and the console's
+	// shared instance is made on the main thread - a worker making it first would wait for the
+	// main queue while the main thread may be waiting for that worker from inside a queue block.
+	[SPQueryController sharedQueryController];
 
     [SAAnalyticsConsentPolicy requestConsentIfNeeded];
     [SAAnalyticsConsentPolicy applyAnalyticsConsent];

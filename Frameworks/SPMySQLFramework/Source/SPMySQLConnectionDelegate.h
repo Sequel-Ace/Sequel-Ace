@@ -115,4 +115,26 @@
  */
 - (SPMySQLConnectionLostDecision)connectionLost:(id)connection;
 
+/**
+ * Called on the main thread when connection work has to wait for a server, and the wait has
+ * already lasted long enough to be noticed. The work runs on the connection's own thread; the
+ * delegate is asked to wait for it in a way that keeps the interface answering, which means
+ * running an event loop of its own rather than blocking.
+ *
+ * The delegate may also stop waiting before the work is finished, by calling
+ * -cancelConnectionCheck, in which case the work is given up on and the connection reports it
+ * as cancelled - as a stop that may have reached the server when the statement had been sent, since
+ * a kill can come too late for a write. A statement the server has answered already with nothing
+ * left to fetch - a write - is left to finish and reports as it was, unless it outlives a short
+ * grace, in which case its caller is told the statement was carried out but its result not read;
+ * a statement with rows still to fetch is stopped like any other. The work itself runs on until
+ * the server or a timeout answers it.
+ *
+ * @param connection The connection whose work is being waited for.
+ * @param isFinished A block that reports whether the wait is over. Call it repeatedly; it returns
+ *                   YES from the moment the work is done or was given up on - which says nothing
+ *                   about whether the worker has stopped or the connection is idle.
+ */
+- (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished;
+
 @end

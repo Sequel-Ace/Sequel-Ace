@@ -71,14 +71,19 @@ public final class SAConnectionSetupDeadline: NSObject {
     }
 
     /// Ends the phase: lifts the deadline, and says whether the session came through - still
-    /// connected, no statement having lost it, and the deadline not having had to end a wait.
-    /// That last it can have done after the last reply was in; the socket is shut down all the
-    /// same, and a session on it is nothing a caller can use.
-    /// - Parameter connected: Whether the connection still reports its session as connected.
-    @objc(endPhaseWhileConnected:)
-    public func endPhase(whileConnected connected: Bool) -> Bool {
+    /// connected, no statement having lost it, the deadline not having had to end a wait, and the
+    /// thread setting the session up not given up on meanwhile. The deadline can have ended a wait
+    /// after the last reply was in; the socket is shut down all the same, and a session on it is
+    /// nothing a caller can use. A thread given up on - the user stopped waiting for it - sends
+    /// nothing from then on: its statements are turned away, so the session is not set up,
+    /// whatever the last of them reported.
+    /// - Parameters:
+    ///   - connected: Whether the connection still reports its session as connected.
+    ///   - threadWasGivenUpOn: Whether the thread that set the session up was given up on.
+    @objc(endPhaseWhileConnected:threadGivenUpOn:)
+    public func endPhase(whileConnected connected: Bool, threadWasGivenUpOn: Bool) -> Bool {
         let theSocketWasShutDown = disarm()
-        return connected && !theSocketWasShutDown && !aStatementLostTheSession
+        return connected && !theSocketWasShutDown && !aStatementLostTheSession && !threadWasGivenUpOn
     }
 
     /// Arms a deadline on a connection's socket.

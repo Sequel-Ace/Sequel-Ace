@@ -25,6 +25,10 @@ public protocol SAConnectionCancellationHost: AnyObject {
 
     /// Marks the query that holds the connection as cancelled, where callers look for it.
     @objc func markRunningQueryCancelled()
+
+    /// Notes that the user stopped the connection's work - a stop of everything - whether or not
+    /// there is a query to kill: in effect for a batch until the next statement is asked for.
+    @objc func noteStopOfEverythingRequested()
 }
 
 /// How a connection stops the query it is running, or the operation still waiting to run one.
@@ -59,6 +63,37 @@ public final class SAConnectionCancellation: NSObject {
         super.init()
     }
 
+    /// Ends the interface's wait for connection work, because the user asked for that, and stops
+    /// that work - and nothing else on the connection.
+    ///
+    /// The work is given up on first, so the caller that waits for it is told at once and the
+    /// worker's thread is let go: cancelled, which is what keeps a statement of its that has not
+    /// gone out from going out - the lease turns a cancelled thread away. Then, if a native query
+    /// that worker began is running on the server, the server is asked to kill it, without waiting
+    /// for the answer - the main thread is what asks, and reaching the server can take as long as
+    /// the query itself. A query another thread is running on the session - a table load behind
+    /// which the stopped work was queued - is left alone, and so are the operations waiting for
+    /// the session: the user stopped waiting for their own work, not for the connection's.
+    /// - Parameter coordinator: The coordinator whose work the user stopped waiting for.
+    @objc(userStoppedWaitingForWorkOf:)
+    public func userStoppedWaiting(forWorkOf coordinator: SAConnectionWorkCoordinator) {
+        let worker = coordinator.currentWorkerThread
+        // Only the work given up on: work that finished first keeps its result, a streaming
+        // statement among it keeps its download, and work whose statement the server has answered
+        // - settling, its result a write the server applied - is left to finish and kept by the
+        // coordinator; nothing of it is killed.
+        let tokens = coordinator.abandonWorkForUserStopReturningAbandonedTokens()
+        guard let worker, let host, !tokens.isEmpty else {
+            return
+        }
+        let hold = host.sessionAccess.reserveCancellation(ofWork: tokens, on: worker)
+        guard hold.holdsTheQuery, hold.query != 0, !hold.killWasAlreadyAccepted else {
+            // Nothing of the stopped work is running on the server, or the server is ending it already.
+            return
+        }
+        request(hold, markingTheRunningQuery: false, synchronously: false)
+    }
+
     /// Stops the query the connection is running, or the operation still waiting to run one.
     /// - Parameter synchronously: Whether the request to the server is made before this returns.
     ///   Callers that rely on the request having gone out ask for that; the main thread never
@@ -70,6 +105,10 @@ public final class SAConnectionCancellation: NSObject {
             return
         }
         let lease = host.sessionAccess
+
+        // The stop is in effect from here, whatever there is to kill: a batch stops on it, also
+        // when another stop already holds the query or nothing native is running.
+        host.noteStopOfEverythingRequested()
 
         // Recorded first, and without waiting: the stop reaches whatever is pending, outermost
         // query included, and names the native query and the session to act on from here.
@@ -90,6 +129,22 @@ public final class SAConnectionCancellation: NSObject {
             // The server is ending the statement on its own time; the socket is left to it.
             return
         }
+        request(hold, markingTheRunningQuery: true, synchronously: synchronously)
+    }
+
+    /// Asks the server to kill the query a hold names, and shuts its socket down after the grace
+    /// period unless the server accepted the request.
+    /// - Parameters:
+    ///   - hold: The reservation, holding the query.
+    ///   - markingTheRunningQuery: Whether a socket shut down marks the connection's running query
+    ///     as cancelled, where callers look for it. A stop of everything does; a stop of one
+    ///     thread's work leaves that to the thread, which reports its own statement as cancelled.
+    ///   - synchronously: Whether the request is made before this returns.
+    private func request(_ hold: SACancellationHold, markingTheRunningQuery: Bool, synchronously: Bool) {
+        guard let host else {
+            return
+        }
+        let lease = host.sessionAccess
 
         // Once the grace period is over, the socket is shut down unless the server accepted the
         // kill - and not before the server has answered, however long that takes; the side
@@ -106,7 +161,7 @@ public final class SAConnectionCancellation: NSObject {
             }
             // The lease checks that it is still that query on that session; the read on it then
             // fails at once, and the next use recovers the session.
-            if lease.shutDownSocket(ofQuery: hold.query, onSession: hold.session) {
+            if lease.shutDownSocket(ofQuery: hold.query, onSession: hold.session), markingTheRunningQuery {
                 host.markRunningQueryCancelled()
             }
         }

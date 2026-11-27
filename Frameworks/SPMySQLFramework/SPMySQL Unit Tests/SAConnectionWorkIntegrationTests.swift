@@ -1,0 +1,1181 @@
+//
+//  SAConnectionWorkIntegrationTests.swift
+//  SPMySQLFramework
+//
+//  Copyright © 2026 Sequel-Ace. All rights reserved.
+//
+//  More info at <https://github.com/Sequel-Ace/Sequel-Ace>
+//
+
+import XCTest
+@testable import SPMySQL
+
+/// Stands in for the application: shows the wait for connection work by running the main thread's
+/// run loop until the work is done - which is what lets the connection hand a main-thread query to
+/// its worker - and records what it was asked. A test can give it something to do while it waits,
+/// once: an event that comes in during the wait, or the user pressing Stop.
+private final class SAWaitingDelegate: NSObject {
+    private(set) var timesAskedToWait = 0
+    /// What the delegate does during the first wait, once the wait has begun; given the block
+    /// that says whether the work being waited for has finished.
+    var onceWhileWaiting: ((_ isFinished: @escaping () -> Bool) -> Void)?
+    private var sent: [(statement: String, thread: Thread)] = []
+    private let lock = NSLock()
+
+    /// The thread each statement was sent on, in the order they were sent - a snapshot, taken
+    /// under the same lock the worker appends under.
+    var statementThreads: [Thread] {
+        lock.lock()
+        defer { lock.unlock() }
+        return sent.map { $0.thread }
+    }
+
+    /// The statements sent so far, in order - a snapshot under the lock.
+    var statementsSent: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return sent.map { $0.statement }
+    }
+
+    @objc func willQueryString(_ query: String, connection: Any) {
+        lock.lock()
+        sent.append((statement: query, thread: Thread.current))
+        lock.unlock()
+    }
+
+    @objc(connection:waitForConnectionWorkUntilFinished:)
+    func connection(_ connection: Any, waitForConnectionWorkUntilFinished isFinished: @escaping () -> Bool) {
+        timesAskedToWait += 1
+        if let onceWhileWaiting {
+            self.onceWhileWaiting = nil
+            onceWhileWaiting(isFinished)
+        }
+        let deadline = Date(timeIntervalSinceNow: Self.waitDeadline)
+        while !isFinished() {
+            if Date() >= deadline {
+                XCTFail("the connection work was not finished after \(Self.waitDeadline) s; the wait returns so that the test can end")
+                return
+            }
+            RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+        }
+    }
+
+    /// How long the wait for connection work may take before the test fails rather than hangs.
+    static let waitDeadline: TimeInterval = 20
+
+    @objc func connectionLost(_ connection: Any) -> SPMySQLConnectionLostDecision {
+        SPMySQLConnectionLostDisconnect
+    }
+}
+
+/// A connection whose report capture on one named thread can be held still - between the
+/// statement writing its report on the connection and taking it for its caller - while the main
+/// thread's caller returns and reads. Only that thread is held: the main caller's statement runs
+/// on the connection's worker, which is not the main thread either, and passes through.
+private final class SAReportCaptureHoldingConnection: SPMySQLConnection {
+    let backgroundStatementWroteItsReport = DispatchSemaphore(value: 0)
+    let letTheBackgroundStatementCapture = DispatchSemaphore(value: 0)
+    /// The thread whose next report capture is held.
+    var heldThread: Thread?
+    /// How the hold ended: let go by the main caller, or timed out.
+    var holdEnded: DispatchTimeoutResult?
+
+    @objc(_reportOfLastStatement) func reportOfLastStatementHeld() -> SAStatementReport {
+        if let heldThread, Thread.current === heldThread {
+            self.heldThread = nil
+            backgroundStatementWroteItsReport.signal()
+            holdEnded = letTheBackgroundStatementCapture.wait(timeout: .now() + 5)
+        }
+        // The connection's own report, by way of the runtime: the method is private.
+        let selector = NSSelectorFromString("_reportOfLastStatement")
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        typealias Report = @convention(c) (AnyObject, Selector) -> Unmanaged<SAStatementReport>
+        return unsafeBitCast(implementation, to: Report.self)(self, selector).takeUnretainedValue()
+    }
+}
+
+/// Ends a test whose expectation was not met in time.
+private struct SATestWaitTimedOut: Error {}
+
+/// A connection on which the user's stop lands the moment a statement has been carried out - after
+/// the server answered, before the connection has settled the statement's report.
+private final class SAStoppedOnceCarriedOutConnection: SPMySQLConnection {
+    /// Whether the next statement carried out has its thread given up on there and then.
+    var stopsOnceTheNextStatementIsCarriedOut = false
+
+    @objc(_noteStatementCarriedOut:) func noteStatementCarriedOutAndStop(_ statement: String) {
+        // The connection's own note first; its method is private, so it is reached by way of the
+        // runtime rather than `super`.
+        let selector = NSSelectorFromString("_noteStatementCarriedOut:")
+        if let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector) {
+            typealias Note = @convention(c) (AnyObject, Selector, NSString) -> Void
+            unsafeBitCast(implementation, to: Note.self)(self, selector, statement as NSString)
+        }
+        if stopsOnceTheNextStatementIsCarriedOut {
+            stopsOnceTheNextStatementIsCarriedOut = false
+            // The user stops waiting: the thread the statement runs on is given up on.
+            Thread.current.cancel()
+        }
+    }
+}
+
+/// A connection on which the user's Stop Waiting lands the moment a write's send has been answered -
+/// the row changed, the statement settling: the statement holds there until the stop has landed.
+private final class SAStoppedWhileSettlingConnection: SPMySQLConnection {
+    let theSendWasAnswered = DispatchSemaphore(value: 0)
+    let letTheStatementSettle = DispatchSemaphore(value: 0)
+    /// Whether the next statement answered holds until the stop has landed.
+    var holdsTheNextStatementAnswered = false
+
+    @objc(_noteStatementCarriedOut:) func noteStatementCarriedOutAndHold(_ statement: String) {
+        let selector = NSSelectorFromString("_noteStatementCarriedOut:")
+        if let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector) {
+            typealias Note = @convention(c) (AnyObject, Selector, NSString) -> Void
+            unsafeBitCast(implementation, to: Note.self)(self, selector, statement as NSString)
+        }
+        if holdsTheNextStatementAnswered {
+            holdsTheNextStatementAnswered = false
+            theSendWasAnswered.signal()
+            _ = letTheStatementSettle.wait(timeout: .now() + 5)
+        }
+    }
+}
+
+/// A connection whose reconnect restores the session as the connection does - the setup statements
+/// run - and then holds, so that the user's Stop Waiting lands with the restore under way: after
+/// its statements were answered, before the statement that lost its session is sent again.
+private final class SAHeldDuringRestoreConnection: SPMySQLConnection {
+    let theRestoreRan = DispatchSemaphore(value: 0)
+    let letTheRestoreEnd = DispatchSemaphore(value: 0)
+
+    @objc(_restoreSessionStateAfterReconnectWithDatabase:encoding:encodingUsesLatin1Transport:timeZoneIdentifier:)
+    func restoreThenHold(_ database: String?, encoding: String?, encodingUsesLatin1Transport: Bool, timeZoneIdentifier: String?) -> Bool {
+        let selector = NSSelectorFromString("_restoreSessionStateAfterReconnectWithDatabase:encoding:encodingUsesLatin1Transport:timeZoneIdentifier:")
+        typealias Restore = @convention(c) (AnyObject, Selector, NSString?, NSString?, Bool, NSString?) -> Bool
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        let restored = unsafeBitCast(implementation, to: Restore.self)(self, selector, database as NSString?, encoding as NSString?, encodingUsesLatin1Transport, timeZoneIdentifier as NSString?)
+        theRestoreRan.signal()
+        _ = letTheRestoreEnd.wait(timeout: .now() + 10)
+        return restored
+    }
+}
+
+/// A connection on which a stop of everything - the toolbar's, as the document issues it - lands
+/// the moment a statement has been carried out, before the connection has settled its report.
+private final class SAToolbarStoppedOnceCarriedOutConnection: SPMySQLConnection {
+    /// Whether the next statement carried out has the toolbar's stop land there and then.
+    var stopsOnceTheNextStatementIsCarriedOut = false
+
+    @objc(_noteStatementCarriedOut:) func noteStatementCarriedOutAndStop(_ statement: String) {
+        let selector = NSSelectorFromString("_noteStatementCarriedOut:")
+        if let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector) {
+            typealias Note = @convention(c) (AnyObject, Selector, NSString) -> Void
+            unsafeBitCast(implementation, to: Note.self)(self, selector, statement as NSString)
+        }
+        if stopsOnceTheNextStatementIsCarriedOut {
+            stopsOnceTheNextStatementIsCarriedOut = false
+            // The document's stop: marks the stop, then asks the server to kill the query.
+            lastQueryWasCancelled = true
+            cancelCurrentQuery()
+        }
+    }
+}
+
+/// A connection that takes a statement's report only once a streaming download that has ended
+/// already has let the session go - the shortest download there is, settled before the report.
+private final class SAFastStreamSettlingConnection: SPMySQLConnection {
+    @objc(_reportOfLastStatement) func reportOfLastStatementOnceSettled() -> SAStatementReport {
+        // A download that ends lets the attached report go; a short one does so before this.
+        let deadline = Date().addingTimeInterval(2)
+        while (value(forKey: "statementReportHold") as? SAStatementReportHold)?.current != nil, Date() < deadline {
+            usleep(1_000)
+        }
+        let selector = NSSelectorFromString("_reportOfLastStatement")
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        typealias Report = @convention(c) (AnyObject, Selector) -> Unmanaged<SAStatementReport>
+        return unsafeBitCast(implementation, to: Report.self)(self, selector).takeUnretainedValue()
+    }
+}
+
+/// A connection that records which thread its connection check ran on.
+private final class SACheckWatchingConnection: SPMySQLConnection {
+    private(set) var checkThread: Thread?
+
+    @objc(_checkConnectionNow) func checkNowAndRecordTheThread() -> Bool {
+        checkThread = Thread.current
+        let selector = NSSelectorFromString("_checkConnectionNow")
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        typealias Check = @convention(c) (AnyObject, Selector) -> Bool
+        return unsafeBitCast(implementation, to: Check.self)(self, selector)
+    }
+}
+
+/// A connection whose check fails, with an error written on the connection the way a check writes it.
+private final class SAFailingCheckConnection: SPMySQLConnection {
+    @objc(_checkConnectionNow) func checkNowAndFail() -> Bool {
+        perform(NSSelectorFromString("_updateLastErrorMessage:"), with: "The check failed")
+        return false
+    }
+}
+
+/// Connection work asked for on the main thread, against the local server: where it runs, who
+/// waits for it, what a stop makes of it, and work that comes in during the wait.
+final class SAConnectionWorkIntegrationTests: XCTestCase {
+
+    /// Connects with a delegate that shows the wait, or skips when no local server is configured.
+    /// The delegates of the connections a test opened, kept for the test's lifetime: a connection
+    /// holds its delegate weakly but remembers that it shows the wait, so a delegate let go early
+    /// would leave slow work waited for by nobody - and given up on.
+    private var delegatesOfOpenConnections: [SAWaitingDelegate] = []
+
+    override func tearDown() {
+        delegatesOfOpenConnections.removeAll()
+        super.tearDown()
+    }
+
+    private func connected<T: SPMySQLConnection>(_ connection: T, delegate: SAWaitingDelegate) throws -> T {
+        delegatesOfOpenConnections.append(delegate)
+        try configureForTheLocalServer(connection)
+        connection.perform(NSSelectorFromString("setDelegate:"), with: delegate)
+        if !connection.connect() {
+            throw XCTSkip("Local MySQL connection is unavailable: \(connection.lastErrorMessage() ?? "no error")")
+        }
+        return connection
+    }
+
+    /// Whether this connection's session runs a statement with this text on the server, as a second
+    /// connection sees it: the process-list row with the session's id, and that row's statement -
+    /// another session running the same text is not it. A process list that cannot be read is a
+    /// failed observation, not an absent statement.
+    private func serverRunsAStatementContaining(_ text: String, inTheSessionOf connection: SPMySQLConnection,
+                                                seenFrom observer: SPMySQLConnection) throws -> Bool {
+        let processes = try XCTUnwrap(observer.queryString("SHOW FULL PROCESSLIST"),
+                                      "the process list could not be read: \(observer.lastErrorMessage() ?? "no error")")
+        let sessionID = "\(connection.mysqlConnectionThreadId)"
+        for row in processes.getAllRows() {
+            let id: Any?
+            let statement: Any?
+            if let columns = row as? [Any] {
+                id = columns.first
+                statement = columns.count > 7 ? columns[7] : nil
+            } else if let columns = row as? [String: Any] {
+                id = columns["Id"]
+                statement = columns["Info"]
+            } else {
+                continue
+            }
+            guard let id, "\(id)" == sessionID else {
+                continue
+            }
+            return ((statement as? String) ?? "").contains(text)
+        }
+        return false
+    }
+
+    /// Waits for an expectation and ends the test when it is not met in time: what the workers
+    /// write afterwards is not read, and nothing more is asked of a connection a worker may still
+    /// be using.
+    private func waited(for expectation: XCTestExpectation, timeout: TimeInterval) throws {
+        guard XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed else {
+            XCTFail("\(expectation.expectationDescription): not within \(timeout) s")
+            throw SATestWaitTimedOut()
+        }
+    }
+
+    /// A statement asked for on the main thread runs on the worker, and answers as before: quick
+    /// work is simply waited for, and the delegate is never told about it.
+    func testAStatementAskedForOnTheMainThreadRunsOnTheWorkerAndAnswers() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        // The session is set up through the coordinator too; a setup statement that outlasts the quiet
+        // wait on a loaded machine asks the delegate to wait before the test's own statement runs.
+        let waitsDuringConnect = delegate.timesAskedToWait
+        XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
+        // Quick is measured against the coordinator's quiet wait, given room here: on a loaded
+        // machine starting the worker thread alone can take longer than the default.
+        connection.setValue(5, forKeyPath: "connectionWorkCoordinator.quietWait")
+
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 'answered'") as? String, "answered")
+
+        XCTAssertEqual(delegate.timesAskedToWait - waitsDuringConnect, 0, "quick work is never handed to the interface")
+        let sentOn = try XCTUnwrap(delegate.statementThreads.last, "the statement was sent")
+        XCTAssertFalse(sentOn.isMainThread, "on the connection's own thread")
+    }
+
+    /// A statement that takes its time is waited for by the delegate, and still answers.
+    func testASlowStatementIsWaitedForByTheDelegateAndStillAnswers() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        // The session is set up through the coordinator too; a setup statement that outlasts the quiet
+        // wait on a loaded machine asks the delegate to wait before the test's own statement runs.
+        let waitsDuringConnect = delegate.timesAskedToWait
+
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT SLEEP(0.5) + 6") as? String, "6")
+
+        XCTAssertEqual(delegate.timesAskedToWait - waitsDuringConnect, 1, "the interface waited for it")
+    }
+
+    /// A connection check asked for on the main thread runs on the worker too.
+    func testACheckAskedForOnTheMainThreadRunsOnTheWorker() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SACheckWatchingConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+
+        XCTAssertTrue(connection.checkIfNecessary())
+
+        let checkedOn = try XCTUnwrap(connection.checkThread, "the check ran")
+        XCTAssertFalse(checkedOn.isMainThread)
+    }
+
+    /// Stopping the wait tells the caller at once that its statement was cancelled - as a stop that
+    /// may have reached the server, since the statement had been sent - and stops the statement on
+    /// the server; the connection is usable again afterwards. The statement waits at a gate the
+    /// observer holds, so it cannot end on its own: gone from the process list means killed.
+    func testStoppingTheWaitCancelsTheStatementAndTellsTheCallerAtOnce() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer { observer.disconnect() }
+        XCTAssertEqual((observer.getFirstField(fromQuery: "SELECT GET_LOCK('sa_stop_gate', 60)") as? NSString)?.integerValue, 1, "the gate is held")
+        defer { _ = observer.queryString("SELECT RELEASE_LOCK('sa_stop_gate')") }
+
+        var stoppedAt: Date?
+        var seenOnTheServer = false
+        delegate.onceWhileWaiting = { _ in
+            // The user presses Stop Waiting once the statement is running on the server - not before
+            // it was sent, which a stop would also end, without proving the kill. The process list is
+            // read from a thread of its own; this one is the waiting thread.
+            let looked = DispatchSemaphore(value: 0)
+            Thread.detachNewThread {
+                let giveUp = Date(timeIntervalSinceNow: 5)
+                while Date() < giveUp {
+                    if (try? self.serverRunsAStatementContaining("'stopped'", inTheSessionOf: connection, seenFrom: observer)) == true {
+                        seenOnTheServer = true
+                        break
+                    }
+                    usleep(20_000)
+                }
+                looked.signal()
+            }
+            guard looked.wait(timeout: .now() + 6) == .success, seenOnTheServer else {
+                XCTFail("the statement was not seen on the server; the stop is not pressed")
+                return
+            }
+            stoppedAt = Date()
+            connection.cancelCheck()
+        }
+
+        let result = connection.queryString("SELECT GET_LOCK('sa_stop_gate', 60), 'stopped'")
+        let toldAfterTheStop = stoppedAt.map { Date().timeIntervalSince($0) }
+
+        XCTAssertNil(result)
+        XCTAssertNotNil(stoppedAt, "the stop was pressed")
+        XCTAssertLessThan(toldAfterTheStop ?? .infinity, 3, "the caller was told at once, not after the statement")
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+        XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertEqual(connection.lastErrorMessage()?.contains("may have taken effect"), true,
+                       "a stop after the send says the statement may have reached the server and taken effect")
+
+        // The statement itself is stopped on the server, by the request that went out behind the
+        // caller - while the gate is still held, so it cannot have ended on its own.
+        let giveUp = Date(timeIntervalSinceNow: 5)
+        while try serverRunsAStatementContaining("'stopped'", inTheSessionOf: connection, seenFrom: observer) && Date() < giveUp {
+            RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
+        }
+        XCTAssertFalse(try serverRunsAStatementContaining("'stopped'", inTheSessionOf: connection, seenFrom: observer), "the statement was killed")
+
+        // And the connection answers the next statement, on this session or a replacement.
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 'again'") as? String, "again")
+    }
+
+    /// Stopping the wait for work that was queued behind another thread's statement stops that
+    /// work alone: the other thread's statement runs to its end and answers, unkilled, and the
+    /// operations the stop was not about keep their turn.
+    func testStoppingTheWaitLeavesAnotherThreadsStatementAlone() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+
+        // The observer holds a gate on the server; the other thread's statement waits at it until the
+        // stop has been sent, so that statement is still running whatever the test thread's pace.
+        XCTAssertEqual((observer.getFirstField(fromQuery: "SELECT GET_LOCK('sa_other_gate', 30)") as? NSString)?.integerValue, 1, "the gate is held")
+        defer { _ = observer.queryString("SELECT RELEASE_LOCK('sa_other_gate')") }
+
+        // A statement of another thread's holds the session - a table load, say.
+        let otherStarted = DispatchSemaphore(value: 0)
+        let otherAnswered = expectation(description: "the other thread's statement answered")
+        var otherAnswer: String?
+        var otherErrored: Bool?
+        var otherWasCancelled: Bool?
+        Thread.detachNewThread {
+            otherStarted.signal()
+            otherAnswer = connection.getFirstField(fromQuery: "SELECT GET_LOCK('sa_other_gate', 30) + 0, 'other'") as? String
+            otherErrored = connection.queryErrored()
+            otherWasCancelled = connection.lastQueryWasCancelled
+            otherAnswered.fulfill()
+        }
+        XCTAssertEqual(otherStarted.wait(timeout: .now() + 2), .success)
+        // Until the other thread's statement holds the session on the server, not for a while.
+        var otherRuns = false
+        for _ in 0..<250 where !otherRuns {
+            otherRuns = try serverRunsAStatementContaining("'other'", inTheSessionOf: connection, seenFrom: observer)
+            if !otherRuns {
+                usleep(20_000)
+            }
+        }
+        XCTAssertTrue(otherRuns, "the other thread's statement holds the session")
+
+        // The main thread's statement queues behind it; the user stops waiting for it at once.
+        delegate.onceWhileWaiting = { _ in connection.cancelCheck() }
+        let started = Date()
+        let mine = connection.queryString("SELECT 'mine'")
+        let elapsed = Date().timeIntervalSince(started)
+
+        XCTAssertNil(mine, "the stopped statement answers nothing")
+        XCTAssertLessThan(elapsed, 1.2, "and the caller was told at once, not after the other statement")
+        XCTAssertTrue(connection.lastQueryWasCancelled)
+
+        // The stop has been sent; the gate opens, and the other thread's statement runs to its end.
+        _ = observer.queryString("SELECT RELEASE_LOCK('sa_other_gate')")
+        try waited(for: otherAnswered, timeout: 5)
+        XCTAssertEqual(otherAnswer, "1", "the other thread's statement ran to its end")
+        XCTAssertEqual(otherErrored, false, "unkilled")
+        XCTAssertEqual(otherWasCancelled, false, "and not reported as stopped")
+    }
+
+    /// Work that comes in during the wait - an event that queries the same connection from the
+    /// thread that is waiting - is refused rather than queued: queued behind a statement whose
+    /// result keeps the session until its caller reads it, it would wait for a caller that is
+    /// waiting for it. The caller is told so, and the work being waited for still answers.
+    func testWorkThatComesInDuringTheWaitIsRefusedAndTheWaitedForWorkStillAnswers() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        // The session is set up through the coordinator too; a setup statement that outlasts the quiet
+        // wait on a loaded machine asks the delegate to wait before the test's own statement runs.
+        let waitsDuringConnect = delegate.timesAskedToWait
+
+        var innerAnswer: Any?
+        var innerErrorID: UInt?
+        var innerError: String?
+        var innerWasCancelled: Bool?
+        delegate.onceWhileWaiting = { _ in
+            innerAnswer = connection.queryString("SELECT 'inner'")
+            innerErrorID = connection.lastErrorID()
+            innerError = connection.lastErrorMessage()
+            innerWasCancelled = connection.lastQueryWasCancelled
+        }
+
+        let outerAnswer = connection.getFirstField(fromQuery: "SELECT SLEEP(0.6) + 0, 'outer'") as? String
+
+        XCTAssertNil(innerAnswer, "the work that came in during the wait was refused")
+        XCTAssertEqual(innerErrorID, 2013)
+        XCTAssertEqual(innerError?.contains("still waiting for an earlier statement"), true, "and told why")
+        XCTAssertEqual(innerWasCancelled, false, "a refusal is not a stop")
+        XCTAssertFalse(delegate.statementsSent.contains("SELECT 'inner'"), "nothing of it was sent")
+        XCTAssertEqual(outerAnswer, "0", "the work being waited for answered")
+        XCTAssertFalse(connection.queryErrored(), "and its caller reads its own report, not the refusal")
+        XCTAssertEqual(delegate.timesAskedToWait - waitsDuringConnect, 1)
+    }
+
+    /// Each caller reads its own statement's report, however the statements of two threads
+    /// overlap: a background statement that has written its report on the connection and not yet
+    /// taken it for its caller is not written over by the main thread's caller returning from a
+    /// statement of its own - a failed write would otherwise read as a success, or a success as
+    /// a failure. The background statement is held between the two steps while the main caller
+    /// returns and reads.
+    func testEachCallerReadsItsOwnReportHoweverTwoThreadsStatementsOverlap() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAReportCaptureHoldingConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+
+        /// Runs the main thread's statement over a background statement held between writing and
+        /// taking its report, and reports what each caller read.
+        func readings(mainStatement: String, backgroundStatement: String) throws -> (mainErrored: Bool, mainErrorID: UInt, backgroundErrored: Bool?, backgroundErrorID: UInt?) {
+            connection.holdEnded = nil
+            let backgroundReturned = expectation(description: "the background statement's caller read its report")
+            var backgroundErrored: Bool?
+            var backgroundErrorID: UInt?
+            // The background statement starts once the main statement's work is done and the
+            // session free, and is held before it takes its report: its own thread is the one held.
+            delegate.onceWhileWaiting = { mainWorkIsFinished in
+                Thread.detachNewThread {
+                    let deadline = Date(timeIntervalSinceNow: 10)
+                    while !mainWorkIsFinished() && Date() < deadline {
+                        usleep(1_000)
+                    }
+                    guard mainWorkIsFinished() else {
+                        XCTFail("the main statement's work did not finish in time; the background statement is not run")
+                        backgroundReturned.fulfill()
+                        return
+                    }
+                    connection.heldThread = Thread.current
+                    _ = connection.queryString(backgroundStatement)
+                    backgroundErrored = connection.queryErrored()
+                    backgroundErrorID = connection.lastErrorID()
+                    backgroundReturned.fulfill()
+                }
+                // The main caller returns only once the background statement stands held.
+                XCTAssertEqual(connection.backgroundStatementWroteItsReport.wait(timeout: .now() + 5), .success,
+                               "the background statement wrote its report and is held")
+            }
+
+            _ = connection.queryString(mainStatement)
+            let mainErrored = connection.queryErrored()
+            let mainErrorID = connection.lastErrorID()
+
+            connection.letTheBackgroundStatementCapture.signal()
+            try waited(for: backgroundReturned, timeout: 5)
+            XCTAssertEqual(connection.holdEnded, .success, "the background statement was held until the main caller had read")
+            return (mainErrored, mainErrorID, backgroundErrored, backgroundErrorID)
+        }
+
+        let mainSucceeds = try readings(mainStatement: "SELECT SLEEP(0.4), 'main'", backgroundStatement: "SELECT * FROM no_such_table_for_the_overlap")
+        XCTAssertFalse(mainSucceeds.mainErrored, "the main caller reads its success")
+        XCTAssertEqual(mainSucceeds.backgroundErrored, true, "the background caller reads its failure")
+        XCTAssertNotEqual(mainSucceeds.backgroundErrorID ?? 0, 0, "the background statement's own failure: no such table, or no database selected")
+
+        let mainFails = try readings(mainStatement: "SELECT SLEEP(0.4), (SELECT 1 UNION SELECT 2)", backgroundStatement: "SELECT 'background'")
+        XCTAssertTrue(mainFails.mainErrored, "the main caller reads its failure")
+        XCTAssertEqual(mainFails.mainErrorID, 1242, "subquery returns more than 1 row")
+        XCTAssertEqual(mainFails.backgroundErrored, false, "the background caller reads its success")
+    }
+
+    /// A stop that lands once the statement has been carried out - the server answered, the stop
+    /// came before the connection settled the report - does not report the statement cancelled:
+    /// it undid nothing, and a caller told "cancelled" would try the write again.
+    func testAStopThatLandsOnceTheStatementWasCarriedOutDoesNotReportItCancelled() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAStoppedOnceCarriedOutConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_carried_out (i INT NOT NULL)")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+
+        let returned = expectation(description: "the statement returned")
+        var wasCancelled = true
+        var errored = true
+        var errorID: UInt = 0
+        var affectedRows: UInt64 = 0
+        Thread.detachNewThread {
+            connection.stopsOnceTheNextStatementIsCarriedOut = true
+            _ = connection.queryString("INSERT INTO mysql.sa_carried_out (i) VALUES (1)")
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            affectedRows = connection.rowsAffectedByLastQuery()
+            returned.fulfill()
+        }
+        try waited(for: returned, timeout: 10)
+
+        XCTAssertFalse(connection.stopsOnceTheNextStatementIsCarriedOut, "the stop landed")
+        XCTAssertFalse(wasCancelled, "a statement carried out is not cancelled")
+        XCTAssertFalse(errored)
+        XCTAssertEqual(errorID, 0)
+        XCTAssertEqual(affectedRows, 1)
+        XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT COUNT(*) FROM mysql.sa_carried_out") as? NSString)?.integerValue, 1,
+                       "the write stands")
+    }
+
+    /// A stop that lands before a result's rows are stored - after the server answered the
+    /// statement, before the connection stored its rows - is reported as a stop, however whole the
+    /// rows came: a result set undoes nothing, so nothing is tried twice, and a run of statements
+    /// stopped on this report runs no further.
+    func testAStopThatLandsBeforeTheRowsAreStoredReportsTheStatementCancelled() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAStoppedOnceCarriedOutConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+
+        let returned = expectation(description: "the statement returned")
+        var wasCancelled = false
+        var errored = false
+        var errorID: UInt = 0
+        Thread.detachNewThread {
+            connection.stopsOnceTheNextStatementIsCarriedOut = true
+            _ = connection.queryString("SELECT 1 AS stored_after_the_stop")
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            returned.fulfill()
+        }
+        try waited(for: returned, timeout: 10)
+
+        XCTAssertFalse(connection.stopsOnceTheNextStatementIsCarriedOut, "the stop landed")
+        XCTAssertTrue(wasCancelled, "a statement stopped before its rows were stored is reported cancelled")
+        XCTAssertTrue(errored)
+        XCTAssertEqual(errorID, 1317)
+        XCTAssertEqual(connection.lastErrorMessage(), "Query cancelled.", "a read that was stopped is simply cancelled")
+    }
+
+    /// A statement that may write and returns rows - a procedure that writes, then selects - stopped
+    /// before its rows are stored is reported as a stop that may have taken effect: the write stands,
+    /// and nobody is told the statement certainly did not run.
+    func testAWriteWithRowsStoppedBeforeTheyAreStoredIsReportedAsAStopThatMayHaveTakenEffect() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAStoppedOnceCarriedOutConnection(), delegate: delegate)
+        defer {
+            _ = connection.queryString("DROP PROCEDURE IF EXISTS mysql.sa_write_then_select")
+            connection.disconnect()
+        }
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_proc_rows (i INT NOT NULL)")
+        _ = connection.queryString("INSERT INTO mysql.sa_proc_rows (i) VALUES (1)")
+        _ = connection.queryString("DROP PROCEDURE IF EXISTS mysql.sa_write_then_select")
+        _ = connection.queryString("CREATE PROCEDURE mysql.sa_write_then_select() BEGIN UPDATE mysql.sa_proc_rows SET i = 2; SELECT i FROM mysql.sa_proc_rows; END")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+
+        connection.stopsOnceTheNextStatementIsCarriedOut = true
+        _ = connection.queryString("CALL mysql.sa_write_then_select()")
+
+        XCTAssertFalse(connection.stopsOnceTheNextStatementIsCarriedOut, "the stop landed")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "stopped before its rows were stored")
+        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertEqual(connection.lastErrorMessage()?.contains("may have taken effect"), true, "as a stop that may have taken effect")
+        XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT i FROM mysql.sa_proc_rows") as? NSString)?.integerValue, 2, "the write stands")
+    }
+
+    /// A stop of everything - the toolbar's - that lands while a statement waits for the session
+    /// behind another thread's statement stops that statement before it is sent, and is still in
+    /// effect for the batch afterwards: the statement's own run must not forget it.
+    func testAToolbarStopWhileAStatementWaitsForTheSessionReachesTheBatch() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        XCTAssertEqual((observer.getFirstField(fromQuery: "SELECT GET_LOCK('sa_wait_gate', 30)") as? NSString)?.integerValue, 1, "the gate is held")
+        defer { _ = observer.queryString("SELECT RELEASE_LOCK('sa_wait_gate')") }
+
+        // Another thread's statement holds the session, waiting at the gate.
+        let otherReturned = expectation(description: "the other thread's statement returned")
+        Thread.detachNewThread {
+            _ = connection.queryString("SELECT GET_LOCK('sa_wait_gate', 30) + 0, 'held'")
+            otherReturned.fulfill()
+        }
+        var otherRuns = false
+        for _ in 0..<250 where !otherRuns {
+            otherRuns = try serverRunsAStatementContaining("'held'", inTheSessionOf: connection, seenFrom: observer)
+            if !otherRuns {
+                usleep(20_000)
+            }
+        }
+        XCTAssertTrue(otherRuns, "the other thread's statement holds the session")
+
+        // This statement waits for the session; the document's stop lands while it waits.
+        delegate.onceWhileWaiting = { _ in
+            connection.lastQueryWasCancelled = true
+            connection.cancelCurrentQuery()
+        }
+        let mine = connection.queryString("SELECT 'mine'")
+
+        XCTAssertNil(mine, "the waiting statement was not sent")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "and is reported as the stop it was")
+        XCTAssertTrue(connection.stopWasRequested(), "the stop is still in effect for a batch")
+        _ = observer.queryString("SELECT RELEASE_LOCK('sa_wait_gate')")
+        try waited(for: otherReturned, timeout: 10)
+
+        XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 'again'") as? String, "again", "the connection answers again")
+        XCTAssertFalse(connection.stopWasRequested(), "and the stop is forgotten with the next statement")
+    }
+
+    /// A statement whose session was lost reconnects, and the reconnect's setup statements are
+    /// answered - `SET NAMES`, the database - before the statement itself is sent again. Stop
+    /// Waiting that lands then stops the statement: the setup's answers are the connection's, not
+    /// the work's, so the work is given up on and the statement is reported cancelled, never sent.
+    func testStopWaitingDuringTheReconnectsRestoreStopsTheStatementTheSetupAnsweredFor() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAHeldDuringRestoreConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.letTheRestoreEnd.signal()
+            connection.disconnect()
+            observer.disconnect()
+        }
+        // The session is lost: the statement fails, and the connection reconnects and restores.
+        _ = observer.queryString("KILL \(connection.mysqlConnectionThreadId)")
+        XCTAssertFalse(observer.queryErrored(), observer.lastErrorMessage() ?? "")
+
+        var stoppedAt: Date?
+        delegate.onceWhileWaiting = { _ in
+            // The user presses Stop Waiting once the restore's statements have been answered. The
+            // restore stays held until the caller has returned: told at once, not once the worker is done.
+            guard connection.theRestoreRan.wait(timeout: .now() + 10) == .success else {
+                XCTFail("the restore did not run")
+                return
+            }
+            stoppedAt = Date()
+            connection.cancelCheck()
+        }
+        let result = connection.queryString("SELECT 'after the loss'")
+        let toldAfterTheStop = stoppedAt.map { Date().timeIntervalSince($0) }
+        connection.letTheRestoreEnd.signal()
+
+        XCTAssertNil(result, "the statement was not sent again")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "it is reported as the stop it was")
+        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertNotNil(stoppedAt, "the stop was pressed")
+        XCTAssertLessThan(toldAfterTheStop ?? .infinity, 3, "and the caller was told at once, with the restore still held")
+    }
+
+    /// A connection check asked for on the main thread whose session is gone reconnects, and the
+    /// reconnect's setup statements are answered. Stop Waiting that lands then stops the check: the
+    /// setup's answers are the connection's, not the work's, so the check is given up on at once
+    /// rather than waited out as settling and reported as carried out.
+    func testStopWaitingDuringACheckRestoreStopsTheCheck() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAHeldDuringRestoreConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.letTheRestoreEnd.signal()
+            connection.disconnect()
+            observer.disconnect()
+        }
+        _ = observer.queryString("KILL \(connection.mysqlConnectionThreadId)")
+        XCTAssertFalse(observer.queryErrored(), observer.lastErrorMessage() ?? "")
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+
+        var stoppedAt: Date?
+        delegate.onceWhileWaiting = { _ in
+            guard connection.theRestoreRan.wait(timeout: .now() + 10) == .success else {
+                XCTFail("the restore did not run")
+                return
+            }
+            stoppedAt = Date()
+            connection.cancelCheck()
+        }
+        let usable = connection.checkIfNecessary()
+        let toldAfterTheStop = stoppedAt.map { Date().timeIntervalSince($0) }
+        connection.letTheRestoreEnd.signal()
+
+        XCTAssertFalse(usable, "the check the user stopped does not answer yes")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "it is reported as the stop it was")
+        XCTAssertNotNil(stoppedAt, "the stop was pressed")
+        XCTAssertLessThan(toldAfterTheStop ?? .infinity, 3, "and the caller was told at once, with the restore still held")
+    }
+
+    /// A statement whose session is gone and cannot be recovered - the server is not where it was -
+    /// is never sent, and its caller reads the connection's error with no rows: not the rows of the
+    /// statement before, which a count read as success would take for this one's.
+    func testAStatementWhoseRecoveryFailsReportsNoRowsOfAnEarlierOne() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_unrecovered (i INT NOT NULL)")
+        _ = connection.queryString("INSERT INTO mysql.sa_unrecovered (i) VALUES (1)")
+        _ = connection.queryString("DELETE FROM mysql.sa_unrecovered WHERE i = 1")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 1, "the statement before affected a row")
+
+        // The session is gone, and the server is not where the connection would look for it again.
+        _ = observer.queryString("KILL \(connection.mysqlConnectionThreadId)")
+        XCTAssertFalse(observer.queryErrored(), observer.lastErrorMessage() ?? "")
+        connection.useSocket = false
+        connection.host = "127.0.0.1"
+        connection.port = 1
+
+        let result = connection.queryString("DELETE FROM mysql.sa_unrecovered WHERE i = 1")
+
+        XCTAssertNil(result, "the statement was not sent")
+        XCTAssertTrue(connection.queryErrored(), "its caller reads the connection's error")
+        XCTAssertNotEqual(connection.lastErrorID(), 0)
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 0, "and no rows - not the earlier statement's")
+        XCTAssertEqual(connection.lastInsertID(), 0)
+    }
+
+    /// A stop of everything - the toolbar's - that lands once a write was carried out leaves that
+    /// write its result, and is still in effect for a batch running statement after statement,
+    /// until the next statement is asked for.
+    func testAToolbarStopThatLandsOnceAWriteWasCarriedOutSparesTheWriteAndStillStopsABatch() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAToolbarStoppedOnceCarriedOutConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_toolbar (i INT NOT NULL)")
+        _ = connection.queryString("INSERT INTO mysql.sa_toolbar (i) VALUES (1)")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+
+        connection.stopsOnceTheNextStatementIsCarriedOut = true
+        let result = connection.queryString("UPDATE mysql.sa_toolbar SET i = 2")
+
+        XCTAssertNotNil(result, "the write's result reaches its caller")
+        XCTAssertFalse(connection.lastQueryWasCancelled, "not as a stop")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 1)
+        XCTAssertTrue(connection.stopWasRequested(), "while a batch stops on the stop being in effect")
+
+        XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT i FROM mysql.sa_toolbar") as? NSString)?.integerValue, 2, "the write stands")
+        XCTAssertFalse(connection.stopWasRequested(), "and the stop is forgotten with the next statement")
+    }
+
+    /// Stop Waiting that lands once the server has answered a write - the row changed, the statement
+    /// settling - leaves the statement to finish and hands its caller the result, not a stop: told
+    /// "cancelled", the caller would try the write again.
+    func testStopWaitingAfterTheServerAnsweredAWriteHandsItsCallerTheResult() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAStoppedWhileSettlingConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_settling (i INT NOT NULL)")
+        _ = connection.queryString("INSERT INTO mysql.sa_settling (i) VALUES (1)")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        let waitsBefore = delegate.timesAskedToWait
+
+        delegate.onceWhileWaiting = { _ in
+            // The user presses Stop Waiting once the server has answered the write.
+            XCTAssertEqual(connection.theSendWasAnswered.wait(timeout: .now() + 5), .success)
+            connection.cancelCheck()
+            connection.letTheStatementSettle.signal()
+        }
+        connection.holdsTheNextStatementAnswered = true
+        let result = connection.queryString("UPDATE mysql.sa_settling SET i = 2")
+
+        XCTAssertNotNil(result, "the statement's own result reaches its caller")
+        XCTAssertFalse(connection.lastQueryWasCancelled, "not a stop")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 1)
+        XCTAssertEqual(delegate.timesAskedToWait - waitsBefore, 1, "the write was waited for once")
+        XCTAssertEqual((connection.getFirstField(fromQuery: "SELECT i FROM mysql.sa_settling") as? NSString)?.integerValue, 2,
+                       "and the write stands")
+    }
+
+    /// A fast streaming statement downloads on a thread of its own from the moment its result
+    /// exists; the shortest download ends, and lets the session go, before the statement's report
+    /// is taken. That report is the statement's own - settled, not attached to the session - and a
+    /// stop of later work on the connection leaves it alone.
+    func testAFastStreamSettledBeforeItsReportWasTakenIsLeftAloneByAStopOfLaterWork() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAFastStreamSettlingConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        try prepareSlowRows(on: connection)
+
+        let aReturned = DispatchSemaphore(value: 0)
+        let laterWorkWasStopped = DispatchSemaphore(value: 0)
+        let aRead = expectation(description: "A read its report")
+        var aRows = 0
+        var aWasCancelled = true
+        var aErrored = true
+        Thread.detachNewThread {
+            if let result = connection.streamingQueryString("SELECT 1", useLowMemoryBlockingStreaming: false) as? SPMySQLStreamingResult {
+                while result.getRowAsArray() != nil {
+                    aRows += 1
+                }
+            }
+            aReturned.signal()
+            guard laterWorkWasStopped.wait(timeout: .now() + 20) == .success else {
+                XCTFail("the later work was not stopped in time; A's report is not read")
+                aRead.fulfill()
+                return
+            }
+            aWasCancelled = connection.lastQueryWasCancelled
+            aErrored = connection.queryErrored()
+            aRead.fulfill()
+        }
+        guard aReturned.wait(timeout: .now() + 10) == .success else {
+            XCTFail("A did not return in time")
+            laterWorkWasStopped.signal()
+            throw SATestWaitTimedOut()
+        }
+
+        // Later work on another thread, stopped while the server is at it - rows that take their
+        // time, which the server aborts when the query is killed.
+        let bReturned = expectation(description: "B returned")
+        var bWasCancelled = false
+        Thread.detachNewThread {
+            _ = connection.queryString(self.slowRowsStatement)
+            bWasCancelled = connection.lastQueryWasCancelled
+            bReturned.fulfill()
+        }
+        var bRuns = false
+        for _ in 0..<100 where !bRuns {
+            bRuns = try serverRunsAStatementContaining("sa_slow_rows", inTheSessionOf: connection, seenFrom: observer)
+            if !bRuns {
+                usleep(50_000)
+            }
+        }
+        XCTAssertTrue(bRuns, "B runs on the server")
+        connection.cancelCurrentQuery()
+        try waited(for: bReturned, timeout: 15)
+        XCTAssertTrue(bWasCancelled, "the stop was B's")
+        laterWorkWasStopped.signal()
+        try waited(for: aRead, timeout: 20)
+
+        XCTAssertEqual(aRows, 1)
+        XCTAssertFalse(aWasCancelled, "A's report is its own, settled before B")
+        XCTAssertFalse(aErrored)
+    }
+
+    /// A failed check asked for on the main thread - which runs on the worker - is read on the
+    /// main thread: its error is handed back there, in front of a statement's report handed back
+    /// earlier in the same turn.
+    func testAFailedCheckAskedForOnTheMainThreadIsReadThere() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAFailingCheckConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
+
+        _ = connection.queryString("SELECT 1")
+        XCTAssertFalse(connection.queryErrored(), "a statement's report is handed back first")
+
+        // The check is due, and fails.
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+        XCTAssertFalse(connection.checkIfNecessary())
+        XCTAssertTrue(connection.queryErrored(), "the check's error is read where the check was asked for")
+        XCTAssertEqual(connection.lastErrorMessage(), "The check failed")
+
+        // A statement stopped earlier in the same turn does not stand in front of the check's error.
+        SAStatementReport.handBack(SAStatementReport(errorMessage: "Query cancelled.", errorID: 1317, sqlState: "70100",
+                                                     affectedRows: 0, insertID: 0, wasCancelled: true), for: connection)
+        connection.setValue(0, forKey: "lastConnectionUsedTime")
+        XCTAssertFalse(connection.checkIfNecessary())
+        XCTAssertEqual(connection.lastErrorMessage(), "The check failed", "the check's own error, not the earlier stop")
+        XCTAssertFalse(connection.lastQueryWasCancelled)
+    }
+
+    /// Work the main thread asks for while a streaming result of its own still keeps the session -
+    /// its rows not downloaded yet - waits for that session on the worker thread that ran the
+    /// streaming statement. Stopping the wait for the later work leaves the earlier statement's
+    /// query alone: it is the result's, still being read, and only shares the thread.
+    func testStoppingTheWaitForWorkQueuedBehindThisThreadsOwnStreamingResultLeavesThatResultAlone() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        try prepareSlowRows(on: connection)
+        XCTAssertTrue(Thread.isMainThread, "the test stands for the interface")
+
+        // Narrow rows: the download is waited for whole, and a loaded machine takes its time.
+        let store = try XCTUnwrap(connection.resultStore(fromQueryString: "SELECT i, SLEEP(0.002) FROM mysql.sa_slow_rows"))
+        let storeReport = try XCTUnwrap(SAStatementReport.reportHandedBackToThisThread(for: connection))
+        XCTAssertFalse(storeReport.wasCancelled)
+
+        // Later work waits for the session the store keeps; the user stops waiting for it.
+        delegate.onceWhileWaiting = { _ in
+            connection.cancelCheck()
+        }
+        let later = connection.queryString("SELECT 'later'")
+        XCTAssertNil(later, "the later work was given up on")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "and its caller told")
+
+        // The store's rows arrive whole: its query was nobody's to kill.
+        store.startDownload()
+        let deadline = Date().addingTimeInterval(60)
+        while !store.dataDownloaded, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        XCTAssertTrue(store.dataDownloaded)
+        XCTAssertEqual(store.numberOfRows(), 900, "every row arrived")
+        XCTAssertFalse(storeReport.wasCancelled, "the streaming statement's query was left alone")
+        XCTAssertEqual(storeReport.errorID, 0, storeReport.errorMessage ?? "")
+    }
+
+    /// A database selection that fails on a connection in a character set other than UTF-8 restores
+    /// that character set with a statement of its own, whose report would otherwise stand in front
+    /// of the failure; the caller reads the failure.
+    func testAFailedDatabaseSelectionIsReadPastTheCharacterSetItRestores() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        XCTAssertTrue(connection.setEncoding("latin1"))
+
+        XCTAssertFalse(connection.selectDatabase("sa_no_such_database_\(UUID().uuidString.prefix(8))"))
+        XCTAssertTrue(connection.queryErrored(), "the selection's failure is read")
+        XCTAssertEqual(connection.lastErrorID(), 1049, "unknown database")
+        // The connection's own fields are the restore's: nothing was written there outside the lease.
+        XCTAssertEqual((connection.value(forKey: "queryErrorID") as? UInt) ?? 0, 0, "the fields say what the restore said")
+    }
+
+    // MARK: - What a statement reports after its report was taken
+
+    /// Gives the connection a table of 900 rows that a streaming statement reads slowly - one row
+    /// every 10 ms, each wider than the server's network buffer so that it is sent as soon as it is
+    /// produced rather than with the rest at the end - so that something can land while the rows
+    /// are still being read. Temporary, so it goes with the session.
+    private func prepareSlowRows(on connection: SPMySQLConnection) throws {
+        _ = connection.queryString("CREATE TEMPORARY TABLE mysql.sa_slow_rows (i INT NOT NULL)")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        _ = connection.queryString("INSERT INTO mysql.sa_slow_rows WITH RECURSIVE r AS (SELECT 1 AS i UNION ALL SELECT i + 1 FROM r WHERE i < 900) SELECT i FROM r")
+        XCTAssertFalse(connection.queryErrored(), connection.lastErrorMessage() ?? "")
+        XCTAssertEqual(connection.rowsAffectedByLastQuery(), 900)
+    }
+
+    /// The streaming statement over those rows.
+    private let slowRowsStatement = "SELECT i, REPEAT('x', 20000) AS padding, SLEEP(0.01) FROM mysql.sa_slow_rows"
+
+    /// A streaming statement's report is taken when the statement returns its result, before its
+    /// rows are read, and stays with the connection while the statement holds the session. A stop
+    /// during the download is written into it from there - and the caller, reading on its own
+    /// thread with that report handed back to it, reads the stop, even once another thread's
+    /// statement has run on the connection in between. The caller is a task thread here, like
+    /// the exporters, which runs its statement where it asks for it.
+    func testAStopDuringAStreamingDownloadIsReadByTheStatementsCaller() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        defer { connection.disconnect() }
+        try prepareSlowRows(on: connection)
+
+        let tenRowsRead = DispatchSemaphore(value: 0)
+        let downloadEnded = DispatchSemaphore(value: 0)
+        let anotherStatementRan = DispatchSemaphore(value: 0)
+        let finished = expectation(description: "the rows were read to the end")
+        var rows = 0
+        var wasCancelled = false
+        var errored = false
+        var errorID: UInt = 0
+        Thread.detachNewThread {
+            if let result = connection.streamingQueryString(self.slowRowsStatement, useLowMemoryBlockingStreaming: true) as? SPMySQLStreamingResult {
+                while result.getRowAsArray() != nil {
+                    rows += 1
+                    if rows == 10 {
+                        tenRowsRead.signal()
+                    }
+                }
+            } else {
+                tenRowsRead.signal()
+            }
+            // Another thread's statement runs on the connection before this caller reads.
+            downloadEnded.signal()
+            guard anotherStatementRan.wait(timeout: .now() + 10) == .success else {
+                XCTFail("the other statement did not run in time; the report is not read")
+                finished.fulfill()
+                return
+            }
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            finished.fulfill()
+        }
+        guard tenRowsRead.wait(timeout: .now() + 10) == .success else {
+            XCTFail("rows were not being read in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
+        connection.cancelCurrentQuery()
+        guard downloadEnded.wait(timeout: .now() + 20) == .success else {
+            XCTFail("the download did not end in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
+        _ = connection.queryString("SELECT 'another statement'")
+        XCTAssertFalse(connection.queryErrored(), "the other statement ran: \(connection.lastErrorMessage() ?? "")")
+        anotherStatementRan.signal()
+        try waited(for: finished, timeout: 20)
+
+        XCTAssertGreaterThanOrEqual(rows, 10)
+        XCTAssertLessThan(rows, 900, "the download was stopped")
+        XCTAssertTrue(wasCancelled, "the caller reads the stop")
+        XCTAssertTrue(errored)
+        XCTAssertEqual(errorID, 1317, "query execution was interrupted")
+    }
+
+    /// A connection lost during a streaming download - the SQL export's case - is read by the
+    /// statement's caller the same way, as an error that is not a stop, and again once another
+    /// thread's statement has been tried on the connection in between.
+    func testALostConnectionDuringAStreamingDownloadIsReadByTheStatementsCaller() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SPMySQLConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.disconnect()
+            observer.disconnect()
+        }
+        let serverThread = connection.mysqlConnectionThreadId
+        try prepareSlowRows(on: connection)
+
+        let tenRowsRead = DispatchSemaphore(value: 0)
+        let downloadEnded = DispatchSemaphore(value: 0)
+        let anotherStatementRan = DispatchSemaphore(value: 0)
+        let finished = expectation(description: "the rows were read to the end")
+        var rows = 0
+        var wasCancelled = false
+        var errored = false
+        var errorID: UInt = 0
+        Thread.detachNewThread {
+            if let result = connection.streamingQueryString(self.slowRowsStatement, useLowMemoryBlockingStreaming: true) as? SPMySQLStreamingResult {
+                while result.getRowAsArray() != nil {
+                    rows += 1
+                    if rows == 10 {
+                        tenRowsRead.signal()
+                    }
+                }
+            } else {
+                tenRowsRead.signal()
+            }
+            // Another thread's statement is tried on the connection before this caller reads.
+            downloadEnded.signal()
+            guard anotherStatementRan.wait(timeout: .now() + 10) == .success else {
+                XCTFail("the other statement was not tried in time; the report is not read")
+                finished.fulfill()
+                return
+            }
+            wasCancelled = connection.lastQueryWasCancelled
+            errored = connection.queryErrored()
+            errorID = connection.lastErrorID()
+            finished.fulfill()
+        }
+        guard tenRowsRead.wait(timeout: .now() + 10) == .success else {
+            XCTFail("rows were not being read in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
+        _ = observer.queryString("KILL \(serverThread)")
+        XCTAssertFalse(observer.queryErrored(), "the connection was killed: \(observer.lastErrorMessage() ?? "")")
+        guard downloadEnded.wait(timeout: .now() + 20) == .success else {
+            XCTFail("the download did not end in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
+        // Tried, not necessarily run: the session is gone, and the delegate lets it go.
+        _ = connection.queryString("SELECT 'another statement'")
+        anotherStatementRan.signal()
+        try waited(for: finished, timeout: 20)
+
+        XCTAssertGreaterThanOrEqual(rows, 10)
+        XCTAssertLessThan(rows, 900, "the download ended early")
+        XCTAssertTrue(errored, "the caller reads the lost connection")
+        XCTAssertEqual(errorID, 2013, "lost connection during query")
+        XCTAssertFalse(wasCancelled, "a lost connection is not a stop")
+    }
+
+    // MARK: - The local server
+
+    /// Points a connection at the local server named by the environment, or at the usual socket.
+    private func configureForTheLocalServer(_ connection: SPMySQLConnection) throws {
+        let environment = ProcessInfo.processInfo.environment
+        var socketPath = environment["SPMYSQL_TEST_SOCKET"]
+        let testHost = environment["SPMYSQL_TEST_HOST"]
+        if (socketPath?.isEmpty ?? true), (testHost?.isEmpty ?? true) {
+            socketPath = ["/tmp/mysql.sock", "/opt/homebrew/var/mysql/mysql.sock"]
+                .first(where: { FileManager.default.fileExists(atPath: $0) })
+        }
+        let testUser = environment["SPMYSQL_TEST_USER"]
+        connection.username = testUser?.isEmpty == false ? testUser : "root"
+        connection.password = environment["SPMYSQL_TEST_PASSWORD"]
+        connection.useKeepAlive = false
+        connection.timeout = 5
+        if let testHost, !testHost.isEmpty {
+            connection.useSocket = false
+            connection.host = testHost
+            if let port = environment["SPMYSQL_TEST_PORT"].flatMap(UInt.init) {
+                connection.port = port
+            }
+        } else if let socketPath, !socketPath.isEmpty {
+            connection.useSocket = true
+            connection.socketPath = socketPath
+        } else {
+            throw XCTSkip("No local MySQL connection configured. Set SPMYSQL_TEST_SOCKET or SPMYSQL_TEST_HOST to run this regression.")
+        }
+    }
+}

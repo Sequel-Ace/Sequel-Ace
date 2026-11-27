@@ -8,6 +8,7 @@
 //
 
 import AppKit
+import SPMySQL
 
 /// Answers the questions the bundled `dialog` client authentication plugin
 /// asks on behalf of a server — MariaDB/MySQL PAM authentication and anything
@@ -88,15 +89,41 @@ enum SADialogAuthPrompt {
     /// Asks on the main thread and blocks the caller until the user answers.
     /// `nil` means the user cancelled; the plugin turns that into a failed
     /// authentication.
-    static func ask(prompt: String?, secure: Bool, isEncrypted: Bool, isServerVerified: Bool = false) -> String? {
+    ///
+    /// By way of the main run loop, not the main queue: a reconnect can ask this from the
+    /// connection's own thread while the main thread waits for that reconnect from inside a
+    /// block on the main queue - which runs one block at a time, so `DispatchQueue.main.sync`
+    /// would never return. The main run loop keeps turning during such a wait.
+    ///
+    /// Work the user stopped waiting for asks nothing: its thread was cancelled, and the session
+    /// its handshake still brings up is retired unused, so a question from it would be stale.
+    /// - Parameters:
+    ///   - prompt: The server's question.
+    ///   - secure: Whether the answer is a password.
+    ///   - isEncrypted: Whether the connection is encrypted.
+    ///   - isServerVerified: Whether the server's identity was verified.
+    ///   - presenter: What shows the question on the main thread; the alert, unless a test
+    ///     stands something in for it. Escaping: the main run loop can still hold the block that
+    ///     holds it when the asking thread returns.
+    /// - Returns: The answer, or nil when the user cancelled.
+    static func ask(prompt: String?, secure: Bool, isEncrypted: Bool, isServerVerified: Bool = false,
+                    presenter: @escaping (_ message: String, _ secure: Bool, _ warning: Bool) -> String? = present) -> String? {
         let message = message(for: prompt, secure: secure, isEncrypted: isEncrypted, isServerVerified: isServerVerified)
         let warning = !isEncrypted || !isServerVerified
-        if Thread.isMainThread {
-            return present(message: message, secure: secure, warning: warning)
+        // The asking thread, which the block below does not run on; the stop can land while the
+        // question is on its way to the main thread, so it is checked again there.
+        let asker = Thread.current
+        guard !asker.isCancelled else {
+            return nil
         }
-        return DispatchQueue.main.sync {
-            present(message: message, secure: secure, warning: warning)
+        var answer: String?
+        SAMainRunLoop.runAndWait {
+            guard !asker.isCancelled else {
+                return
+            }
+            answer = presenter(message, secure, warning)
         }
+        return answer
     }
 
     /// Runs the alert. `warning` only changes how loudly it is presented; the

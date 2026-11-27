@@ -1,0 +1,266 @@
+//
+//  SAStatementCall.swift
+//  SPMySQLFramework
+//
+//  Copyright © 2026 Sequel-Ace. All rights reserved.
+//
+
+import Foundation
+
+/// The connection as a statement call sees it: what runs the statement with the interface alive,
+/// the lease that records a call turned away, and the insert ID a report carries.
+@objc(SAStatementCallHost)
+public protocol SAStatementCallHost: AnyObject {
+
+    /// The lease, which records a call it or the hand-off turned away, and why.
+    @objc var sessionAccess: SAConnectionSessionAccess { get }
+
+    /// The insert ID the connection carries, as the last statement left it.
+    @objc var insertIDCarried: UInt64 { get }
+
+    /// Ends the reach of an explicit stop recorded on the connection: a statement is being asked
+    /// for, and the stop was of the work before it.
+    @objc func forgetAnExplicitStop()
+
+    /// A report of what the connection's fields say now: the last statement's error, rows and stop.
+    @objc var reportFromTheConnectionsFields: SAStatementReport { get }
+
+    /// Runs yes-or-no connection work the way statements are run: on the worker when asked for on
+    /// the main thread, waiting with the interface alive.
+    /// - Parameter work: The work.
+    /// - Returns: What the work answered, or false when the user stopped waiting for it.
+    @objc func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool
+
+    /// Runs the work on the connection's worker when asked for on the main thread, waiting with
+    /// the interface alive, and where it was asked for otherwise.
+    /// - Parameter work: The statement, run under the lease.
+    /// - Returns: What the work returned, or nil when it was refused or given up on.
+    @objc func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any?
+}
+
+/// A statement call as `queryString:` makes it: the statement runs through the hand-off, takes
+/// its report with its result while the session is still held, and the report is handed to the
+/// calling thread - a statement refused the session, or given up on, is reported to that thread
+/// the same way, with the reason.
+@objc(SAStatementCall)
+public final class SAStatementCall: NSObject {
+
+    /// Runs a statement and hands its report to the calling thread.
+    ///
+    /// A statement that was refused the session never reached the server. Saying so is what keeps
+    /// it apart from one that ran and changed nothing: callers read the row count and the error
+    /// together, and both would still describe the statement before this one - which is how an
+    /// edit that was never written comes to be treated as saved. The refusal is this caller's to
+    /// read, handed to its thread like a statement's report, with its reason: the question out to
+    /// the main thread, or the earlier work this thread is waiting for.
+    /// - Parameters:
+    ///   - work: The statement, run under the lease; returns its result with its report, taken
+    ///     while the session is still held.
+    ///   - host: The connection.
+    /// - Returns: The statement's result, or nil when it failed, was refused or was given up on.
+    @objc(run:on:)
+    public static func run(_ work: @escaping () -> SAStatementRun?, on host: SAStatementCallHost) -> Any? {
+        SAStatementReport.forgetReportHandedBackToThisThread(for: host)
+        // An explicit stop reaches every caller until the next statement is asked for - this one,
+        // refused or not: a refused statement is not one the user stopped.
+        host.forgetAnExplicitStop()
+        // Entered outside any coordinator's work, this call is the statement the work is for.
+        // Entered inside one - the connection running a statement for itself, a reconnect's
+        // setup inside a statement that lost its session, or inside a check - it is not, and
+        // what it notes must not reach that work's outcome.
+        let isTheWorksOwnStatement = SAConnectionWorkCoordinator.tokenOfWorkOnThisThread == nil
+        let run = host.runWorkKeepingInterfaceAlive { markedAsTheWorksOwnStatement(isTheWorksOwnStatement) { work() } } as? SAStatementRun
+        var result: Any?
+        if let run {
+            SAStatementReport.handBack(run.report, for: host)
+            result = run.result
+        }
+
+        // No run means the statement was refused or given up on, and the connection records that
+        // itself; given up on, its caller was already told. A refusal is reported here - and only
+        // for a statement that never ran: one that ran and failed has its own report, handed back
+        // above, whatever refusal marker may stand on the thread.
+        let lease = host.sessionAccess
+        let refusedWhileWaiting = lease.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork
+        let refused = lease.takeTheRefusalOfThisThreadsLastCall()
+        if run == nil, refused {
+            SAStatementReport.handBack(refusalReport(whileWaitingForEarlierWork: refusedWhileWaiting, on: host), for: host)
+        } else if run == nil, SAStatementReport.reportHandedBackToThisThread(for: host)?.closesTheCall != true {
+            // No run, no refusal, and nothing handed back that closes this call - a stop, a
+            // statement carried out but unread: the session needed recovering before the statement
+            // could be sent, and the recovery failed. The caller is told that, with the connection's
+            // error - not the rows and insert ID of the statement before, and not the report of a
+            // nested call the wait delivered on this thread meanwhile.
+            SAStatementReport.handBack(recoveryFailureReport(on: host), for: host)
+        }
+        return result
+    }
+
+    /// The report of a statement that was never sent because the session needed recovering first
+    /// and the recovery failed: the connection's error, and no rows - the statement did nothing.
+    /// - Parameter host: The connection.
+    private static func recoveryFailureReport(on host: SAStatementCallHost) -> SAStatementReport {
+        let fields = host.reportFromTheConnectionsFields
+        let message = (fields.errorMessage?.isEmpty == false) ? fields.errorMessage
+            : NSLocalizedString("The connection could not be restored, so the statement was not sent.",
+                                comment: "Error shown for a statement whose connection was lost and could not be reconnected before the statement was sent")
+        return SAStatementReport(errorMessage: message, errorID: fields.errorID != 0 ? fields.errorID : 2006, sqlState: fields.sqlState ?? "HY000",
+                                 affectedRows: 0, insertID: 0, wasCancelled: fields.wasCancelled)
+    }
+
+    /// The key under which the thread running a statement's work carries that fact, for the
+    /// connection to tell the statement the work is for from the statements it runs for itself on
+    /// the same thread - a reconnect's setup, the restore of a session - and from work that is no
+    /// statement at all, such as a check.
+    private static let statementWorkKey = "SAStatementCall.runsAStatement"
+
+    /// Runs the body with the thread marked as running the statement the work is for, or as not
+    /// doing so - a statement the connection runs for itself inside that work, or inside work
+    /// that is no statement - for the body's duration.
+    /// - Parameters:
+    ///   - itIs: Whether the body is the statement the work is for.
+    ///   - body: The statement's work.
+    /// - Returns: What the body returned.
+    static func markedAsTheWorksOwnStatement<T>(_ itIs: Bool, _ body: () -> T) -> T {
+        let dictionary = Thread.current.threadDictionary
+        let wasMarked = dictionary[statementWorkKey] as? Bool
+        dictionary[statementWorkKey] = itIs
+        defer { dictionary[statementWorkKey] = wasMarked }
+        return body()
+    }
+
+    /// Whether the current thread runs the statement its work is for.
+    private static var threadRunsTheWorksOwnStatement: Bool {
+        Thread.current.threadDictionary[statementWorkKey] as? Bool == true
+    }
+
+    /// Notes on the work's outcome that the server has answered the statement the work is for,
+    /// with nothing left to fetch - and only that statement: not one the connection runs for
+    /// itself on the same thread (a reconnect's setup, the restore of a session, inside a statement
+    /// or inside a check). Those would mark work as settling whose own statement was never sent,
+    /// and a stop could then neither give it up nor kill it.
+    /// - Parameter host: The connection.
+    @objc(noteStatementAnsweredOn:)
+    public static func noteStatementAnswered(on host: SAStatementCallHost) {
+        guard threadRunsTheWorksOwnStatement else {
+            return
+        }
+        SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
+    }
+
+    /// Admits the send of the statement the work is for - and only that statement, as above - as
+    /// one decision with the user's stop: given up on first, the statement is not sent; admitted,
+    /// a stop from here on is reported as one that may have reached the server. A statement the
+    /// connection runs for itself is sent as it likes.
+    /// - Parameter host: The connection.
+    /// - Returns: Whether the statement may be sent.
+    @objc(admitStatementSendOn:)
+    public static func admitStatementSend(on host: SAStatementCallHost) -> Bool {
+        guard threadRunsTheWorksOwnStatement else {
+            return true
+        }
+        return SAConnectionWorkCoordinator.admitSendOfCurrentWorksStatement()
+    }
+
+    /// Records work the user stopped waiting for as cancelled after its statement had been sent, for
+    /// the thread that asked for it: a stop, which callers treat as one, with a word that the server
+    /// may have carried the statement out before the kill reached it - nobody is told it certainly
+    /// did not run.
+    /// - Parameter host: The connection.
+    @objc(recordWorkAsCancelledAfterTheSendOn:)
+    public static func recordWorkAsCancelledAfterTheSend(on host: SAStatementCallHost) {
+        let report = SAStatementReport(errorMessage: Self.stopAfterTheSendMessage, errorID: 1317, sqlState: "70100", affectedRows: 0,
+                                       insertID: host.insertIDCarried, wasCancelled: true)
+        report.markAsClosingTheCall()
+        SAStatementReport.handBack(report, for: host)
+    }
+
+    /// What a caller reads for a statement stopped after it was sent: a stop, and a word that the
+    /// server may have carried the statement out - nobody is told it certainly did not run.
+    @objc public static var stopAfterTheSendMessage: String {
+        NSLocalizedString("Query cancelled. The statement may have reached the server and may have taken effect.",
+                          comment: "Error shown when the user stopped a statement after it had been sent to the server")
+    }
+
+    /// The report of a call the connection turned away, with the reason: the question out to the
+    /// main thread, or the earlier work this thread is waiting for.
+    /// - Parameters:
+    ///   - whileWaitingForEarlierWork: Whether the call came in during this thread's wait for
+    ///     earlier work on the connection.
+    ///   - host: The connection.
+    /// - Returns: The report, error 2013.
+    private static func refusalReport(whileWaitingForEarlierWork: Bool, on host: SAStatementCallHost) -> SAStatementReport {
+        let reason = whileWaitingForEarlierWork
+            ? NSLocalizedString("The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.",
+                                comment: "Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection")
+            : NSLocalizedString("The connection cannot be used while you are being asked what to do about it. Answer that question, then try again.",
+                                comment: "Error shown for a statement refused while the lost-connection question is open")
+        return SAStatementReport(errorMessage: reason, errorID: 2013, sqlState: "HY000", affectedRows: 0,
+                                 insertID: host.insertIDCarried, wasCancelled: false)
+    }
+
+    /// Runs a connection check and hands a failed check's report to the calling thread.
+    ///
+    /// A failed check's error is the calling thread's to read, like a statement's report: a report
+    /// handed back earlier would otherwise stand in front of it. Not when the user stopped waiting
+    /// for this very check, whose stop was handed back during it - told from a report of some
+    /// statement stopped earlier, which does not stand in front of the check's error, by the
+    /// report's identity before and after the check. A check handed over can be turned away before
+    /// it runs - a question out to the main thread, or earlier work this thread is waiting for -
+    /// and is reported as refused then, with the reason, like a statement: the connection's fields
+    /// describe some other statement.
+    /// - Parameters:
+    ///   - check: The check itself, which writes its error on the connection.
+    ///   - handedOver: Whether the check runs through the hand-off - on the worker for the main
+    ///     thread - or where it was asked for.
+    ///   - host: The connection.
+    /// - Returns: Whether the connection is usable.
+    @objc(runCheck:handedOver:on:)
+    public static func runCheck(_ check: @escaping () -> Bool, handedOver: Bool, on host: SAStatementCallHost) -> Bool {
+        let reportBefore = SAStatementReport.reportHandedBackToThisThread(for: host)
+        let usable = handedOver ? host.runConnectionWorkKeepingInterfaceAlive(check) : check()
+        let lease = host.sessionAccess
+        let refusedWhileWaiting = lease.thisThreadsLastCallWasRefusedWhileWaitingForEarlierWork
+        let refused = handedOver && lease.takeTheRefusalOfThisThreadsLastCall()
+        let reportAfter = SAStatementReport.reportHandedBackToThisThread(for: host)
+        let thisCheckWasStopped = reportAfter !== reportBefore && reportAfter?.wasCancelled == true
+        if !usable, refused {
+            SAStatementReport.handBack(refusalReport(whileWaitingForEarlierWork: refusedWhileWaiting, on: host), for: host)
+        } else if !usable, !thisCheckWasStopped {
+            SAStatementReport.handBack(host.reportFromTheConnectionsFields, for: host)
+        }
+        return usable
+    }
+
+    /// Records work the user stopped waiting for as cancelled, for the thread that asked for it.
+    ///
+    /// Handed to that thread rather than written over the connection's report, which a statement
+    /// another thread is running may be writing. Nothing was affected, as far as anybody can say:
+    /// callers work out success from the count - the content view's row deletion compares it with
+    /// how many rows it meant to delete and, on a match, takes them off the screen without asking
+    /// the error - and a stopped DELETE must not look like one that worked.
+    /// - Parameter host: The connection.
+    @objc(recordWorkAsCancelledOn:)
+    public static func recordWorkAsCancelled(on host: SAStatementCallHost) {
+        let report = SAStatementReport(errorMessage: NSLocalizedString("Query cancelled.", comment: "Query cancelled error"),
+                                       errorID: 1317, sqlState: "70100", affectedRows: 0,
+                                       insertID: host.insertIDCarried, wasCancelled: true)
+        report.markAsClosingTheCall()
+        SAStatementReport.handBack(report, for: host)
+    }
+
+    /// Records work the user stopped waiting for whose statement the server had answered already,
+    /// and that did not settle within the grace, for the thread that asked for it: the statement
+    /// was carried out - a write applied - so it is not a stop, and must not be tried again; its
+    /// result was not read, so it is not a success either. The caller reads an error that says so.
+    /// - Parameter host: The connection.
+    @objc(recordWorkAsCarriedOutButUnsettledOn:)
+    public static func recordWorkAsCarriedOutButUnsettled(on host: SAStatementCallHost) {
+        let reason = NSLocalizedString("The statement was carried out, but its result could not be read in time.",
+                                       comment: "Error shown when the user stopped waiting after the server had carried the statement out and the connection could not settle it in time")
+        let report = SAStatementReport(errorMessage: reason, errorID: 2013, sqlState: "HY000", affectedRows: 0,
+                                       insertID: host.insertIDCarried, wasCancelled: false)
+        report.markAsClosingTheCall()
+        SAStatementReport.handBack(report, for: host)
+    }
+}
