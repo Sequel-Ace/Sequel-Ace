@@ -10,7 +10,7 @@ import Foundation
 
 extension FileManager {
 
-    var userHomeDirectoryPath : String {
+    @objc var userHomeDirectoryPath : String {
         guard
             let pw = getpwuid(getuid()),
             let home = pw.pointee.pw_dir
