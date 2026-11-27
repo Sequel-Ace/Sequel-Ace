@@ -320,10 +320,10 @@ Gw
             <point key="canvasLocation" x="-364" y="159"/>
         </window>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="17" userLabel="General">
-            <rect key="frame" x="0.0" y="0.0" width="656" height="543"/>
+            <rect key="frame" x="0.0" y="0.0" width="656" height="574"/>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="XRZ-IQ-R00">
-                    <rect key="frame" x="180" y="506" width="456" height="22"/>
+                    <rect key="frame" x="180" y="537" width="456" height="22"/>
                     <buttonCell key="cell" type="check" title="Prompt for confirmation before quitting" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="pLU-wO-HXa">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -336,19 +336,19 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="FJw-vU-VgL">
-                    <rect key="frame" x="180" y="494" width="456" height="5"/>
+                    <rect key="frame" x="180" y="525" width="456" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="o4y-7V-ZEP"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1420">
-                    <rect key="frame" x="180" y="422" width="456" height="5"/>
+                    <rect key="frame" x="180" y="453" width="456" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="jHx-SA-a0F"/>
                     </constraints>
                 </box>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1419">
-                    <rect key="frame" x="18" y="394" width="154" height="20"/>
+                    <rect key="frame" x="18" y="425" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="8zj-eb-GHj"/>
                         <constraint firstAttribute="height" constant="20" id="GHh-gf-gj6"/>
@@ -360,7 +360,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1418">
-                    <rect key="frame" x="180" y="393" width="456" height="22"/>
+                    <rect key="frame" x="180" y="424" width="456" height="22"/>
                     <popUpButtonCell key="cell" type="push" title="Last Used" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="1449" id="1422">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -405,7 +405,7 @@ Gw
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="581">
-                    <rect key="frame" x="180" y="381" width="456" height="5"/>
+                    <rect key="frame" x="180" y="412" width="456" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="Lfj-js-9td"/>
                     </constraints>
@@ -463,7 +463,7 @@ Gw
                     </connections>
                 </button>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="577">
-                    <rect key="frame" x="18" y="353" width="154" height="20"/>
+                    <rect key="frame" x="18" y="384" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="2fJ-uV-yWE"/>
                         <constraint firstAttribute="width" constant="150" id="H3R-fZ-7pu"/>
@@ -487,7 +487,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="569">
-                    <rect key="frame" x="180" y="465" width="456" height="22"/>
+                    <rect key="frame" x="180" y="496" width="456" height="22"/>
                     <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" inset="2" autoenablesItems="NO" id="570">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -502,7 +502,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="568">
-                    <rect key="frame" x="18" y="466" width="154" height="20"/>
+                    <rect key="frame" x="18" y="497" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="iwU-u3-PUC"/>
                         <constraint firstAttribute="height" constant="20" id="y3H-yc-8cM"/>
@@ -514,7 +514,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="567">
-                    <rect key="frame" x="180" y="434" width="456" height="22"/>
+                    <rect key="frame" x="180" y="465" width="456" height="22"/>
                     <buttonCell key="cell" type="check" title="Connect to default on startup" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="576">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -527,7 +527,7 @@ Gw
                     </connections>
                 </button>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="24" userLabel="Default Encoding Dropdown">
-                    <rect key="frame" x="180" y="352" width="456" height="22"/>
+                    <rect key="frame" x="180" y="383" width="456" height="22"/>
                     <popUpButtonCell key="cell" type="push" title="Autodetect" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="50" id="25">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -587,6 +587,51 @@ Gw
                                 <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
                             </dictionary>
                         </binding>
+                    </connections>
+                </popUpButton>
+                <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dXf-Lb-T01">
+                    <rect key="frame" x="18" y="353" width="154" height="20"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="150" id="dXf-Lb-W01"/>
+                        <constraint firstAttribute="height" constant="20" id="dXf-Lb-H01"/>
+                    </constraints>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Default Export Format:" id="dXf-Lb-C01">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <popUpButton toolTip="Format File &gt; Export opens on. Automatic uses CSV when the Content or Query view is showing rows, otherwise the format of your last export." verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dXf-Pu-B01" userLabel="Default Export Format Dropdown">
+                    <rect key="frame" x="180" y="352" width="456" height="22"/>
+                    <popUpButtonCell key="cell" type="push" title="Automatic" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="dXf-Mi-A00" id="dXf-Pu-C01">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="message"/>
+                        <menu key="menu" title="OtherViews" id="dXf-Mn-U01">
+                            <items>
+                                <menuItem title="Automatic" state="on" id="dXf-Mi-A00">
+                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                </menuItem>
+                                <menuItem isSeparatorItem="YES" tag="-1" id="dXf-Mi-S00"/>
+                                <menuItem title="SQL" tag="1" id="dXf-Mi-A01">
+                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                </menuItem>
+                                <menuItem title="CSV" tag="2" id="dXf-Mi-A02">
+                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                </menuItem>
+                                <menuItem title="XML" tag="3" id="dXf-Mi-A03">
+                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                </menuItem>
+                                <menuItem title="Dot" tag="4" id="dXf-Mi-A04">
+                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                </menuItem>
+                            </items>
+                        </menu>
+                    </popUpButtonCell>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="22" id="dXf-Pu-H01"/>
+                    </constraints>
+                    <connections>
+                        <binding destination="117" name="selectedTag" keyPath="values.DefaultExportFormat" id="dXf-Pu-K01"/>
                     </connections>
                 </popUpButton>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="784">
@@ -832,7 +877,7 @@ Gw
                     </constraints>
                 </box>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="NBD-nG-VYi">
-                    <rect key="frame" x="18" y="507" width="154" height="20"/>
+                    <rect key="frame" x="18" y="538" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="I93-gu-1Cg"/>
                         <constraint firstAttribute="height" constant="20" id="Iqw-5P-eDM"/>
@@ -947,7 +992,12 @@ Gw
                 <constraint firstItem="567" firstAttribute="top" secondItem="569" secondAttribute="bottom" constant="9" id="v89-ty-GLV"/>
                 <constraint firstItem="790" firstAttribute="centerY" secondItem="787" secondAttribute="centerY" id="wfq-CS-s72"/>
                 <constraint firstItem="24" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="x1x-TL-91g"/>
-                <constraint firstItem="582" firstAttribute="top" secondItem="24" secondAttribute="bottom" constant="9" id="x21-dW-TG6"/>
+                <constraint firstItem="582" firstAttribute="top" secondItem="dXf-Pu-B01" secondAttribute="bottom" constant="9" id="x21-dW-TG6"/>
+                <constraint firstItem="dXf-Pu-B01" firstAttribute="top" secondItem="24" secondAttribute="bottom" constant="9" id="dXf-Cn-T01"/>
+                <constraint firstItem="dXf-Pu-B01" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="dXf-Cn-L01"/>
+                <constraint firstItem="dXf-Pu-B01" firstAttribute="trailing" secondItem="569" secondAttribute="trailing" id="dXf-Cn-R01"/>
+                <constraint firstItem="dXf-Pu-B01" firstAttribute="centerY" secondItem="dXf-Lb-T01" secondAttribute="centerY" id="dXf-Cn-Y01"/>
+                <constraint firstItem="dXf-Lb-T01" firstAttribute="leading" secondItem="17" secondAttribute="leading" constant="20" id="dXf-Cn-L02"/>
                 <constraint firstItem="2aR-JM-Lbr" firstAttribute="trailing" secondItem="569" secondAttribute="trailing" id="xnW-28-sTv"/>
                 <constraint firstItem="784" firstAttribute="top" secondItem="hMm-gH-Xw4" secondAttribute="bottom" constant="30" id="xsB-vw-oOb"/>
                 <constraint firstItem="XAX-zM-z61" firstAttribute="top" secondItem="yhD-8W-lrG" secondAttribute="bottom" constant="9" id="yri-Jh-GCb"/>
