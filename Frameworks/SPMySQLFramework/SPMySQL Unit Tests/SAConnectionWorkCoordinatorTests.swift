@@ -356,7 +356,10 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             coordinator.abandonWorkForUserStop()
         })
 
-        XCTAssertEqual(noticed.wait(timeout: .now() + 2), .success)
+        guard noticed.wait(timeout: .now() + 2) == .success else {
+            XCTFail("the work did not look in time")
+            return
+        }
         XCTAssertTrue(abandonedWhenItLooked)
     }
 
@@ -598,7 +601,10 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(result as? String, "this thread's", "handed over and answered, not refused")
         XCTAssertEqual(host.timesAskedToWait, 1, "through the hand-off, waited for")
         XCTAssertEqual(host.cancelledWorkRecorded, 0)
-        XCTAssertEqual(outerReturned.wait(timeout: .now() + 5), .success)
+        guard outerReturned.wait(timeout: .now() + 5) == .success else {
+            XCTFail("the other thread's work did not return in time")
+            return
+        }
         XCTAssertEqual(outerResult as? String, "outer")
     }
 
@@ -766,7 +772,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         let callHost = SAScriptedStatementHost()
         /// A statement call that notes its answer and its send, as the connection does for a write.
         func answeredStatement() -> SAStatementRun? {
-            SAStatementCall.noteStatementSent(on: callHost)
+            _ = SAStatementCall.admitStatementSend(on: callHost)
             SAStatementCall.noteStatementAnswered(on: callHost)
             return SAStatementRun(result: "ok", report: callHost.reportFromTheConnectionsFields)
         }
@@ -817,7 +823,7 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         }
 
         let result = coordinator.run({
-            SAConnectionWorkCoordinator.noteStatementOfCurrentWorkSent()
+            XCTAssertTrue(SAConnectionWorkCoordinator.admitSendOfCurrentWorksStatement(), "nothing stopped the send")
             theStatementWasSent.signal()
             _ = theStopWasAccepted.wait(timeout: .now() + 2)
             return nil
@@ -827,6 +833,22 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.cancelledAfterSendRecorded, 1, "a stop after the send says the server may have carried the statement out")
         XCTAssertEqual(host.cancelledWorkRecorded, 0)
         XCTAssertEqual(host.unsettledWorkRecorded, 0)
+    }
+
+    /// The send of the work's statement is admitted as one decision with the user's stop: given up
+    /// on first, nothing is sent and the caller reads a plain stop; admitted first, the send is
+    /// noted and a stop from here on is one that may have reached the server.
+    func testTheSendIsAdmittedOnlyWhileTheWorkIsNotGivenUp() {
+        let admitted = SAConnectionWorkOutcome()
+        XCTAssertTrue(admitted.admitStatementSend())
+        XCTAssertTrue(admitted.statementWasSentToTheServer)
+        XCTAssertTrue(admitted.abandon(), "given up on after the send: a stop that may have reached the server")
+        XCTAssertTrue(admitted.statementWasSentToTheServer, "which the caller is told")
+
+        let stopped = SAConnectionWorkOutcome()
+        XCTAssertTrue(stopped.abandon())
+        XCTAssertFalse(stopped.admitStatementSend(), "given up on first: the statement is not sent")
+        XCTAssertFalse(stopped.statementWasSentToTheServer)
     }
 
     /// Settling work that outlives the grace keeps its thread uncancelled - the statement's
@@ -861,7 +883,10 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertFalse(nextThread === settlingThread, "the next piece of work got a thread of its own")
 
         letTheWorkEnd.signal()
-        XCTAssertEqual(theWorkEnded.wait(timeout: .now() + 2), .success)
+        guard theWorkEnded.wait(timeout: .now() + 2) == .success else {
+            XCTFail("the settling work did not end in time")
+            return
+        }
         XCTAssertEqual(theThreadWasCancelledAfterTheGrace, false, "the settling work's thread was left uncancelled for its clean-up")
     }
 

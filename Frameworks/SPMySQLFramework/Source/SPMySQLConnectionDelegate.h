@@ -123,9 +123,12 @@
  *
  * The delegate may also stop waiting before the work is finished, by calling
  * -cancelConnectionCheck, in which case the work is given up on and the connection reports it
- * as cancelled - unless the server has answered its statement already, which the connection then
- * leaves to finish and reports as it was. The work itself runs on until the server or a timeout
- * answers it.
+ * as cancelled - as a stop that may have reached the server when the statement had been sent, since
+ * a kill can come too late for a write. A statement the server has answered already with nothing
+ * left to fetch - a write - is left to finish and reports as it was, unless it outlives a short
+ * grace, in which case its caller is told the statement was carried out but its result not read;
+ * a statement with rows still to fetch is stopped like any other. The work itself runs on until
+ * the server or a timeout answers it.
  *
  * @param connection The connection whose work is being waited for.
  * @param isFinished A block that reports whether the wait is over. Call it repeatedly; it returns

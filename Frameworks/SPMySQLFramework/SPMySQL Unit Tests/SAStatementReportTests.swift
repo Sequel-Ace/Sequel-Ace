@@ -101,7 +101,14 @@ final class SAStatementReportTests: XCTestCase {
         /// Whether handed-over work comes back with nothing - the session needed recovering first
         /// and the recovery failed, so the statement never ran.
         var handsBackNothing = false
-        func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? { handsBackNothing ? nil : work() }
+        /// A report a nested call left on this thread while the work was waited for, before nothing came back.
+        var nestedCallsReport: SAStatementReport?
+        func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? {
+            if let nestedCallsReport {
+                SAStatementReport.handBack(nestedCallsReport, for: self)
+            }
+            return handsBackNothing ? nil : work()
+        }
         func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool {
             if refusesHandedOverWork {
                 sessionAccess.noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: true)
@@ -228,8 +235,11 @@ final class SAStatementReportTests: XCTestCase {
             return fields
         })
 
-        XCTAssertEqual(releaseReturned.wait(timeout: .now() + 2), .success, "the release went through once the reading had ended")
-        XCTAssertEqual(theReleaseTookTheLockWhileTheFieldsWereBeingRead, false, "and not while the fields were being read")
+        guard releaseReturned.wait(timeout: .now() + 2) == .success else {
+            XCTFail("the release did not go through once the reading had ended")
+            return
+        }
+        XCTAssertEqual(theReleaseTookTheLockWhileTheFieldsWereBeingRead, false, "the release did not take the lock while the fields were being read")
         XCTAssertNil(hold.current)
     }
 
@@ -256,6 +266,29 @@ final class SAStatementReportTests: XCTestCase {
         XCTAssertEqual(report?.affectedRows, 0, "no rows: the statement did nothing")
         XCTAssertEqual(report?.insertID, 0)
         XCTAssertEqual(report?.wasCancelled, false)
+    }
+
+    /// A nested call the wait delivered on this thread leaves its report there; it is not taken for
+    /// the outer statement's own: a failed recovery is still reported as such, while a stop that closed
+    /// the outer call stands.
+    func testARecoveryFailureIsReportedPastANestedCallsReport() {
+        let host = SAScriptedCallHost()
+        defer { SAStatementReport.forgetReportHandedBackToThisThread(for: host) }
+        host.fields = SAStatementReport(errorMessage: "Can't connect to MySQL server", errorID: 2003, sqlState: "HY000",
+                                        affectedRows: 0, insertID: 0, wasCancelled: false)
+        host.handsBackNothing = true
+        host.nestedCallsReport = SAStatementReport(errorMessage: "still waiting for an earlier statement", errorID: 2013, sqlState: "HY000",
+                                                   affectedRows: 0, insertID: 0, wasCancelled: false)
+
+        _ = SAStatementCall.run({ XCTFail("the statement does not run"); return nil }, on: host)
+        XCTAssertEqual(SAStatementReport.reportHandedBackToThisThread(for: host)?.errorID, 2003, "the recovery's failure, not the nested call's refusal")
+
+        // A stop that closed this very call is what the caller reads.
+        let stop = SAStatementReport(errorMessage: "Query cancelled.", errorID: 1317, sqlState: "70100", affectedRows: 0, insertID: 0, wasCancelled: true)
+        stop.markAsClosingTheCall()
+        host.nestedCallsReport = stop
+        _ = SAStatementCall.run({ XCTFail("the statement does not run"); return nil }, on: host)
+        XCTAssertEqual(SAStatementReport.reportHandedBackToThisThread(for: host)?.errorID, 1317, "the stop that closed the call")
     }
 
     /// A stop of everything - the toolbar's - is in effect for every caller until the next statement
@@ -479,5 +512,28 @@ final class SAStatementCompletionTests: XCTestCase {
         completion.noteResultRetrieved(errorID: 0)
         XCTAssertTrue(completion.wasCarriedOut)
         XCTAssertFalse(completion.isReportedCancelled(stopLanded: true))
+    }
+}
+
+/// What kind of statement a text is, for the connection's reports: whether it may write.
+final class SAStatementKindTests: XCTestCase {
+
+    /// Statements led by a reading keyword only read, past whitespace, comments and parentheses.
+    func testAStatementLedByAReadingKeywordOnlyReads() {
+        XCTAssertFalse(SAStatementKind.statementMayWrite("SELECT 1"))
+        XCTAssertFalse(SAStatementKind.statementMayWrite("  \n/* a comment */ -- another\n# and one more\n  (select 1)"))
+        XCTAssertFalse(SAStatementKind.statementMayWrite("SHOW FULL PROCESSLIST"))
+        XCTAssertFalse(SAStatementKind.statementMayWrite("explain select 1"))
+        XCTAssertEqual(SAStatementKind.leadingKeyword(of: "  /* x */ DESCRIBE t"), "DESCRIBE")
+    }
+
+    /// Anything else may write - also a common table expression, a call, and what is not known.
+    func testAnyOtherStatementMayWrite() {
+        XCTAssertTrue(SAStatementKind.statementMayWrite("INSERT INTO t VALUES (1) RETURNING i"))
+        XCTAssertTrue(SAStatementKind.statementMayWrite("update t set i = 2"))
+        XCTAssertTrue(SAStatementKind.statementMayWrite("WITH c AS (SELECT 1) DELETE FROM t"))
+        XCTAssertTrue(SAStatementKind.statementMayWrite("CALL p()"))
+        XCTAssertTrue(SAStatementKind.statementMayWrite("/* nothing */"))
+        XCTAssertNil(SAStatementKind.leadingKeyword(of: "  -- only a comment"))
     }
 }

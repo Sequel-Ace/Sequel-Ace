@@ -67,12 +67,20 @@ public final class SAConnectionWorkOutcome: NSObject {
         return statementWasSent
     }
 
-    /// Notes that the statement this work ran was sent to the server. Called by the worker, from
-    /// the connection, right before the send.
-    func noteStatementSent() {
+    /// Admits the send of the statement this work runs, unless the work has been given up on:
+    /// one decision with the user's stop, under the lock the stop gives the work up under, so that
+    /// a stop before the send keeps the statement from going out and a stop after it is told the
+    /// statement may have reached the server. Called by the worker, from the connection, right
+    /// before the send.
+    /// - Returns: Whether the statement may be sent.
+    func admitStatementSend() -> Bool {
         lock.lock()
         defer { lock.unlock() }
+        guard !workWasGivenUp else {
+            return false
+        }
         statementWasSent = true
+        return true
     }
 
     /// Whether the thread running this work is to be let go once the work is done: settling work
@@ -283,11 +291,12 @@ public final class SAConnectionWorkCoordinator: NSObject {
         (Thread.current.threadDictionary[workOutcomeKey] as? SAConnectionWorkOutcome)?.noteStatementAnswered()
     }
 
-    /// The statement the current thread's work ran is being sent to the server: a stop from here
-    /// on is reported as one that may have reached the server. Nothing happens on a thread that
-    /// runs no coordinator's work.
-    @objc public static func noteStatementOfCurrentWorkSent() {
-        (Thread.current.threadDictionary[workOutcomeKey] as? SAConnectionWorkOutcome)?.noteStatementSent()
+    /// Admits the send of the statement the current thread's work runs, unless the user has stopped
+    /// waiting for that work meanwhile - one decision with the stop. A thread that runs no
+    /// coordinator's work sends as it likes.
+    /// - Returns: Whether the statement may be sent.
+    @objc public static func admitSendOfCurrentWorksStatement() -> Bool {
+        (Thread.current.threadDictionary[workOutcomeKey] as? SAConnectionWorkOutcome)?.admitStatementSend() ?? true
     }
 
     /// The token of the work the current thread is running for a coordinator, if it runs any.
@@ -579,7 +588,14 @@ public final class SAConnectionWorkCoordinator: NSObject {
     /// thread of its own rather than a place behind this one.
     /// - Parameter outcome: The outcome of the work the thread is running.
     private func letTheWorkerGoAfterItsWork(_ outcome: SAConnectionWorkOutcome) {
+        let thread = workerThread
         outcome.noteThreadIsToBeLetGoAfterwards()
+        // The worker reads that note once its work is done. Work that finished in the meantime
+        // read it unset and went back to its run loop: the thread goes from here then, so that it
+        // goes in either order.
+        if outcome.hasFinishedItsWork {
+            thread?.cancel()
+        }
         workerThread = nil
     }
 

@@ -391,7 +391,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSUInteger theErrorID;
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
-	explicitlyCancelled = NO;
+	// The explicit stop is forgotten only as a statement is asked for, by the statement call: a stop
+	// that lands while this statement waits for the session must still reach a batch afterwards.
 	lastStatementWasCarriedOut = NO;
 
 	// If a disconnect was requested, cancel the action
@@ -538,10 +539,15 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 
 		if (!queryStatus) {
-			// From here the statement may reach the server: a stop that lands now is reported as one
-			// that may have been carried out - for the statement the work is for alone.
-			[SAStatementCall noteStatementSentOn:[self _statementCallHost]];
-			queryStatus = mysql_real_query(mySQLConnection, queryData.bytes, queryData.length);
+			// One decision with the user's stop: given up on first, the statement does not go out;
+			// admitted, it may reach the server, and a stop from here on is reported as one that may
+			// have taken effect - for the statement the work is for alone.
+			if ([SAStatementCall admitStatementSendOn:[self _statementCallHost]]) {
+				[completion noteSendAttempted];
+				queryStatus = mysql_real_query(mySQLConnection, queryData.bytes, queryData.length);
+			} else {
+				queryStatus = 1;
+			}
 		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
 		lastConnectionUsedTime = _monotonicTime();
@@ -686,7 +692,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	lastQueryWasCancelled = [completion isReportedCancelledWithStopLanded:self.sessionAccess.currentQueryWasCancelled];
 	lastStatementWasCarriedOut = completion.wasCarriedOut;
 	if (lastQueryWasCancelled) {
-		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
+		// A statement that may write, stopped once it had been sent - its rows not stored whole, say -
+		// may have taken effect all the same; a read, or a statement never sent, was simply stopped.
+		theErrorMessage = (completion.wasSent && [SAStatementKind statementMayWrite:theQueryString])
+			? SAStatementCall.stopAfterTheSendMessage
+			: NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
 		theSqlstate = @"70100";
 	}

@@ -85,10 +85,12 @@ public final class SAStatementCall: NSObject {
         let refused = lease.takeTheRefusalOfThisThreadsLastCall()
         if run == nil, refused {
             SAStatementReport.handBack(refusalReport(whileWaitingForEarlierWork: refusedWhileWaiting, on: host), for: host)
-        } else if run == nil, SAStatementReport.reportHandedBackToThisThread(for: host) == nil {
-            // No run, no refusal, and nothing handed back for a stop: the session needed recovering
-            // before the statement could be sent, and the recovery failed. The caller is told that,
-            // with the connection's error - not the rows and insert ID of the statement before.
+        } else if run == nil, SAStatementReport.reportHandedBackToThisThread(for: host)?.closesTheCall != true {
+            // No run, no refusal, and nothing handed back that closes this call - a stop, a
+            // statement carried out but unread: the session needed recovering before the statement
+            // could be sent, and the recovery failed. The caller is told that, with the connection's
+            // error - not the rows and insert ID of the statement before, and not the report of a
+            // nested call the wait delivered on this thread meanwhile.
             SAStatementReport.handBack(recoveryFailureReport(on: host), for: host)
         }
         return result
@@ -146,16 +148,18 @@ public final class SAStatementCall: NSObject {
         SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
     }
 
-    /// Notes on the work's outcome that the statement the work is for is being sent to the server
-    /// - and only that statement, as above - so that a stop from here on is reported as one that
-    /// may have reached the server.
+    /// Admits the send of the statement the work is for - and only that statement, as above - as
+    /// one decision with the user's stop: given up on first, the statement is not sent; admitted,
+    /// a stop from here on is reported as one that may have reached the server. A statement the
+    /// connection runs for itself is sent as it likes.
     /// - Parameter host: The connection.
-    @objc(noteStatementSentOn:)
-    public static func noteStatementSent(on host: SAStatementCallHost) {
+    /// - Returns: Whether the statement may be sent.
+    @objc(admitStatementSendOn:)
+    public static func admitStatementSend(on host: SAStatementCallHost) -> Bool {
         guard threadRunsTheWorksOwnStatement else {
-            return
+            return true
         }
-        SAConnectionWorkCoordinator.noteStatementOfCurrentWorkSent()
+        return SAConnectionWorkCoordinator.admitSendOfCurrentWorksStatement()
     }
 
     /// Records work the user stopped waiting for as cancelled after its statement had been sent, for
@@ -165,10 +169,17 @@ public final class SAStatementCall: NSObject {
     /// - Parameter host: The connection.
     @objc(recordWorkAsCancelledAfterTheSendOn:)
     public static func recordWorkAsCancelledAfterTheSend(on host: SAStatementCallHost) {
-        let message = NSLocalizedString("Query cancelled. The statement had reached the server, which may have carried it out.",
-                                        comment: "Error shown when the user stopped waiting for a statement after it had been sent to the server")
-        SAStatementReport.handBack(SAStatementReport(errorMessage: message, errorID: 1317, sqlState: "70100", affectedRows: 0,
-                                                     insertID: host.insertIDCarried, wasCancelled: true), for: host)
+        let report = SAStatementReport(errorMessage: Self.stopAfterTheSendMessage, errorID: 1317, sqlState: "70100", affectedRows: 0,
+                                       insertID: host.insertIDCarried, wasCancelled: true)
+        report.markAsClosingTheCall()
+        SAStatementReport.handBack(report, for: host)
+    }
+
+    /// What a caller reads for a statement stopped after it was sent: a stop, and a word that the
+    /// server may have carried the statement out - nobody is told it certainly did not run.
+    @objc public static var stopAfterTheSendMessage: String {
+        NSLocalizedString("Query cancelled. The statement may have reached the server and may have taken effect.",
+                          comment: "Error shown when the user stopped a statement after it had been sent to the server")
     }
 
     /// The report of a call the connection turned away, with the reason: the question out to the
@@ -231,9 +242,11 @@ public final class SAStatementCall: NSObject {
     /// - Parameter host: The connection.
     @objc(recordWorkAsCancelledOn:)
     public static func recordWorkAsCancelled(on host: SAStatementCallHost) {
-        SAStatementReport.handBack(SAStatementReport(errorMessage: NSLocalizedString("Query cancelled.", comment: "Query cancelled error"),
-                                                     errorID: 1317, sqlState: "70100", affectedRows: 0,
-                                                     insertID: host.insertIDCarried, wasCancelled: true), for: host)
+        let report = SAStatementReport(errorMessage: NSLocalizedString("Query cancelled.", comment: "Query cancelled error"),
+                                       errorID: 1317, sqlState: "70100", affectedRows: 0,
+                                       insertID: host.insertIDCarried, wasCancelled: true)
+        report.markAsClosingTheCall()
+        SAStatementReport.handBack(report, for: host)
     }
 
     /// Records work the user stopped waiting for whose statement the server had answered already,
@@ -245,7 +258,9 @@ public final class SAStatementCall: NSObject {
     public static func recordWorkAsCarriedOutButUnsettled(on host: SAStatementCallHost) {
         let reason = NSLocalizedString("The statement was carried out, but its result could not be read in time.",
                                        comment: "Error shown when the user stopped waiting after the server had carried the statement out and the connection could not settle it in time")
-        SAStatementReport.handBack(SAStatementReport(errorMessage: reason, errorID: 2013, sqlState: "HY000", affectedRows: 0,
-                                                     insertID: host.insertIDCarried, wasCancelled: false), for: host)
+        let report = SAStatementReport(errorMessage: reason, errorID: 2013, sqlState: "HY000", affectedRows: 0,
+                                       insertID: host.insertIDCarried, wasCancelled: false)
+        report.markAsClosingTheCall()
+        SAStatementReport.handBack(report, for: host)
     }
 }

@@ -23,6 +23,15 @@ public final class SAStatementCompletion: NSObject {
     /// Whether the server carried the statement out, as far as the connection knows so far.
     @objc public private(set) var wasCarriedOut = false
 
+    /// Whether the statement was sent to the server - or at least may have reached it: a stop that
+    /// lands after this is not described as a statement that certainly did not run.
+    @objc public private(set) var wasSent = false
+
+    /// The statement is being sent to the server.
+    @objc public func noteSendAttempted() {
+        wasSent = true
+    }
+
     /// Whether a stop had landed by the time a buffered result's rows were stored.
     private var theStopLandedBeforeTheRowsWereStored = false
 

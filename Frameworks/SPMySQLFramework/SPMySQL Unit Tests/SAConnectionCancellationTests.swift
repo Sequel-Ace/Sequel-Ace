@@ -84,6 +84,15 @@ private final class SACancellationHost: NSObject, SAConnectionCancellationHost {
         }
     }
 
+    /// How often the user's stop of everything was noted, kill or no kill.
+    private(set) var stopsOfEverythingRequested = 0
+
+    func noteStopOfEverythingRequested() {
+        lock.lock()
+        stopsOfEverythingRequested += 1
+        lock.unlock()
+    }
+
     /// What the test wants to look at the moment the query is marked.
     var whenMarked: (() -> Void)?
 
@@ -528,6 +537,22 @@ final class SAConnectionCancellationTests: XCTestCase {
         XCTAssertEqual(outcome.result as? String, "applied", "and the result reached the caller")
         XCTAssertNotEqual(host.killWasAsked.wait(timeout: .now() + 0.3), .success, "nothing was killed")
         XCTAssertEqual(host.recordedCalls(), [], "nor marked")
+    }
+
+    /// A stop of everything is noted whether or not it gets to kill anything: a second stop while the
+    /// first's request is still out holds nothing - no second kill - and is in effect all the same,
+    /// so a batch stops on it.
+    func testAStopOfEverythingIsNotedEvenWhileAnotherStopHoldsTheQuery() {
+        host.killAnswer = .blockedThenAccepted
+        defer { host.letTheKillReturn.signal() }
+        host.sessionAccess.beginNativeQuery()
+
+        cancellation.requestCancellation(synchronously: false)
+        XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success, "the first stop asks the server")
+        cancellation.requestCancellation(synchronously: false)
+
+        XCTAssertEqual(host.stopsOfEverythingRequested, 2, "both stops are in effect")
+        XCTAssertEqual(host.recordedCalls().filter { $0.hasPrefix("kill") }.count, 1, "the server is asked once")
     }
 
     /// A token names one piece of work in the whole process. A query begun on this session by

@@ -126,10 +126,25 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	}
 }
 
+/**
+ * Whether the user stopped the connection's work since the current statement was asked for: a stop of
+ * everything, in effect for a batch whatever the statement's own report says, until the next statement.
+ */
 - (BOOL)stopWasRequested
 {
 	@synchronized (self) {
 		return explicitlyCancelled;
+	}
+}
+
+/**
+ * Notes that the user stopped the connection's work - a stop of everything - whether or not there is
+ * a query to kill: in effect for a batch until the next statement is asked for.
+ */
+- (void)noteStopOfEverythingRequested
+{
+	@synchronized (self) {
+		explicitlyCancelled = YES;
 	}
 }
 

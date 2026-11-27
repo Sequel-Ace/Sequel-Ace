@@ -25,6 +25,10 @@ public protocol SAConnectionCancellationHost: AnyObject {
 
     /// Marks the query that holds the connection as cancelled, where callers look for it.
     @objc func markRunningQueryCancelled()
+
+    /// Notes that the user stopped the connection's work - a stop of everything - whether or not
+    /// there is a query to kill: in effect for a batch until the next statement is asked for.
+    @objc func noteStopOfEverythingRequested()
 }
 
 /// How a connection stops the query it is running, or the operation still waiting to run one.
@@ -101,6 +105,10 @@ public final class SAConnectionCancellation: NSObject {
             return
         }
         let lease = host.sessionAccess
+
+        // The stop is in effect from here, whatever there is to kill: a batch stops on it, also
+        // when another stop already holds the query or nothing native is running.
+        host.noteStopOfEverythingRequested()
 
         // Recorded first, and without waiting: the stop reaches whatever is pending, outermost
         // query included, and names the native query and the session to act on from here.

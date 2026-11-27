@@ -161,6 +161,23 @@ public final class SAStatementReport: NSObject {
         storedWasCarriedOut = true
     }
 
+    private var storedClosesTheCall = false
+
+    /// Whether this report closes the statement call it was handed back for - a stop, a statement
+    /// carried out but unread - as against a report a nested call left on the thread meanwhile.
+    var closesTheCall: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedClosesTheCall
+    }
+
+    /// Marks this report as closing the statement call it is handed back for.
+    func markAsClosingTheCall() {
+        lock.lock()
+        defer { lock.unlock() }
+        storedClosesTheCall = true
+    }
+
     /// Keeps what the connection reports now.
     /// - Parameters:
     ///   - errorMessage: The error message, or nil.
