@@ -358,6 +358,13 @@ final class SAConnectionCheckSheet: NSObject {
     /// brought up to date after every event, so the next one finds them as they should be.
     private func deliverPendingEvents() {
         while !hasEnded, let event = NSApp.nextEvent(matching: .any, until: Date(), inMode: .default, dequeue: true) {
+            // The wait can have ended while the event was being taken out: an ended wait delivers
+            // nothing, and the event goes back to the front of the queue, in order, for whatever
+            // runs the loop next, once the operation that waited has returned.
+            if hasEnded {
+                NSApp.postEvent(event, atStart: true)
+                return
+            }
             NSApp.sendEvent(event)
             Self.refreshActiveWaits()
         }

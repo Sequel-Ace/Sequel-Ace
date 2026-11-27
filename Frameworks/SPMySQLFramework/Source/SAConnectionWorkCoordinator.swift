@@ -71,11 +71,43 @@ public final class SAConnectionWorkOutcome: NSObject {
     }
 
     /// Notes that the server has answered the work's statement with nothing left to fetch. Called
-    /// by the worker, from the connection, as it happens.
+    /// by the worker, from the connection, as it happens. An answer that comes once the work has
+    /// been given up on is nobody's: the stop was accepted first, and is what the caller was told.
     func noteStatementAnswered() {
         lock.lock()
         defer { lock.unlock() }
+        guard !workWasGivenUp else {
+            return
+        }
         statementWasAnswered = true
+    }
+
+    /// What the waiting side decides when its wait ends before the work was seen to finish.
+    enum SAWaitDisposition {
+        /// The worker stored the result meanwhile: the work finished.
+        case finished
+        /// The server has answered the statement and the result is still to come: the work is
+        /// settling, and is waited for a moment longer.
+        case settling
+        /// The work is given up on; whatever it returns afterwards is nobody's answer.
+        case abandoned
+    }
+
+    /// The waiting side's one decision when its wait ended before the work did, taken under the
+    /// lock the worker stores the result under, so that an answer or a result that comes in the
+    /// same moment is seen whole: finished, settling, or given up on - and given up on only here.
+    /// - Returns: What became of the work.
+    func endWaiting() -> SAWaitDisposition {
+        lock.lock()
+        defer { lock.unlock() }
+        if workHasFinished {
+            return .finished
+        }
+        if statementWasAnswered {
+            return .settling
+        }
+        workWasGivenUp = true
+        return .abandoned
     }
 
     /// Whether the work finished before the waiting ended.
@@ -411,25 +443,28 @@ public final class SAConnectionWorkCoordinator: NSObject {
         // Work nobody waited for to the end keeps running, and what it returns is nobody's
         // answer any more - unless it finished in the very moment the waiting ended, or is
         // settling a statement the server has answered: that ends within moments, and its
-        // result - a write the server applied - is the caller's, not a stop's. Settling work
-        // that outlives the grace keeps running on its thread, which the next piece of work does
-        // not wait behind; its caller is told the statement was carried out, its result unread.
+        // result - a write the server applied - is the caller's, not a stop's. One decision,
+        // under the outcome's lock, so that a result or an answer arriving in that moment is
+        // seen whole rather than taken for the other.
         if !outcome.finished {
-            if outcome.statementWasAnsweredByTheServer {
-                if workFinished.wait(timeout: .now() + Self.settlingGrace) == .success {
+            switch outcome.endWaiting() {
+            case .finished:
+                outcome.finished = true
+            case .settling:
+                // Settling work that outlives the grace keeps running on its thread, which the
+                // next piece of work does not wait behind; its caller is told the statement was
+                // carried out, its result unread. A result stored just as the grace ran out is a
+                // result all the same.
+                if workFinished.wait(timeout: .now() + Self.settlingGrace) == .success || outcome.hasFinishedItsWork {
                     outcome.finished = true
                 } else {
                     cancel()
                 }
-                return outcome
-            }
-            if outcome.abandon() {
+            case .abandoned:
                 // That work can hold this thread for as long as the server takes to answer, or
                 // for as long as the network takes to give up on it. The next piece of work gets
                 // a thread of its own rather than a place in the queue behind it.
                 cancel()
-            } else {
-                outcome.finished = true
             }
         }
 

@@ -142,12 +142,22 @@ final class SAConnectionCheckSheetTests: XCTestCase {
         XCTAssertEqual(queuedMarker(), 1)
 
         let sheet = SAConnectionCheckSheet()
+        // The work finishes while the first event is being taken out: once it has left the queue.
+        // Finished stays finished, as work does - the event put back must not unfinish it.
+        var finished = false
         sheet.wait(in: nil, untilFinished: {
-            // The work finishes while the first event is being delivered: once it has left the queue.
-            return queuedMarker() != 1
+            if queuedMarker() != 1 {
+                finished = true
+            }
+            return finished
         }, whenCancelled: nil)
 
-        XCTAssertEqual(queuedMarker(), 2, "the second event is still in the queue")
+        XCTAssertEqual(queuedMarker(), 1, "the first event is back at the head of the queue, undelivered")
+        var queued = 0
+        while NSApp.nextEvent(matching: .applicationDefined, until: Date(), inMode: .default, dequeue: true) != nil {
+            queued += 1
+        }
+        XCTAssertEqual(queued, 2, "and the second is still behind it")
     }
 
     /// The time a wait shows is counted from the start of that wait, whether or not a sheet is up yet.

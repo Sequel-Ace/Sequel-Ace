@@ -42,6 +42,26 @@ private final class SAScriptedWorkHost: NSObject, SAConnectionWorkHost {
     }
 }
 
+/// A connection as the statement call sees it, for the note of a statement's answer: a lease, and
+/// nothing else the note needs.
+private final class SAScriptedStatementHost: NSObject, SAStatementCallHost {
+    let sessionAccess = SAConnectionSessionAccess()
+    var insertIDCarried: UInt64 = 0
+    var reportFromTheConnectionsFields: SAStatementReport {
+        SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
+    }
+
+    func forgetAnExplicitStop() {}
+
+    func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool {
+        work()
+    }
+
+    func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? {
+        work()
+    }
+}
+
 /// Hands work over the way the connection does, through its private method.
 @objc private protocol SAWorkHandOff {
     @objc(_runWorkKeepingInterfaceAlive:)
@@ -291,7 +311,14 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertTrue(waitEndedAtOnce)
         XCTAssertFalse(outcome.finished)
         XCTAssertTrue(outcome.wasAbandoned)
-        XCTAssertNil(outcome.result)
+        // The late result is read only once the worker has stored it: a result exposed during
+        // publication would otherwise slip past this.
+        let published = Date(timeIntervalSinceNow: 2)
+        while !outcome.hasFinishedItsWork && Date() < published {
+            usleep(1_000)
+        }
+        XCTAssertTrue(outcome.hasFinishedItsWork, "the worker stored the late result")
+        XCTAssertNil(outcome.result, "which stays nobody's")
     }
 
     /// Work the user stopped knows it, once it looks: the lease turns its thread away.
@@ -525,17 +552,20 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
                 otherResult = coordinator.run({ "other" }, on: host)
                 otherReturned.signal()
             }
-            while !isFinished() {
+            let deadline = Date(timeIntervalSinceNow: 10)
+            while !isFinished() && Date() < deadline {
                 usleep(1_000)
             }
+            XCTAssertTrue(isFinished(), "the outer work finished while the other thread's call was in")
         }
 
-        _ = coordinator.run({
-            Thread.sleep(forTimeInterval: 0.3)
-            return "outer"
+        // The outer work waits for the other thread's call to come back, so that call is made
+        // while this thread is waiting for the outer work - the interleaving under test.
+        let outerResult = coordinator.run({
+            otherReturned.wait(timeout: .now() + 5) == .success ? "outer" : "outer, without the other thread's call"
         }, on: watcher)
 
-        XCTAssertEqual(otherReturned.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(outerResult as? String, "outer")
         XCTAssertEqual(otherResult as? String, "other")
     }
 
@@ -561,7 +591,10 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             looked.fulfill()
         }
 
-        wait(for: [looked], timeout: 5)
+        guard XCTWaiter.wait(for: [looked], timeout: 5) == .completed else {
+            XCTFail("the reconnect did not return in time; its worker may still be using the connection")
+            return
+        }
         XCTAssertEqual(connection.handshakes, 1, "the handshake came up")
         XCTAssertEqual(connection.restoresAttempted, 0, "nobody set the session up")
         XCTAssertEqual(reconnected, false, "so the reconnect did not succeed")
@@ -595,7 +628,10 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             looked.fulfill()
         }
 
-        wait(for: [looked], timeout: 5)
+        guard XCTWaiter.wait(for: [looked], timeout: 5) == .completed else {
+            XCTFail("the reconnect did not return in time; its worker may still be using the connection")
+            return
+        }
         XCTAssertEqual(connection.databasesAskedToRestore, ["sa_restore_me"], "the restore ran, and was stopped during it")
         XCTAssertEqual(reconnected, false, "a restore by a thread given up on does not count")
         XCTAssertEqual(stateAfterwards, Int(SPMySQLConnectionLostInBackground.rawValue), "the session is retired")
@@ -626,7 +662,10 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
             looked.fulfill()
         }
 
-        wait(for: [looked], timeout: 5)
+        guard XCTWaiter.wait(for: [looked], timeout: 5) == .completed else {
+            XCTFail("the reconnect did not return in time; its worker may still be using the connection")
+            return
+        }
         XCTAssertEqual(reconnected, false, "the reconnect did not succeed")
         XCTAssertEqual(stateAfterwards, Int(SPMySQLConnectionLostInBackground.rawValue),
                        "but the connection is left for the next use to reconnect and restore")
@@ -684,6 +723,91 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(started), SAConnectionWorkCoordinator.settlingGrace, "the grace was waited out")
         XCTAssertEqual(host.unsettledWorkRecorded, 1, "the statement is recorded as carried out, its result unread")
         XCTAssertEqual(host.cancelledWorkRecorded, 0, "not as a stop")
+    }
+
+    /// The server's answer is noted on the work's outcome for the statement the work is for alone:
+    /// not for a statement the connection runs for itself nested inside it - a reconnect's setup -
+    /// and not for work that is no statement, such as a check. Either would mark as settling work
+    /// whose own statement was never sent, and a stop could then neither give it up nor kill it.
+    func testOnlyTheStatementTheWorkIsForNotesItsAnswer() {
+        let callHost = SAScriptedStatementHost()
+        let lease = callHost.sessionAccess
+
+        let check = run({
+            // Work that is no statement - a check whose setup statement is answered.
+            _ = lease.performQuery { SAStatementCall.noteStatementAnswered(on: callHost); return nil }
+            return nil
+        }, whenSlow: Self.waitingForTheWork)
+        XCTAssertFalse(check.statementWasAnsweredByTheServer, "a check's statement is not the work's own")
+
+        let nested = run({
+            SAStatementCall.runningAStatement {
+                // The statement's session was lost; the reconnect's setup statement is answered
+                // inside it, before the statement itself is sent.
+                _ = lease.performQuery {
+                    lease.performQuery { SAStatementCall.noteStatementAnswered(on: callHost); return nil }
+                }
+            }
+        }, whenSlow: Self.waitingForTheWork)
+        XCTAssertFalse(nested.statementWasAnsweredByTheServer, "a setup statement nested in the work's own is not the work's own")
+
+        let own = run({
+            SAStatementCall.runningAStatement {
+                lease.performQuery { SAStatementCall.noteStatementAnswered(on: callHost); return nil }
+            }
+        }, whenSlow: Self.waitingForTheWork)
+        XCTAssertTrue(own.statementWasAnsweredByTheServer, "the work's own statement is")
+    }
+
+    /// An answer that comes once the user's stop has been accepted is nobody's: the stop was
+    /// first, and is what the caller was told - a cancellation, not a statement carried out.
+    func testAnAnswerThatComesAfterTheStopWasAcceptedIsNobodys() {
+        let host = SAScriptedWorkHost()
+        let workStarted = DispatchSemaphore(value: 0)
+        let theStopWasAccepted = DispatchSemaphore(value: 0)
+        let theAnswerWasNoted = DispatchSemaphore(value: 0)
+        host.whileWaiting = { [coordinator] _ in
+            XCTAssertEqual(workStarted.wait(timeout: .now() + 2), .success)
+            coordinator.abandonWorkForUserStop()
+            theStopWasAccepted.signal()
+            // The wait ends only once the late answer has been noted, so the caller's report is
+            // decided with the answer in: the ordering this test is about.
+            XCTAssertEqual(theAnswerWasNoted.wait(timeout: .now() + 2), .success)
+        }
+
+        let result = coordinator.run({
+            workStarted.signal()
+            XCTAssertEqual(theStopWasAccepted.wait(timeout: .now() + 2), .success)
+            // The server answers the statement after all - the kill came too late for it.
+            SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
+            theAnswerWasNoted.signal()
+            return "answered late"
+        }, on: host)
+
+        XCTAssertNil(result)
+        XCTAssertEqual(host.cancelledWorkRecorded, 1, "the stop is what the caller is told")
+        XCTAssertEqual(host.unsettledWorkRecorded, 0, "not a statement carried out")
+    }
+
+    /// The waiting side's one decision when its wait ends before the work was seen to finish:
+    /// finished when the worker stored the result meanwhile, settling when the server has
+    /// answered the statement, and given up on otherwise - only then.
+    func testTheWaitsEndIsOneDecision() {
+        let finished = SAConnectionWorkOutcome()
+        finished.storeResult("done")
+        XCTAssertEqual(finished.endWaiting(), .finished)
+        XCTAssertFalse(finished.wasAbandoned)
+
+        let settling = SAConnectionWorkOutcome()
+        settling.noteStatementAnswered()
+        XCTAssertEqual(settling.endWaiting(), .settling)
+        XCTAssertFalse(settling.wasAbandoned, "settling work is not given up on")
+
+        let abandoned = SAConnectionWorkOutcome()
+        XCTAssertEqual(abandoned.endWaiting(), .abandoned)
+        XCTAssertTrue(abandoned.wasAbandoned)
+        abandoned.noteStatementAnswered()
+        XCTAssertFalse(abandoned.statementWasAnsweredByTheServer, "an answer after the stop is nobody's")
     }
 
     /// Work handed over forgets a refusal that was not about it: the mark is read by the statement

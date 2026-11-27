@@ -886,6 +886,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
     SPLog(@"connect");
 
 	userTriggeredDisconnect = NO;
+	// A report an earlier statement handed to this thread would stand in front of a failed
+	// connect's error, which is written on the connection's own fields.
+	[SAStatementReport forgetReportHandedBackToThisThreadFor:self];
 	return [self _connect];
 }
 

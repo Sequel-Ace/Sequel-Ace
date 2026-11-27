@@ -239,7 +239,10 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
 
         // The check answers: connectivity is there, and the statement could be sent. It is not.
         connection.letTheCheckAnswer.signal()
-        wait(for: [returned], timeout: 10)
+        guard XCTWaiter.wait(for: [returned], timeout: 10) == .completed else {
+            XCTFail("the statement did not return in time; its thread may still be writing its report")
+            return
+        }
 
         XCTAssertNil(result)
         XCTAssertTrue(wasCancelled)
@@ -286,7 +289,10 @@ final class SASessionIdentityIntegrationTests: XCTestCase {
 
         connection.cancelCurrentQuery()
         statement.letItFinish.signal()
-        wait(for: [returned], timeout: 10)
+        guard XCTWaiter.wait(for: [returned], timeout: 10) == .completed else {
+            XCTFail("the statement did not return in time; its thread may still be writing its report")
+            return
+        }
 
         XCTAssertNil(result)
         XCTAssertTrue(wasCancelled)

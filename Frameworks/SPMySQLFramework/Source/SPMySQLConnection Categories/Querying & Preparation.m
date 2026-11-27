@@ -546,8 +546,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			[completion noteSendAnswered];
 			// A statement without a result set - a write - has nothing left to fetch: what remains of it
 			// takes no time worth stopping, and a stop that lands from here on leaves it to finish. Noted
-			// on the work's outcome, which outlives the native query's record on the lease.
-			if (mysql_field_count(mySQLConnection) == 0) [SAConnectionWorkCoordinator noteStatementOfCurrentWorkAnswered];
+			// on the work's outcome, which outlives the native query's record on the lease - and only for
+			// the statement the work is for, which the statement call tells from the connection's own.
+			if (mysql_field_count(mySQLConnection) == 0) [SAStatementCall noteStatementAnsweredOn:[self _statementCallHost]];
 			[self _noteStatementCarriedOut:theQueryString];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.

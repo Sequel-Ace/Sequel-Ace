@@ -308,8 +308,36 @@ final class SAStatementReportTests: XCTestCase {
             SAStatementReport.forgetReportHandedBackToThisThread(for: connection)
             done.signal()
         }
-        XCTAssertEqual(done.wait(timeout: .now() + 5), .success)
+        guard done.wait(timeout: .now() + 5) == .success else {
+            XCTFail("the thread did not finish in time")
+            return
+        }
         XCTAssertTrue(firstWasLetGoOf)
+    }
+
+    /// A connection that never comes up - the handshake fails - so that `connect` fails fast.
+    private final class SANeverConnectingConnection: SPMySQLConnection {
+        @objc(_connectUsingConnectTimeout:) func handshake(_ connectTimeoutOrZero: UInt) -> Bool {
+            false
+        }
+
+        @objc(_waitForNetworkConnectionWithTimeout:) func waitForNetwork(_ timeout: Double) -> Bool {
+            true
+        }
+    }
+
+    /// A report an earlier statement handed to this thread does not stand in front of a failed
+    /// connect: `connect` forgets it first, and the connect's own fields are what is read.
+    func testConnectForgetsTheReportHandedBackToThisThread() {
+        let connection = SANeverConnectingConnection()
+        connection.useKeepAlive = false
+        SAStatementReport.handBack(SAStatementReport(errorMessage: "earlier", errorID: 1146, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false), for: connection)
+        XCTAssertEqual(connection.lastErrorID(), 1146, "the handed-back report is read before the connect")
+
+        XCTAssertFalse(connection.connect())
+
+        XCTAssertNil(SAStatementReport.reportHandedBackToThisThread(for: connection), "the connect forgot the report")
+        XCTAssertNotEqual(connection.lastErrorID(), 1146, "and the connect's own fields are read")
     }
 
     /// A report is kept by the connection it is about, not by its address: once the connection is

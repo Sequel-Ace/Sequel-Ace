@@ -141,6 +141,25 @@ private final class SAStoppedWhileSettlingConnection: SPMySQLConnection {
     }
 }
 
+/// A connection whose reconnect restores the session as the connection does - the setup statements
+/// run - and then holds, so that the user's Stop Waiting lands with the restore under way: after
+/// its statements were answered, before the statement that lost its session is sent again.
+private final class SAHeldDuringRestoreConnection: SPMySQLConnection {
+    let theRestoreRan = DispatchSemaphore(value: 0)
+    let letTheRestoreEnd = DispatchSemaphore(value: 0)
+
+    @objc(_restoreSessionStateAfterReconnectWithDatabase:encoding:encodingUsesLatin1Transport:timeZoneIdentifier:)
+    func restoreThenHold(_ database: String?, encoding: String?, encodingUsesLatin1Transport: Bool, timeZoneIdentifier: String?) -> Bool {
+        let selector = NSSelectorFromString("_restoreSessionStateAfterReconnectWithDatabase:encoding:encodingUsesLatin1Transport:timeZoneIdentifier:")
+        typealias Restore = @convention(c) (AnyObject, Selector, NSString?, NSString?, Bool, NSString?) -> Bool
+        let implementation = class_getMethodImplementation(SPMySQLConnection.self, selector)!
+        let restored = unsafeBitCast(implementation, to: Restore.self)(self, selector, database as NSString?, encoding as NSString?, encodingUsesLatin1Transport, timeZoneIdentifier as NSString?)
+        theRestoreRan.signal()
+        _ = letTheRestoreEnd.wait(timeout: .now() + 10)
+        return restored
+    }
+}
+
 /// A connection that takes a statement's report only once a streaming download that has ended
 /// already has let the session go - the shortest download there is, settled before the report.
 private final class SAFastStreamSettlingConnection: SPMySQLConnection {
@@ -317,8 +336,10 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
                 }
                 looked.signal()
             }
-            XCTAssertEqual(looked.wait(timeout: .now() + 6), .success)
-            XCTAssertTrue(seenOnTheServer, "the SLEEP reached the server")
+            guard looked.wait(timeout: .now() + 6) == .success, seenOnTheServer else {
+                XCTFail("the SLEEP was not seen on the server; the stop is not pressed, and the statement runs to its end")
+                return
+            }
             stoppedAt = Date()
             connection.cancelCheck()
         }
@@ -559,6 +580,41 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(errorID, 1317)
     }
 
+    /// A statement whose session was lost reconnects, and the reconnect's setup statements are
+    /// answered - `SET NAMES`, the database - before the statement itself is sent again. Stop
+    /// Waiting that lands then stops the statement: the setup's answers are the connection's, not
+    /// the work's, so the work is given up on and the statement is reported cancelled, never sent.
+    func testStopWaitingDuringTheReconnectsRestoreStopsTheStatementTheSetupAnsweredFor() throws {
+        let delegate = SAWaitingDelegate()
+        let connection = try connected(SAHeldDuringRestoreConnection(), delegate: delegate)
+        let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
+        defer {
+            connection.letTheRestoreEnd.signal()
+            connection.disconnect()
+            observer.disconnect()
+        }
+        // The session is lost: the statement fails, and the connection reconnects and restores.
+        _ = observer.queryString("KILL \(connection.mysqlConnectionThreadId)")
+        XCTAssertFalse(observer.queryErrored(), observer.lastErrorMessage() ?? "")
+
+        delegate.onceWhileWaiting = { _ in
+            // The user presses Stop Waiting once the restore's statements have been answered.
+            guard connection.theRestoreRan.wait(timeout: .now() + 10) == .success else {
+                XCTFail("the restore did not run")
+                return
+            }
+            connection.cancelCheck()
+            connection.letTheRestoreEnd.signal()
+        }
+        let started = Date()
+        let result = connection.queryString("SELECT 'after the loss'")
+
+        XCTAssertNil(result, "the statement was not sent again")
+        XCTAssertTrue(connection.lastQueryWasCancelled, "it is reported as the stop it was")
+        XCTAssertEqual(connection.lastErrorID(), 1317)
+        XCTAssertLessThan(Date().timeIntervalSince(started), 8, "and the caller was told without waiting a grace out")
+    }
+
     /// Stop Waiting that lands once the server has answered a write - the row changed, the statement
     /// settling - leaves the statement to finish and hands its caller the result, not a stop: told
     /// "cancelled", the caller would try the write again.
@@ -621,7 +677,11 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             aErrored = connection.queryErrored()
             aRead.fulfill()
         }
-        XCTAssertEqual(aReturned.wait(timeout: .now() + 10), .success, "A returned")
+        guard aReturned.wait(timeout: .now() + 10) == .success else {
+            XCTFail("A did not return in time")
+            laterWorkWasStopped.signal()
+            throw SATestWaitTimedOut()
+        }
 
         // Later work on another thread, stopped while the server is at it - rows that take their
         // time, which the server aborts when the query is killed.
@@ -786,9 +846,17 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             errorID = connection.lastErrorID()
             finished.fulfill()
         }
-        XCTAssertEqual(tenRowsRead.wait(timeout: .now() + 10), .success, "rows are being read")
+        guard tenRowsRead.wait(timeout: .now() + 10) == .success else {
+            XCTFail("rows were not being read in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
         connection.cancelCurrentQuery()
-        XCTAssertEqual(downloadEnded.wait(timeout: .now() + 20), .success, "the download ended")
+        guard downloadEnded.wait(timeout: .now() + 20) == .success else {
+            XCTFail("the download did not end in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
         _ = connection.queryString("SELECT 'another statement'")
         XCTAssertFalse(connection.queryErrored(), "the other statement ran: \(connection.lastErrorMessage() ?? "")")
         anotherStatementRan.signal()
@@ -842,10 +910,18 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             errorID = connection.lastErrorID()
             finished.fulfill()
         }
-        XCTAssertEqual(tenRowsRead.wait(timeout: .now() + 10), .success, "rows are being read")
+        guard tenRowsRead.wait(timeout: .now() + 10) == .success else {
+            XCTFail("rows were not being read in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
         _ = observer.queryString("KILL \(serverThread)")
         XCTAssertFalse(observer.queryErrored(), "the connection was killed: \(observer.lastErrorMessage() ?? "")")
-        XCTAssertEqual(downloadEnded.wait(timeout: .now() + 20), .success, "the download ended")
+        guard downloadEnded.wait(timeout: .now() + 20) == .success else {
+            XCTFail("the download did not end in time")
+            anotherStatementRan.signal()
+            throw SATestWaitTimedOut()
+        }
         // Tried, not necessarily run: the session is gone, and the delegate lets it go.
         _ = connection.queryString("SELECT 'another statement'")
         anotherStatementRan.signal()

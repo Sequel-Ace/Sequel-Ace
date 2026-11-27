@@ -64,7 +64,7 @@ public final class SAStatementCall: NSObject {
         // An explicit stop reaches every caller until the next statement is asked for - this one,
         // refused or not: a refused statement is not one the user stopped.
         host.forgetAnExplicitStop()
-        let run = host.runWorkKeepingInterfaceAlive { work() } as? SAStatementRun
+        let run = host.runWorkKeepingInterfaceAlive { runningAStatement { work() } } as? SAStatementRun
         var result: Any?
         if let run {
             SAStatementReport.handBack(run.report, for: host)
@@ -82,6 +82,39 @@ public final class SAStatementCall: NSObject {
             SAStatementReport.handBack(refusalReport(whileWaitingForEarlierWork: refusedWhileWaiting, on: host), for: host)
         }
         return result
+    }
+
+    /// The key under which the thread running a statement's work carries that fact, for the
+    /// connection to tell the statement the work is for from the statements it runs for itself on
+    /// the same thread - a reconnect's setup, the restore of a session - and from work that is no
+    /// statement at all, such as a check.
+    private static let statementWorkKey = "SAStatementCall.runsAStatement"
+
+    /// Runs the body as a statement's work: while it runs, the thread is known to be running the
+    /// statement the work is for.
+    /// - Parameter body: The statement's work.
+    /// - Returns: What the body returned.
+    static func runningAStatement<T>(_ body: () -> T) -> T {
+        let dictionary = Thread.current.threadDictionary
+        let wasRunningOne = dictionary[statementWorkKey] as? Bool ?? false
+        dictionary[statementWorkKey] = true
+        defer { dictionary[statementWorkKey] = wasRunningOne ? true : nil }
+        return body()
+    }
+
+    /// Notes on the work's outcome that the server has answered the statement the work is for,
+    /// with nothing left to fetch - and only that statement: not one the connection runs for
+    /// itself on the same thread, nested inside it (a reconnect's setup, the restore of a session),
+    /// and not one run for work that is no statement (a check). Those would mark work as settling
+    /// whose own statement was never sent, and a stop could then neither give it up nor kill it.
+    /// - Parameter host: The connection.
+    @objc(noteStatementAnsweredOn:)
+    public static func noteStatementAnswered(on host: SAStatementCallHost) {
+        guard Thread.current.threadDictionary[statementWorkKey] as? Bool == true,
+              host.sessionAccess.thisThreadRunsItsOutermostOperation else {
+            return
+        }
+        SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
     }
 
     /// The report of a call the connection turned away, with the reason: the question out to the

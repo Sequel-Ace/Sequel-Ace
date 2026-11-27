@@ -448,7 +448,10 @@ final class SAConnectionCancellationTests: XCTestCase {
             looked.fulfill()
         }
 
-        wait(for: [looked], timeout: 2)
+        guard XCTWaiter.wait(for: [looked], timeout: 2) == .completed else {
+            XCTFail("the thread given up on did not look in time")
+            return
+        }
         XCTAssertEqual(maySend, false)
         XCTAssertEqual(reportsCancelled, true)
         XCTAssertFalse(lease.currentQueryWasCancelled, "while a thread not given up on is not affected")
