@@ -459,8 +459,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	int queryStatus;
 	// Whether the statement reached the server and was carried out, which a stop that lands
 	// afterwards does not undo.
-	BOOL theStatementWasCarriedOut = NO;
-	BOOL theStopLandedBeforeTheRowsWereStored = NO;
+	// What became of the statement between its send and its report - carried out, or stopped in time -
+	// noted as it happens and decided at the end.
+	SAStatementCompletion *completion = [[SAStatementCompletion alloc] init];
 
 	// The bytes of the attempt under way, held while they are sent.
 	NSData *queryData = nil;
@@ -542,7 +543,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
-			theStatementWasCarriedOut = YES;
+			[completion noteSendAnswered];
 			[self _noteStatementCarriedOut:theQueryString];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
@@ -622,11 +623,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 				// update the affected row count.
 				case SPMySQLResultAsResult:
 					mysqlResult = mysql_store_result(mySQLConnection);
-					// A stop that has landed by now - after the server answered, before its rows were
-					// stored - ends the statement for its caller, however whole the rows came: a result
-					// set undoes nothing, so nothing is tried twice, and a run of statements stopped on
-					// this report runs no further.
-					theStopLandedBeforeTheRowsWereStored = self.sessionAccess.currentQueryWasCancelled;
+					// Read once the rows are stored: a stop that has landed by now still counts.
+					[completion noteRowsStoredWithStopLanded:self.sessionAccess.currentQueryWasCancelled];
 					theResult = [[SPMySQLResult alloc] initWithMySQLResult:mysqlResult stringEncoding:statementBytes.encoding version:self.serverMajorVersion];
 					theAffectedRowCount = mysql_affected_rows(mySQLConnection);
 					break;
@@ -657,10 +655,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			theErrorID = mysql_errno(mySQLConnection);
 			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
 			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
-			// A result the server could not deliver whole - the query killed while its rows were
-			// being stored - was not carried out, whatever the send said; nor was a statement whose
-			// stop had landed by the time its rows were stored.
-			if (theErrorID != 0 || theStopLandedBeforeTheRowsWereStored) theStatementWasCarriedOut = NO;
+			// A result the server could not deliver whole was not carried out, whatever the send said.
+			[completion noteResultRetrievedWithErrorID:theErrorID];
 		} else {
 			theResult = [[SPMySQLEmptyResult alloc] init];
 		}
@@ -672,9 +668,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 
 	// If the query was cancelled, override the error state - unless the statement had been carried
-	// out by the time the stop landed: it undoes nothing then, and a statement reported cancelled
-	// would be tried again, a write applied twice.
-	lastQueryWasCancelled = !theStatementWasCarriedOut && self.sessionAccess.currentQueryWasCancelled;
+	// out by the time the stop landed, which the completion decides.
+	lastQueryWasCancelled = [completion isReportedCancelledWithStopLanded:self.sessionAccess.currentQueryWasCancelled];
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -867,7 +862,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (SAStatementReport *)_reportOfLastStatement
 {
-	return [statementReportHold reportOfStatementSettledWith:[self _reportFromTheConnectionsFields]];
+	// The fields are read under the hold's lock, by the hold: a download that writes its error and lets
+	// the session go cannot slip in between the reading and the choice of the report.
+	return [statementReportHold reportOfStatementSettledWith:^SAStatementReport *{
+		return [self _reportFromTheConnectionsFields];
+	}];
 }
 
 /**

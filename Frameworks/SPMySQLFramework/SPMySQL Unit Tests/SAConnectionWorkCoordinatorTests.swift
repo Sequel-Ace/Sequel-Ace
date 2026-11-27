@@ -78,6 +78,48 @@ private final class SALateHandshakeConnection: SPMySQLConnection {
     }
 }
 
+/// A connection whose reconnect comes up and whose thread is given up on during the restore - the
+/// user stops waiting while the database is being selected, which the restore's statements, turned
+/// away, cannot report; the restore itself reports success.
+private final class SAStoppedDuringRestoreConnection: SPMySQLConnection {
+    private(set) var databasesAskedToRestore: [String] = []
+    private var pair: [Int32] = [-1, -1]
+
+    deinit {
+        pair.filter { $0 >= 0 }.forEach { Darwin.close($0) }
+    }
+
+    @objc(_connectUsingConnectTimeout:) func handshake(_ connectTimeoutOrZero: UInt) -> Bool {
+        setValue(SPMySQLConnected.rawValue, forKey: "state")
+        return true
+    }
+
+    @objc(_waitForNetworkConnectionWithTimeout:) func waitForNetwork(_ timeout: Double) -> Bool {
+        true
+    }
+
+    @objc(_disconnectPreservingProxyReconnect:) func closeSession(_ preserveProxy: Bool) {
+        setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+    }
+
+    /// A socket of the test's own for the restore's deadline to be armed on, there being no session.
+    @objc(_socketForSetupDeadline) func socketForSetupDeadline() -> Int32 {
+        if pair[0] < 0 {
+            _ = socketpair(AF_UNIX, SOCK_STREAM, 0, &pair)
+        }
+        return pair[0]
+    }
+
+    @objc(_restoreSessionStateAfterReconnectWithDatabase:encoding:encodingUsesLatin1Transport:timeZoneIdentifier:)
+    func restore(_ database: String?, encoding: String?, encodingUsesLatin1Transport: Bool, timeZoneIdentifier: String?) -> Bool {
+        databasesAskedToRestore.append(database ?? "")
+        // The user stops waiting while the database is being selected: the statement is turned
+        // away, which the restore does not notice.
+        Thread.current.cancel()
+        return true
+    }
+}
+
 /// Where connection work runs, who waits for it, and what a stop makes of it.
 final class SAConnectionWorkCoordinatorTests: XCTestCase {
     private let coordinator = SAConnectionWorkCoordinator()
@@ -490,6 +532,39 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(reconnected, false, "so the reconnect did not succeed")
         XCTAssertEqual(stateAfterwards, Int(SPMySQLConnectionLostInBackground.rawValue),
                        "and the session is retired, for the next use to reconnect and restore")
+    }
+
+    /// A reconnect whose thread is given up on during the restore - the user stops waiting while
+    /// the database is being selected - does not count as restored, whatever the restore reported:
+    /// its statements were turned away. The session is retired with the saved state kept, for the
+    /// next use to reconnect and restore.
+    func testAReconnectGivenUpOnDuringTheRestoreIsRetiredWithItsSavedState() {
+        let connection = SAStoppedDuringRestoreConnection()
+        connection.useKeepAlive = false
+        connection.setValue(SPMySQLConnectionLostInBackground.rawValue, forKey: "state")
+        // The session being reconnected had a database selected, which the reconnect saves to restore.
+        connection.setValue("sa_restore_me", forKey: "database")
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        let looked = expectation(description: "the reconnect returned")
+        var reconnected: Bool?
+        var stateAfterwards: Int?
+        var databaseKept: String?
+
+        Thread.detachNewThread {
+            reconnected = unsafeBitCast(connection, to: SAReconnectHandOff.self).reconnect(allowingRetries: true)
+            stateAfterwards = connection.value(forKey: "state") as? Int
+            databaseKept = connection.value(forKey: "databaseToRestore") as? String
+            looked.fulfill()
+        }
+
+        wait(for: [looked], timeout: 5)
+        XCTAssertEqual(connection.databasesAskedToRestore, ["sa_restore_me"], "the restore ran, and was stopped during it")
+        XCTAssertEqual(reconnected, false, "a restore by a thread given up on does not count")
+        XCTAssertEqual(stateAfterwards, Int(SPMySQLConnectionLostInBackground.rawValue), "the session is retired")
+        XCTAssertEqual(databaseKept, "sa_restore_me", "with the saved state kept for the next reconnect")
     }
 
     /// Work handed over forgets a refusal that was not about it: the mark is read by the statement

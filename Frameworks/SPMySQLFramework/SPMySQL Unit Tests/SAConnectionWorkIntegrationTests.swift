@@ -19,13 +19,27 @@ private final class SAWaitingDelegate: NSObject {
     /// What the delegate does during the first wait, once the wait has begun; given the block
     /// that says whether the work being waited for has finished.
     var onceWhileWaiting: ((_ isFinished: @escaping () -> Bool) -> Void)?
-    /// The thread each statement was sent on, in the order they were sent.
-    private(set) var statementThreads: [Thread] = []
+    private var sent: [(statement: String, thread: Thread)] = []
     private let lock = NSLock()
+
+    /// The thread each statement was sent on, in the order they were sent - a snapshot, taken
+    /// under the same lock the worker appends under.
+    var statementThreads: [Thread] {
+        lock.lock()
+        defer { lock.unlock() }
+        return sent.map { $0.thread }
+    }
+
+    /// The statements sent so far, in order - a snapshot under the lock.
+    var statementsSent: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return sent.map { $0.statement }
+    }
 
     @objc func willQueryString(_ query: String, connection: Any) {
         lock.lock()
-        statementThreads.append(Thread.current)
+        sent.append((statement: query, thread: Thread.current))
         lock.unlock()
     }
 
@@ -329,14 +343,11 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         var innerErrorID: UInt?
         var innerError: String?
         var innerWasCancelled: Bool?
-        var innerStatementsSent = 0
         delegate.onceWhileWaiting = { _ in
-            let before = delegate.statementThreads.count
             innerAnswer = connection.queryString("SELECT 'inner'")
             innerErrorID = connection.lastErrorID()
             innerError = connection.lastErrorMessage()
             innerWasCancelled = connection.lastQueryWasCancelled
-            innerStatementsSent = delegate.statementThreads.count - before
         }
 
         let outerAnswer = connection.getFirstField(fromQuery: "SELECT SLEEP(0.6) + 0, 'outer'") as? String
@@ -345,7 +356,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertEqual(innerErrorID, 2013)
         XCTAssertEqual(innerError?.contains("still waiting for an earlier statement"), true, "and told why")
         XCTAssertEqual(innerWasCancelled, false, "a refusal is not a stop")
-        XCTAssertEqual(innerStatementsSent, 0, "nothing of it was sent")
+        XCTAssertFalse(delegate.statementsSent.contains("SELECT 'inner'"), "nothing of it was sent")
         XCTAssertEqual(outerAnswer, "0", "the work being waited for answered")
         XCTAssertFalse(connection.queryErrored(), "and its caller reads its own report, not the refusal")
         XCTAssertEqual(delegate.timesAskedToWait - waitsDuringConnect, 1)

@@ -52,13 +52,18 @@ public final class SAStatementReportHold: NSObject {
     /// The report of the statement just run: the attached one, with the statement's own final
     /// status - its stop, its rows - taken from the connection's fields, while it is still
     /// attached; a download that has ended already let it go, and the fields - which that
-    /// download wrote last - are the report.
-    /// - Parameter fields: What the connection's fields say now.
+    /// download wrote last - are the report. The fields are read under the hold's lock, so that a
+    /// download cannot write its error and let the session go between the reading and the choice:
+    /// a release waits for the reading to end, and a reading after the release sees what the
+    /// download wrote.
+    /// - Parameter fields: Reads what the connection's fields say now. Called once, under the lock,
+    ///   so it must not come back to the hold.
     /// - Returns: The report the statement's caller is handed.
     @objc(reportOfStatementSettledWith:)
-    public func reportOfStatement(settledWith fields: SAStatementReport) -> SAStatementReport {
+    public func reportOfStatement(settledWith fields: () -> SAStatementReport) -> SAStatementReport {
         lock.lock()
         defer { lock.unlock() }
+        let fields = fields()
         guard let held else {
             return fields
         }

@@ -285,25 +285,31 @@ final class SAConnectionSetupDeadlineTests: XCTestCase {
     }
 
     /// What the phase decides: it goes on while the session is connected and no statement lost it;
-    /// it ends well only if, on top of that, the deadline never had to end a wait.
-    func testThePhaseDecidesFromTheSessionTheStatementsAndTheDeadline() throws {
+    /// it ends well only if, on top of that, the deadline never had to end a wait and the thread
+    /// setting the session up was not given up on.
+    func testThePhaseDecidesFromTheSessionTheStatementsTheDeadlineAndTheThread() throws {
         let pair = try socketPair()
 
         let quiet = try SAConnectionSetupDeadline.deadline(forSocket: pair.client, seconds: 5)
         XCTAssertTrue(quiet.phaseContinues(whileConnected: true))
         XCTAssertFalse(quiet.phaseContinues(whileConnected: false), "a session that is gone has no phase to go on with")
-        XCTAssertTrue(quiet.endPhase(whileConnected: true))
+        XCTAssertTrue(quiet.endPhase(whileConnected: true, threadWasGivenUpOn: false))
 
         let lost = try SAConnectionSetupDeadline.deadline(forSocket: pair.client, seconds: 5)
         lost.noteAStatementLostTheSession()
         XCTAssertFalse(lost.phaseContinues(whileConnected: true), "a statement lost the session, connected or not")
-        XCTAssertFalse(lost.endPhase(whileConnected: true))
+        XCTAssertFalse(lost.endPhase(whileConnected: true, threadWasGivenUpOn: false))
 
         let late = try SAConnectionSetupDeadline.deadline(forSocket: pair.client, seconds: 0.1)
         Thread.sleep(forTimeInterval: 0.3)
         XCTAssertTrue(late.phaseContinues(whileConnected: true), "the statements themselves report a loss, not the clock")
-        XCTAssertFalse(late.endPhase(whileConnected: true), "but a deadline that ran out has shut the session down")
+        XCTAssertFalse(late.endPhase(whileConnected: true, threadWasGivenUpOn: false), "but a deadline that ran out has shut the session down")
         XCTAssertTrue(late.endedTheWaitOnTheSocket)
+
+        let givenUp = try SAConnectionSetupDeadline.deadline(forSocket: pair.client, seconds: 5)
+        XCTAssertTrue(givenUp.phaseContinues(whileConnected: true))
+        XCTAssertFalse(givenUp.endPhase(whileConnected: true, threadWasGivenUpOn: true),
+                       "a thread given up on sent nothing, so the session is not set up, whatever the last statement reported")
     }
 
     // MARK: - Through the connection

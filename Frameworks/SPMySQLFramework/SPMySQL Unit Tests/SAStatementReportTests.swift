@@ -182,7 +182,7 @@ final class SAStatementReportTests: XCTestCase {
         XCTAssertTrue(hold.current === held)
 
         let fields = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 3, insertID: 9, wasCancelled: true)
-        XCTAssertTrue(hold.reportOfStatement(settledWith: fields) === held, "the attached report, settled")
+        XCTAssertTrue(hold.reportOfStatement(settledWith: { fields }) === held, "the attached report, settled")
         XCTAssertTrue(held.wasCancelled)
         XCTAssertEqual(held.affectedRows, 3)
         XCTAssertEqual(held.insertID, 9)
@@ -190,7 +190,35 @@ final class SAStatementReportTests: XCTestCase {
         hold.sessionWasReleased()
         XCTAssertNil(hold.current)
         let later = SAStatementReport(errorMessage: "later", errorID: 1146, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
-        XCTAssertTrue(hold.reportOfStatement(settledWith: later) === later, "nothing attached: the fields' report")
+        XCTAssertTrue(hold.reportOfStatement(settledWith: { later }) === later, "nothing attached: the fields' report")
+    }
+
+    /// The fields are read under the hold's lock: a download that writes its error and lets the
+    /// session go cannot slip in between the reading of the fields and the choice of the report -
+    /// its release waits for the reading to end.
+    func testTheFieldsAreReadUnderTheHoldsLockSoAReleaseCannotSlipInBetween() {
+        let hold = SAStatementReportHold()
+        hold.attach(insertID: 0)
+        let releaseAttempted = DispatchSemaphore(value: 0)
+        let releaseReturned = DispatchSemaphore(value: 0)
+        var theReleaseWaitedForTheReading: Bool?
+        let fields = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
+
+        _ = hold.reportOfStatement(settledWith: {
+            // The download lets the session go while the fields are being read.
+            Thread.detachNewThread {
+                releaseAttempted.signal()
+                hold.sessionWasReleased()
+                releaseReturned.signal()
+            }
+            XCTAssertEqual(releaseAttempted.wait(timeout: .now() + 2), .success)
+            theReleaseWaitedForTheReading = releaseReturned.wait(timeout: .now() + 0.2) == .timedOut
+            return fields
+        })
+
+        XCTAssertEqual(theReleaseWaitedForTheReading, true, "the release waited for the reading to end")
+        XCTAssertEqual(releaseReturned.wait(timeout: .now() + 2), .success, "and went through once it had")
+        XCTAssertNil(hold.current)
     }
 
     /// A delegate that shows the wait, which is what has the connection hand work over from the
@@ -293,5 +321,63 @@ final class SAStatementReportTests: XCTestCase {
             }
         }
         throw XCTSkip("no object came to be at the gone connection's address")
+    }
+}
+
+/// What became of a statement between its send and its report, as the connection's statement path
+/// decides it: carried out, or stopped in time to be told so.
+final class SAStatementCompletionTests: XCTestCase {
+
+    /// A statement the server answered, whose rows came whole, was carried out: a stop that lands
+    /// afterwards undoes nothing and is not reported - the result stands.
+    func testAStatementCarriedOutIsNotReportedCancelledForAStopThatLandsAfterwards() {
+        let completion = SAStatementCompletion()
+        completion.noteSendAnswered()
+        completion.noteRowsStored(stopLanded: false)
+        completion.noteResultRetrieved(errorID: 0)
+        XCTAssertTrue(completion.wasCarriedOut)
+        XCTAssertFalse(completion.isReportedCancelled(stopLanded: true))
+        XCTAssertFalse(completion.isReportedCancelled(stopLanded: false))
+    }
+
+    /// A statement never answered - stopped before the send, or the send failed - is reported
+    /// cancelled when a stop landed, and not otherwise.
+    func testAStatementNeverAnsweredIsReportedCancelledOnlyWhenAStopLanded() {
+        let completion = SAStatementCompletion()
+        XCTAssertFalse(completion.wasCarriedOut)
+        XCTAssertTrue(completion.isReportedCancelled(stopLanded: true))
+        XCTAssertFalse(completion.isReportedCancelled(stopLanded: false))
+    }
+
+    /// A result the server could not deliver whole - the query killed while its rows were being
+    /// sent - was not carried out, whatever the send said.
+    func testAResultTheServerCouldNotDeliverWholeWasNotCarriedOut() {
+        let completion = SAStatementCompletion()
+        completion.noteSendAnswered()
+        completion.noteRowsStored(stopLanded: false)
+        completion.noteResultRetrieved(errorID: 1317)
+        XCTAssertFalse(completion.wasCarriedOut)
+        XCTAssertTrue(completion.isReportedCancelled(stopLanded: true))
+    }
+
+    /// A stop that had landed by the time the rows were stored is reported, however whole the rows
+    /// came: a result set undoes nothing, and a run of statements stopped on the report runs no further.
+    func testAStopThatLandedBeforeTheRowsWereStoredIsReported() {
+        let completion = SAStatementCompletion()
+        completion.noteSendAnswered()
+        completion.noteRowsStored(stopLanded: true)
+        completion.noteResultRetrieved(errorID: 0)
+        XCTAssertFalse(completion.wasCarriedOut)
+        XCTAssertTrue(completion.isReportedCancelled(stopLanded: true))
+    }
+
+    /// A statement without stored rows - a write, a streaming result - keeps the rule of the send:
+    /// answered without an error, it was carried out.
+    func testAStatementWithoutStoredRowsIsCarriedOutByItsSend() {
+        let completion = SAStatementCompletion()
+        completion.noteSendAnswered()
+        completion.noteResultRetrieved(errorID: 0)
+        XCTAssertTrue(completion.wasCarriedOut)
+        XCTAssertFalse(completion.isReportedCancelled(stopLanded: true))
     }
 }

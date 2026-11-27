@@ -1485,13 +1485,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 /**
  * Ends a setup phase, lifting its deadline.
- * @return Whether the session came through the phase: connected, no statement having lost it, and
- *         the deadline not having had to end a wait. Without a deadline, no.
+ * @return Whether the session came through the phase: connected, no statement having lost it, the
+ *         deadline not having had to end a wait, and this thread not given up on meanwhile - a
+ *         thread the user stopped waiting for sends nothing, so its session is not set up, whatever
+ *         the last of its statements reported. Without a deadline, no.
  */
 - (BOOL)_endSetupPhase:(SAConnectionSetupDeadline *)setupDeadline
 {
 	activeSetupDeadline = nil;
-	BOOL sessionCameThrough = [setupDeadline endPhaseWhileConnected:state == SPMySQLConnected];
+	BOOL sessionCameThrough = [setupDeadline endPhaseWhileConnected:state == SPMySQLConnected
+	                                                threadGivenUpOn:[[NSThread currentThread] isCancelled]];
 	if ([setupDeadline endedTheWaitOnTheSocket]) {
 		SPLog(@"session setup did not finish within its budget; the socket was shut down to end the wait");
 	}
@@ -2050,8 +2053,9 @@ asm(".desc ___crashreporter_info__, 0x10");
                                                         encoding:encodingToRestore
                                     encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
                                                timeZoneIdentifier:timeZoneIdentifierToRestore];
-			// A restore that lost the session along the way, or ran out of time at its end, did
-			// not restore it, whatever the last of its statements reported.
+			// A restore that lost the session along the way, ran out of time at its end, or whose
+			// thread was given up on meanwhile - its statements turned away - did not restore it,
+			// whatever the last of its statements reported.
 			if (![self _endSetupPhase:restoreDeadline]) reconnectSucceeded = NO;
             if (!reconnectSucceeded) {
                 // Never hand a session with the server's default time zone to a query.
