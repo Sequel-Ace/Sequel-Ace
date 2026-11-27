@@ -122,12 +122,15 @@
  * running an event loop of its own rather than blocking.
  *
  * The delegate may also stop waiting before the work is finished, by calling
- * -cancelConnectionCheck, in which case the connection reports the work as cancelled. The work
- * itself runs on until the server or a timeout answers it.
+ * -cancelConnectionCheck, in which case the work is given up on and the connection reports it
+ * as cancelled - unless the server has answered its statement already, which the connection then
+ * leaves to finish and reports as it was. The work itself runs on until the server or a timeout
+ * answers it.
  *
  * @param connection The connection whose work is being waited for.
- * @param isFinished A block that reports whether the work has finished. Call it repeatedly; it
- *                   returns YES from the moment the work is done.
+ * @param isFinished A block that reports whether the wait is over. Call it repeatedly; it returns
+ *                   YES from the moment the work is done or was given up on - which says nothing
+ *                   about whether the worker has stopped or the connection is idle.
  */
 - (void)connection:(id)connection waitForConnectionWorkUntilFinished:(BOOL (^)(void))isFinished;
 

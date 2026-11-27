@@ -224,9 +224,18 @@ final class SAStatementReportTests: XCTestCase {
     /// A delegate that shows the wait, which is what has the connection hand work over from the
     /// main thread - and turn it away there while a question is out.
     private final class SAWaitShowingDelegate: NSObject {
+        /// How long the wait may take before the test fails rather than hangs: a reconnect handed
+        /// off and waiting for a question only this thread can answer would otherwise loop forever.
+        static let waitDeadline: TimeInterval = 20
+
         @objc(connection:waitForConnectionWorkUntilFinished:)
         func connection(_ connection: Any, waitForConnectionWorkUntilFinished isFinished: @escaping () -> Bool) {
+            let deadline = Date(timeIntervalSinceNow: Self.waitDeadline)
             while !isFinished() {
+                if Date() >= deadline {
+                    XCTFail("the connection work was not finished after \(Self.waitDeadline) s; the wait returns so that the test can end")
+                    return
+                }
                 RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
             }
         }

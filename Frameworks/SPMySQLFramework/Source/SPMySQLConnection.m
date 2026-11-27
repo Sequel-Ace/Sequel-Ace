@@ -404,6 +404,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	[SAStatementCall recordWorkAsCancelledOn:self];
 }
 
+/**
+ * Records work the user stopped waiting for whose statement the server had answered already, and
+ * that did not settle within the grace: carried out, its result unread - not a stop.
+ */
+- (void)recordWorkAsCarriedOutButUnsettled
+{
+	[SAStatementCall recordWorkAsCarriedOutButUnsettledOn:self];
+}
+
 #pragma mark -
 #pragma mark What the statement call asks of the connection
 
@@ -2077,6 +2086,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// the next use reconnects and restores, with the saved state still there to restore from.
 		else if (state == SPMySQLConnected) {
 			[self _disconnectPreservingProxyReconnect:YES];
+			state = SPMySQLConnectionLostInBackground;
+			reconnectingThread = NULL;
+			return NO;
+		}
+		// A reconnect given up on while its session was being set up has closed that session already:
+		// the setup fails as an attempt that never came up. The connection stays recoverable all the
+		// same, like one whose restore failed - the next use reconnects and restores, with the saved
+		// state still there to restore from. A thread given up on does not retry here.
+		else if ([[NSThread currentThread] isCancelled] && state == SPMySQLDisconnected) {
 			state = SPMySQLConnectionLostInBackground;
 			reconnectingThread = NULL;
 			return NO;

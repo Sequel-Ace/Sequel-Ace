@@ -94,6 +94,9 @@ private final class SAReportCaptureHoldingConnection: SPMySQLConnection {
     }
 }
 
+/// Ends a test whose expectation was not met in time.
+private struct SATestWaitTimedOut: Error {}
+
 /// A connection on which the user's stop lands the moment a statement has been carried out - after
 /// the server answered, before the connection has settled the statement's report.
 private final class SAStoppedOnceCarriedOutConnection: SPMySQLConnection {
@@ -200,18 +203,43 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         return connection
     }
 
-    /// Whether a statement with this text is running on the server, as a second connection sees it.
-    /// A process list that cannot be read is a failed observation, not an absent statement.
-    private func serverRunsAStatementContaining(_ text: String, seenFrom observer: SPMySQLConnection) throws -> Bool {
+    /// Whether this connection's session runs a statement with this text on the server, as a second
+    /// connection sees it: the process-list row with the session's id, and that row's statement -
+    /// another session running the same text is not it. A process list that cannot be read is a
+    /// failed observation, not an absent statement.
+    private func serverRunsAStatementContaining(_ text: String, inTheSessionOf connection: SPMySQLConnection,
+                                                seenFrom observer: SPMySQLConnection) throws -> Bool {
         let processes = try XCTUnwrap(observer.queryString("SHOW FULL PROCESSLIST"),
                                       "the process list could not be read: \(observer.lastErrorMessage() ?? "no error")")
+        let sessionID = "\(connection.mysqlConnectionThreadId)"
         for row in processes.getAllRows() {
-            let columns: [Any] = (row as? [Any]) ?? ((row as? [String: Any]).map { Array($0.values) } ?? [])
-            for case let column as String in columns where column.contains(text) {
-                return true
+            let id: Any?
+            let statement: Any?
+            if let columns = row as? [Any] {
+                id = columns.first
+                statement = columns.count > 7 ? columns[7] : nil
+            } else if let columns = row as? [String: Any] {
+                id = columns["Id"]
+                statement = columns["Info"]
+            } else {
+                continue
             }
+            guard let id, "\(id)" == sessionID else {
+                continue
+            }
+            return ((statement as? String) ?? "").contains(text)
         }
         return false
+    }
+
+    /// Waits for an expectation and ends the test when it is not met in time: what the workers
+    /// write afterwards is not read, and nothing more is asked of a connection a worker may still
+    /// be using.
+    private func waited(for expectation: XCTestExpectation, timeout: TimeInterval) throws {
+        guard XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed else {
+            XCTFail("\(expectation.expectationDescription): not within \(timeout) s")
+            throw SATestWaitTimedOut()
+        }
     }
 
     /// A statement asked for on the main thread runs on the worker, and answers as before: quick
@@ -271,27 +299,46 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         let observer = try connected(SPMySQLConnection(), delegate: SAWaitingDelegate())
         defer { observer.disconnect() }
 
+        var stoppedAt: Date?
+        var seenOnTheServer = false
         delegate.onceWhileWaiting = { _ in
-            // The user presses Stop Waiting as soon as the sheet is up.
+            // The user presses Stop Waiting once the statement is running on the server - not before
+            // it was sent, which a stop would also end, without proving the kill. The process list is
+            // read from a thread of its own; this one is the waiting thread.
+            let looked = DispatchSemaphore(value: 0)
+            Thread.detachNewThread {
+                let giveUp = Date(timeIntervalSinceNow: 5)
+                while Date() < giveUp {
+                    if (try? self.serverRunsAStatementContaining("'stopped'", inTheSessionOf: connection, seenFrom: observer)) == true {
+                        seenOnTheServer = true
+                        break
+                    }
+                    usleep(20_000)
+                }
+                looked.signal()
+            }
+            XCTAssertEqual(looked.wait(timeout: .now() + 6), .success)
+            XCTAssertTrue(seenOnTheServer, "the SLEEP reached the server")
+            stoppedAt = Date()
             connection.cancelCheck()
         }
 
-        let started = Date()
         let result = connection.queryString("SELECT SLEEP(8), 'stopped'")
-        let elapsed = Date().timeIntervalSince(started)
+        let toldAfterTheStop = stoppedAt.map { Date().timeIntervalSince($0) }
 
         XCTAssertNil(result)
-        XCTAssertLessThan(elapsed, 3, "the caller was told at once, not after the statement")
+        XCTAssertNotNil(stoppedAt, "the stop was pressed")
+        XCTAssertLessThan(toldAfterTheStop ?? .infinity, 3, "the caller was told at once, not after the statement")
         XCTAssertTrue(connection.lastQueryWasCancelled)
         XCTAssertTrue(connection.queryErrored())
         XCTAssertEqual(connection.lastErrorID(), 1317)
 
         // The statement itself is stopped on the server, by the request that went out behind the caller.
         let giveUp = Date(timeIntervalSinceNow: 5)
-        while try serverRunsAStatementContaining("'stopped'", seenFrom: observer) && Date() < giveUp {
+        while try serverRunsAStatementContaining("'stopped'", inTheSessionOf: connection, seenFrom: observer) && Date() < giveUp {
             RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
         }
-        XCTAssertFalse(try serverRunsAStatementContaining("'stopped'", seenFrom: observer), "the SLEEP was killed")
+        XCTAssertFalse(try serverRunsAStatementContaining("'stopped'", inTheSessionOf: connection, seenFrom: observer), "the SLEEP was killed")
 
         // And the connection answers the next statement, on this session or a replacement.
         XCTAssertEqual(connection.getFirstField(fromQuery: "SELECT 'again'") as? String, "again")
@@ -309,6 +356,11 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             observer.disconnect()
         }
 
+        // The observer holds a gate on the server; the other thread's statement waits at it until the
+        // stop has been sent, so that statement is still running whatever the test thread's pace.
+        XCTAssertEqual((observer.getFirstField(fromQuery: "SELECT GET_LOCK('sa_other_gate', 30)") as? NSString)?.integerValue, 1, "the gate is held")
+        defer { _ = observer.queryString("SELECT RELEASE_LOCK('sa_other_gate')") }
+
         // A statement of another thread's holds the session - a table load, say.
         let otherStarted = DispatchSemaphore(value: 0)
         let otherAnswered = expectation(description: "the other thread's statement answered")
@@ -317,7 +369,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         var otherWasCancelled: Bool?
         Thread.detachNewThread {
             otherStarted.signal()
-            otherAnswer = connection.getFirstField(fromQuery: "SELECT SLEEP(1.5) + 0, 'other'") as? String
+            otherAnswer = connection.getFirstField(fromQuery: "SELECT GET_LOCK('sa_other_gate', 30) + 0, 'other'") as? String
             otherErrored = connection.queryErrored()
             otherWasCancelled = connection.lastQueryWasCancelled
             otherAnswered.fulfill()
@@ -326,7 +378,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         // Until the other thread's statement holds the session on the server, not for a while.
         var otherRuns = false
         for _ in 0..<250 where !otherRuns {
-            otherRuns = try serverRunsAStatementContaining("'other'", seenFrom: observer)
+            otherRuns = try serverRunsAStatementContaining("'other'", inTheSessionOf: connection, seenFrom: observer)
             if !otherRuns {
                 usleep(20_000)
             }
@@ -343,8 +395,10 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         XCTAssertLessThan(elapsed, 1.2, "and the caller was told at once, not after the other statement")
         XCTAssertTrue(connection.lastQueryWasCancelled)
 
-        wait(for: [otherAnswered], timeout: 5)
-        XCTAssertEqual(otherAnswer, "0", "the other thread's statement ran to its end")
+        // The stop has been sent; the gate opens, and the other thread's statement runs to its end.
+        _ = observer.queryString("SELECT RELEASE_LOCK('sa_other_gate')")
+        try waited(for: otherAnswered, timeout: 5)
+        XCTAssertEqual(otherAnswer, "1", "the other thread's statement ran to its end")
         XCTAssertEqual(otherErrored, false, "unkilled")
         XCTAssertEqual(otherWasCancelled, false, "and not reported as stopped")
     }
@@ -397,7 +451,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
 
         /// Runs the main thread's statement over a background statement held between writing and
         /// taking its report, and reports what each caller read.
-        func readings(mainStatement: String, backgroundStatement: String) -> (mainErrored: Bool, mainErrorID: UInt, backgroundErrored: Bool?, backgroundErrorID: UInt?) {
+        func readings(mainStatement: String, backgroundStatement: String) throws -> (mainErrored: Bool, mainErrorID: UInt, backgroundErrored: Bool?, backgroundErrorID: UInt?) {
             connection.holdEnded = nil
             let backgroundReturned = expectation(description: "the background statement's caller read its report")
             var backgroundErrored: Bool?
@@ -425,17 +479,17 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             let mainErrorID = connection.lastErrorID()
 
             connection.letTheBackgroundStatementCapture.signal()
-            wait(for: [backgroundReturned], timeout: 5)
+            try waited(for: backgroundReturned, timeout: 5)
             XCTAssertEqual(connection.holdEnded, .success, "the background statement was held until the main caller had read")
             return (mainErrored, mainErrorID, backgroundErrored, backgroundErrorID)
         }
 
-        let mainSucceeds = readings(mainStatement: "SELECT SLEEP(0.4), 'main'", backgroundStatement: "SELECT * FROM no_such_table_for_the_overlap")
+        let mainSucceeds = try readings(mainStatement: "SELECT SLEEP(0.4), 'main'", backgroundStatement: "SELECT * FROM no_such_table_for_the_overlap")
         XCTAssertFalse(mainSucceeds.mainErrored, "the main caller reads its success")
         XCTAssertEqual(mainSucceeds.backgroundErrored, true, "the background caller reads its failure")
         XCTAssertNotEqual(mainSucceeds.backgroundErrorID ?? 0, 0, "the background statement's own failure: no such table, or no database selected")
 
-        let mainFails = readings(mainStatement: "SELECT SLEEP(0.4), (SELECT 1 UNION SELECT 2)", backgroundStatement: "SELECT 'background'")
+        let mainFails = try readings(mainStatement: "SELECT SLEEP(0.4), (SELECT 1 UNION SELECT 2)", backgroundStatement: "SELECT 'background'")
         XCTAssertTrue(mainFails.mainErrored, "the main caller reads its failure")
         XCTAssertEqual(mainFails.mainErrorID, 1242, "subquery returns more than 1 row")
         XCTAssertEqual(mainFails.backgroundErrored, false, "the background caller reads its success")
@@ -465,7 +519,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             affectedRows = connection.rowsAffectedByLastQuery()
             returned.fulfill()
         }
-        wait(for: [returned], timeout: 10)
+        try waited(for: returned, timeout: 10)
 
         XCTAssertFalse(connection.stopsOnceTheNextStatementIsCarriedOut, "the stop landed")
         XCTAssertFalse(wasCancelled, "a statement carried out is not cancelled")
@@ -497,7 +551,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
             errorID = connection.lastErrorID()
             returned.fulfill()
         }
-        wait(for: [returned], timeout: 10)
+        try waited(for: returned, timeout: 10)
 
         XCTAssertFalse(connection.stopsOnceTheNextStatementIsCarriedOut, "the stop landed")
         XCTAssertTrue(wasCancelled, "a statement stopped before its rows were stored is reported cancelled")
@@ -580,17 +634,17 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         }
         var bRuns = false
         for _ in 0..<100 where !bRuns {
-            bRuns = try serverRunsAStatementContaining("sa_slow_rows", seenFrom: observer)
+            bRuns = try serverRunsAStatementContaining("sa_slow_rows", inTheSessionOf: connection, seenFrom: observer)
             if !bRuns {
                 usleep(50_000)
             }
         }
         XCTAssertTrue(bRuns, "B runs on the server")
         connection.cancelCurrentQuery()
-        wait(for: [bReturned], timeout: 15)
+        try waited(for: bReturned, timeout: 15)
         XCTAssertTrue(bWasCancelled, "the stop was B's")
         laterWorkWasStopped.signal()
-        wait(for: [aRead], timeout: 20)
+        try waited(for: aRead, timeout: 20)
 
         XCTAssertEqual(aRows, 1)
         XCTAssertFalse(aWasCancelled, "A's report is its own, settled before B")
@@ -738,7 +792,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         _ = connection.queryString("SELECT 'another statement'")
         XCTAssertFalse(connection.queryErrored(), "the other statement ran: \(connection.lastErrorMessage() ?? "")")
         anotherStatementRan.signal()
-        wait(for: [finished], timeout: 20)
+        try waited(for: finished, timeout: 20)
 
         XCTAssertGreaterThanOrEqual(rows, 10)
         XCTAssertLessThan(rows, 900, "the download was stopped")
@@ -795,7 +849,7 @@ final class SAConnectionWorkIntegrationTests: XCTestCase {
         // Tried, not necessarily run: the session is gone, and the delegate lets it go.
         _ = connection.queryString("SELECT 'another statement'")
         anotherStatementRan.signal()
-        wait(for: [finished], timeout: 20)
+        try waited(for: finished, timeout: 20)
 
         XCTAssertGreaterThanOrEqual(rows, 10)
         XCTAssertLessThan(rows, 900, "the download ended early")

@@ -20,6 +20,7 @@ private final class SAScriptedWorkHost: NSObject, SAConnectionWorkHost {
     var whileWaiting: ((_ isFinished: @escaping () -> Bool) -> Void)?
     private(set) var timesAskedToWait = 0
     private(set) var cancelledWorkRecorded = 0
+    private(set) var unsettledWorkRecorded = 0
 
     func waitForWork(untilFinished isFinished: @escaping () -> Bool) {
         timesAskedToWait += 1
@@ -34,6 +35,10 @@ private final class SAScriptedWorkHost: NSObject, SAConnectionWorkHost {
 
     func recordWorkAsCancelled() {
         cancelledWorkRecorded += 1
+    }
+
+    func recordWorkAsCarriedOutButUnsettled() {
+        unsettledWorkRecorded += 1
     }
 }
 
@@ -117,6 +122,25 @@ private final class SAStoppedDuringRestoreConnection: SPMySQLConnection {
         // away, which the restore does not notice.
         Thread.current.cancel()
         return true
+    }
+}
+
+/// A connection whose reconnect's thread is given up on while the new session is being set up: the
+/// setup fails as an attempt that never came up and closes the session, as the connection's does.
+private final class SAStoppedDuringSetupConnection: SPMySQLConnection {
+    @objc(_connectUsingConnectTimeout:) func handshakeThenSetupGivenUpOn(_ connectTimeoutOrZero: UInt) -> Bool {
+        // The user stops waiting during the setup statements; the setup fails and closes the session.
+        Thread.current.cancel()
+        setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+        return false
+    }
+
+    @objc(_waitForNetworkConnectionWithTimeout:) func waitForNetwork(_ timeout: Double) -> Bool {
+        true
+    }
+
+    @objc(_disconnectPreservingProxyReconnect:) func closeSession(_ preserveProxy: Bool) {
+        setValue(SPMySQLDisconnected.rawValue, forKey: "state")
     }
 }
 
@@ -216,19 +240,30 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
 
     /// Work that was abandoned does not hold up what follows: the next piece gets a thread of its own.
     func testWorkThatWasAbandonedDoesNotHoldUpWhatFollows() {
+        let stuckWorkBegan = DispatchSemaphore(value: 0)
         let stuckWorkMayFinish = DispatchSemaphore(value: 0)
+        defer { stuckWorkMayFinish.signal() }
 
         _ = run({
+            stuckWorkBegan.signal()
             stuckWorkMayFinish.wait()
             return nil
+        }, whenSlow: { _ in
+            // The user stops waiting once the work is stuck on its thread - not before it began,
+            // when a stop would discard it unrun and prove nothing about the thread.
+            XCTAssertEqual(stuckWorkBegan.wait(timeout: .now() + 2), .success)
         })
 
-        let outcome = run({ "next" }, whenSlow: Self.waitingForTheWork)
+        let outcome = run({ "next" }, whenSlow: { isFinished in
+            let deadline = Date(timeIntervalSinceNow: 5)
+            while !isFinished() && Date() < deadline {
+                usleep(1_000)
+            }
+            XCTAssertTrue(isFinished(), "the next piece of work got a thread of its own")
+        })
 
         XCTAssertTrue(outcome.finished)
         XCTAssertEqual(outcome.result as? String, "next")
-
-        stuckWorkMayFinish.signal()
     }
 
     /// Work the user stops never counts as finished, even when it returns before the waiting ends.
@@ -567,6 +602,37 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(databaseKept, "sa_restore_me", "with the saved state kept for the next reconnect")
     }
 
+    /// A reconnect given up on while its session was being set up - the setup failed and closed
+    /// the session - leaves the connection recoverable: the next use reconnects and restores, with
+    /// the saved state still there, rather than finding a disconnected connection nobody reconnects.
+    func testAReconnectGivenUpOnDuringTheSetupStaysRecoverable() {
+        let connection = SAStoppedDuringSetupConnection()
+        connection.useKeepAlive = false
+        connection.setValue(SPMySQLConnectionLostInBackground.rawValue, forKey: "state")
+        connection.setValue("sa_restore_me", forKey: "database")
+        defer {
+            connection.setValue(SPMySQLDisconnected.rawValue, forKey: "state")
+            connection.disconnect()
+        }
+        let looked = expectation(description: "the reconnect returned")
+        var reconnected: Bool?
+        var stateAfterwards: Int?
+        var databaseKept: String?
+
+        Thread.detachNewThread {
+            reconnected = unsafeBitCast(connection, to: SAReconnectHandOff.self).reconnect(allowingRetries: true)
+            stateAfterwards = connection.value(forKey: "state") as? Int
+            databaseKept = connection.value(forKey: "databaseToRestore") as? String
+            looked.fulfill()
+        }
+
+        wait(for: [looked], timeout: 5)
+        XCTAssertEqual(reconnected, false, "the reconnect did not succeed")
+        XCTAssertEqual(stateAfterwards, Int(SPMySQLConnectionLostInBackground.rawValue),
+                       "but the connection is left for the next use to reconnect and restore")
+        XCTAssertEqual(databaseKept, "sa_restore_me", "with the saved state kept")
+    }
+
     /// Work whose statement the server has answered, with nothing left to fetch, is settling: the
     /// user's stop leaves it the moment it still needs, and its result - a write the server applied -
     /// reaches its caller rather than a stop.
@@ -582,17 +648,42 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         }
 
         let result = coordinator.run({
-            host.sessionAccess.beginNativeQuery()
-            host.sessionAccess.noteActiveNativeQueryIsSettling()
+            // The server answered the write; the statement takes a moment longer to settle.
+            SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
             theWorkIsSettling.signal()
             letTheWorkEnd.wait()
-            host.sessionAccess.endNativeQuery()
             return "applied"
         }, on: host)
 
         XCTAssertEqual(result as? String, "applied", "the result reached its caller")
         XCTAssertEqual(host.cancelledWorkRecorded, 0, "and nothing was recorded as cancelled")
+        XCTAssertEqual(host.unsettledWorkRecorded, 0)
         XCTAssertEqual(host.timesAskedToWait, 1)
+    }
+
+    /// Settling work that outlives the grace is not given up on either: its caller is told the
+    /// statement was carried out and its result not read - not a stop, since the write stands.
+    func testWorkSettlingItsStatementPastTheGraceIsRecordedAsCarriedOutNotCancelled() {
+        let host = SAScriptedWorkHost()
+        let theWorkIsSettling = DispatchSemaphore(value: 0)
+        let letTheWorkEnd = DispatchSemaphore(value: 0)
+        defer { letTheWorkEnd.signal() }
+        host.whileWaiting = { _ in
+            XCTAssertEqual(theWorkIsSettling.wait(timeout: .now() + 2), .success)
+        }
+
+        let started = Date()
+        let result = coordinator.run({
+            SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
+            theWorkIsSettling.signal()
+            letTheWorkEnd.wait()
+            return "applied"
+        }, on: host)
+
+        XCTAssertNil(result, "nothing was read in time")
+        XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(started), SAConnectionWorkCoordinator.settlingGrace, "the grace was waited out")
+        XCTAssertEqual(host.unsettledWorkRecorded, 1, "the statement is recorded as carried out, its result unread")
+        XCTAssertEqual(host.cancelledWorkRecorded, 0, "not as a stop")
     }
 
     /// Work handed over forgets a refusal that was not about it: the mark is read by the statement

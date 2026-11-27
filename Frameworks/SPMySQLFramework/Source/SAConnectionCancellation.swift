@@ -74,14 +74,11 @@ public final class SAConnectionCancellation: NSObject {
     @objc(userStoppedWaitingForWorkOf:)
     public func userStoppedWaiting(forWorkOf coordinator: SAConnectionWorkCoordinator) {
         let worker = coordinator.currentWorkerThread
-        // Work whose statement the server has answered, with nothing left to fetch, is settling:
-        // it ends within moments, and its result - a write the server applied - is its caller's,
-        // not a stop's. It is left to finish; the coordinator waits that moment out once the
-        // interface's wait has ended.
-        let settling = host?.sessionAccess.tokenOfWorkSettlingItsQuery
-        // Only the work given up on: work that finished first keeps its result, and a streaming
-        // statement among it keeps its download.
-        let tokens = coordinator.abandonWorkForUserStopReturningAbandonedTokens(keeping: settling)
+        // Only the work given up on: work that finished first keeps its result, a streaming
+        // statement among it keeps its download, and work whose statement the server has answered
+        // - settling, its result a write the server applied - is left to finish and kept by the
+        // coordinator; nothing of it is killed.
+        let tokens = coordinator.abandonWorkForUserStopReturningAbandonedTokens()
         guard let worker, let host, !tokens.isEmpty else {
             return
         }

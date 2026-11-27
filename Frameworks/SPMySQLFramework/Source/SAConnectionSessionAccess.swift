@@ -26,9 +26,6 @@ import Darwin
     private var threadOfActiveNativeQuery: ObjectIdentifier?
     /// The token of the coordinator's work that began the active native query, if that work did.
     private var workTokenOfActiveNativeQuery: UInt64?
-    /// Whether the server has answered the active native query's statement with nothing left to
-    /// fetch, so that what remains of the statement takes no time worth stopping.
-    private var activeNativeQueryIsSettling = false
     private var cancellingQuery: UInt?
     private var cancellingSocketGeneration: UInt = 0
     private var recoveryRequired = false
@@ -146,7 +143,6 @@ import Darwin
             activeNativeQuery = nativeQueryGeneration
             threadOfActiveNativeQuery = ObjectIdentifier(thread)
             workTokenOfActiveNativeQuery = SAConnectionWorkCoordinator.tokenOfWorkOnThisThread
-            activeNativeQueryIsSettling = false
             // A thread that was given up on never sends: the lease turns it away while it waits,
             // and here once more should it already hold the session.
             return !thread.isCancelled && (token.map { $0 == queryCancellationGeneration } ?? true)
@@ -162,23 +158,6 @@ import Darwin
             activeNativeQuery = nil
             threadOfActiveNativeQuery = nil
             workTokenOfActiveNativeQuery = nil
-            activeNativeQueryIsSettling = false
-        }
-    }
-
-    /// The server has answered the active native query's statement and nothing of it is left to
-    /// fetch - a write, or any statement without a result set: what remains of the statement takes
-    /// no time worth stopping, and its result - a write the server applied - is its caller's.
-    @objc public func noteActiveNativeQueryIsSettling() {
-        socketLock.withLock { activeNativeQueryIsSettling = true }
-    }
-
-    /// The token of the coordinator's work whose native query is settling - the server has answered
-    /// its statement and nothing of it is left to fetch - or nil when no such query is active, or no
-    /// coordinator's work began it.
-    public var tokenOfWorkSettlingItsQuery: UInt64? {
-        socketLock.withLock {
-            activeNativeQuery != nil && activeNativeQueryIsSettling ? workTokenOfActiveNativeQuery : nil
         }
     }
 

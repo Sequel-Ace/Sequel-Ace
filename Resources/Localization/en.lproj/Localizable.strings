@@ -2299,6 +2299,9 @@
 /* Error shown for a statement asked for while the window is waiting for an earlier statement on the same connection */
 "The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again." = "The connection is still waiting for an earlier statement from this window. Let it finish, or stop waiting for it, then try again.";
 
+/* Error shown when the user stopped waiting after the server had carried the statement out and the connection could not settle it in time */
+"The statement was carried out, but its result could not be read in time." = "The statement was carried out, but its result could not be read in time.";
+
 /* connection wait sheet note while a finished wait is held up by another window's wait */
 "Continues once the other window has finished waiting." = "Continues once the other window has finished waiting.";
 

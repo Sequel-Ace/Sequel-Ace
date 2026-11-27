@@ -373,7 +373,6 @@ final class SAConnectionCancellationTests: XCTestCase {
         var theWorkerWasStillThereBeforeTheStop: Bool?
         var theWorkerWasLetGoWhenMarked: Bool?
         var theWorkerWasLetGoWhenTheStopReturned: Bool?
-        var theStopReturnedBeforeTheKillWasAnswered: Bool?
         let theWorkerBeganItsQuery = DispatchSemaphore(value: 0)
 
         let outcome = coordinator.run({ [host] in
@@ -390,17 +389,15 @@ final class SAConnectionCancellationTests: XCTestCase {
             XCTAssertEqual(theWorkerBeganItsQuery.wait(timeout: .now() + 2), .success)
             theWorkerWasStillThereBeforeTheStop = coordinator.currentWorkerThread != nil
             host.whenMarked = { theWorkerWasLetGoWhenMarked = coordinator.currentWorkerThread == nil }
-            let stopStarted = Date()
             cancellation.userStoppedWaiting(forWorkOf: coordinator)
             theWorkerWasLetGoWhenTheStopReturned = coordinator.currentWorkerThread == nil
-            theStopReturnedBeforeTheKillWasAnswered = Date().timeIntervalSince(stopStarted) < 1
         })
 
         XCTAssertEqual(theWorkerWasStillThereBeforeTheStop, true)
         XCTAssertTrue(outcome.wasAbandoned, "the work was given up on")
         XCTAssertEqual(theWorkerWasLetGoWhenTheStopReturned, true, "and its thread let go by the time the stop returned")
-        XCTAssertEqual(theStopReturnedBeforeTheKillWasAnswered, true, "without waiting for the server")
-        XCTAssertFalse(host.aBlockedKillRanOutOfTime, "and the kill is still blocked, for the test to let go")
+        XCTAssertFalse(host.aBlockedKillRanOutOfTime,
+                       "without waiting for the server: the kill is still blocked, for the test to let go - a stop that waited for it would have run the fake server's deadline out")
         XCTAssertEqual(host.killWasAsked.wait(timeout: .now() + 2), .success, "which was asked all the same")
         XCTAssertTrue(host.recordedCalls().contains("kill 42"))
         XCTAssertFalse(host.recordedCalls().contains("marked"),
@@ -511,7 +508,8 @@ final class SAConnectionCancellationTests: XCTestCase {
 
         let outcome = coordinator.run({ [host] in
             host.sessionAccess.beginNativeQuery()
-            host.sessionAccess.noteActiveNativeQueryIsSettling()
+            // The server answered the write; the statement takes a moment longer to settle.
+            SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
             theWorkIsSettling.signal()
             letTheWorkEnd.wait()
             return "applied"
@@ -520,8 +518,6 @@ final class SAConnectionCancellationTests: XCTestCase {
             cancellation.userStoppedWaiting(forWorkOf: coordinator)
             theWorkerWasKept = coordinator.currentWorkerThread != nil
             letTheWorkEnd.signal()
-        }, settling: { [host] token in
-            host.sessionAccess.tokenOfWorkSettlingItsQuery == token
         })
 
         XCTAssertEqual(theWorkerWasKept, true, "the thread stays for the moment the work still needs")

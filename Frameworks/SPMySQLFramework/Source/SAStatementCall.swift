@@ -148,4 +148,17 @@ public final class SAStatementCall: NSObject {
                                                      errorID: 1317, sqlState: "70100", affectedRows: 0,
                                                      insertID: host.insertIDCarried, wasCancelled: true), for: host)
     }
+
+    /// Records work the user stopped waiting for whose statement the server had answered already,
+    /// and that did not settle within the grace, for the thread that asked for it: the statement
+    /// was carried out - a write applied - so it is not a stop, and must not be tried again; its
+    /// result was not read, so it is not a success either. The caller reads an error that says so.
+    /// - Parameter host: The connection.
+    @objc(recordWorkAsCarriedOutButUnsettledOn:)
+    public static func recordWorkAsCarriedOutButUnsettled(on host: SAStatementCallHost) {
+        let reason = NSLocalizedString("The statement was carried out, but its result could not be read in time.",
+                                       comment: "Error shown when the user stopped waiting after the server had carried the statement out and the connection could not settle it in time")
+        SAStatementReport.handBack(SAStatementReport(errorMessage: reason, errorID: 2013, sqlState: "HY000", affectedRows: 0,
+                                                     insertID: host.insertIDCarried, wasCancelled: false), for: host)
+    }
 }
