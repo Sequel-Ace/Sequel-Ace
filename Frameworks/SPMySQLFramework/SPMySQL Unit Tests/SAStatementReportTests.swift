@@ -527,6 +527,19 @@ final class SAStatementKindTests: XCTestCase {
         XCTAssertEqual(SAStatementKind.leadingKeyword(of: "  /* x */ DESCRIBE t"), "DESCRIBE")
     }
 
+    /// A reading statement that calls a function the connection does not know - a stored function,
+    /// qualified or quoted or bare - may write through it; the server's own functions and the words
+    /// of SQL before a parenthesis do not count, nor does text in strings and comments.
+    func testAReadingStatementCallingAnUnknownFunctionMayWrite() {
+        XCTAssertTrue(SAStatementKind.statementMayWrite("SELECT record_event()"))
+        XCTAssertTrue(SAStatementKind.statementMayWrite("SELECT mysql.record_event(1)"))
+        XCTAssertTrue(SAStatementKind.statementMayWrite("SELECT `my func`(1)"))
+        XCTAssertTrue(SAStatementKind.statementMayWrite("select count(*) from t where audit(x) > 0"))
+        XCTAssertFalse(SAStatementKind.statementMayWrite("SELECT COUNT(*), MAX(x), DATE_FORMAT(d, '%Y'), IF(a, b, c) FROM t WHERE x IN (SELECT y FROM u) AND s LIKE 'f('"))
+        XCTAssertFalse(SAStatementKind.statementMayWrite("SELECT CAST(x AS CHAR(10)), JSON_EXTRACT(j, '$.a') /* f( */ FROM t -- g(\n"))
+        XCTAssertFalse(SAStatementKind.statementMayWrite("SELECT ROW_NUMBER() OVER (PARTITION BY a ORDER BY b) FROM t"))
+    }
+
     /// Anything else may write - also a common table expression, a call, and what is not known.
     func testAnyOtherStatementMayWrite() {
         XCTAssertTrue(SAStatementKind.statementMayWrite("INSERT INTO t VALUES (1) RETURNING i"))
