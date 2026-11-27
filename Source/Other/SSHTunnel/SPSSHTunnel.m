@@ -632,6 +632,10 @@ static unsigned short getRandomPort(void);
 		// use default shell so ProxyJump commands run by ssh stay inside the sandbox
 		[taskEnvironment removeObjectForKey:@"SHELL"];
 
+		// ssh expands ~ in Include via $HOME, which points at the sandbox container
+		NSString *userHome = [[NSFileManager defaultManager] userHomeDirectoryPath];
+		if (userHome.length) [taskEnvironment safeSetObject:userHome forKey:@"HOME"];
+
 		[taskEnvironment safeSetObject:authenticationAppPath forKey:@"SSH_ASKPASS"];
 		[taskEnvironment safeSetObject:@":0" forKey:@"DISPLAY"];
 		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];
