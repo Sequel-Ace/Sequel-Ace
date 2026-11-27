@@ -21,6 +21,7 @@ private final class SAScriptedWorkHost: NSObject, SAConnectionWorkHost {
     private(set) var timesAskedToWait = 0
     private(set) var cancelledWorkRecorded = 0
     private(set) var unsettledWorkRecorded = 0
+    private(set) var cancelledAfterSendRecorded = 0
 
     func waitForWork(untilFinished isFinished: @escaping () -> Bool) {
         timesAskedToWait += 1
@@ -40,12 +41,19 @@ private final class SAScriptedWorkHost: NSObject, SAConnectionWorkHost {
     func recordWorkAsCarriedOutButUnsettled() {
         unsettledWorkRecorded += 1
     }
+
+    func recordWorkAsCancelledAfterTheSend() {
+        cancelledAfterSendRecorded += 1
+    }
 }
 
-/// A connection as the statement call sees it, for the note of a statement's answer: a lease, and
-/// nothing else the note needs.
+/// A connection as the statement call sees it: hands a statement's work to its coordinator the way
+/// the connection does from a thread outside any work, and runs it where it is from inside work -
+/// a statement the connection runs for itself on the worker - and keeps the last outcome to look at.
 private final class SAScriptedStatementHost: NSObject, SAStatementCallHost {
     let sessionAccess = SAConnectionSessionAccess()
+    let coordinator = SAConnectionWorkCoordinator()
+    private(set) var lastOutcome: SAConnectionWorkOutcome?
     var insertIDCarried: UInt64 = 0
     var reportFromTheConnectionsFields: SAStatementReport {
         SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
@@ -58,7 +66,16 @@ private final class SAScriptedStatementHost: NSObject, SAStatementCallHost {
     }
 
     func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? {
-        work()
+        if SAConnectionWorkCoordinator.tokenOfWorkOnThisThread != nil {
+            return work()
+        }
+        let outcome = coordinator.run(work, whenSlow: { isFinished in
+            while !isFinished() {
+                usleep(1_000)
+            }
+        })
+        lastOutcome = outcome
+        return outcome.result
     }
 }
 
@@ -540,33 +557,49 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertEqual(host.cancelledWorkRecorded, 0)
     }
 
-    /// Work from another thread during the wait is not nested work, and is handed over as usual.
-    func testWorkFromAnotherThreadDuringTheWaitIsNotRefused() {
+    /// Work asked for on the main thread while another thread is waiting for work is not nested
+    /// work: it is handed over as usual - to the worker, the delegate waiting - and answers.
+    func testWorkFromAnotherThreadDuringTheWaitIsHandedOverAsUsual() {
+        let outerWaitIsOn = DispatchSemaphore(value: 0)
+        let letTheOuterWorkEnd = DispatchSemaphore(value: 0)
+        let outerReturned = DispatchSemaphore(value: 0)
+        defer { letTheOuterWorkEnd.signal() }
+        var outerResult: Any?
+
+        // Another thread asks for work and waits for it.
+        Thread.detachNewThread { [coordinator] in
+            outerResult = coordinator.run({
+                _ = letTheOuterWorkEnd.wait(timeout: .now() + 10)
+                return "outer"
+            }, whenSlow: { isFinished in
+                outerWaitIsOn.signal()
+                let deadline = Date(timeIntervalSinceNow: 10)
+                while !isFinished() && Date() < deadline {
+                    usleep(1_000)
+                }
+                XCTAssertTrue(isFinished(), "the outer work finished")
+            }).result
+            outerReturned.signal()
+        }
+        XCTAssertEqual(outerWaitIsOn.wait(timeout: .now() + 5), .success, "the other thread is waiting for its work")
+
+        // This thread's work, with a delegate to show the wait, goes through the hand-off: it is
+        // queued behind the outer work on the worker, and this thread's wait lets that work end.
         let host = SAScriptedWorkHost()
-        host.delegateShowsTheWait = false
-        var otherResult: Any?
-        let otherReturned = DispatchSemaphore(value: 0)
-        let watcher = SAScriptedWorkHost()
-        watcher.whileWaiting = { [coordinator] isFinished in
-            Thread.detachNewThread {
-                otherResult = coordinator.run({ "other" }, on: host)
-                otherReturned.signal()
-            }
+        host.whileWaiting = { isFinished in
+            letTheOuterWorkEnd.signal()
             let deadline = Date(timeIntervalSinceNow: 10)
             while !isFinished() && Date() < deadline {
                 usleep(1_000)
             }
-            XCTAssertTrue(isFinished(), "the outer work finished while the other thread's call was in")
         }
+        let result = coordinator.run({ "this thread's" }, on: host)
 
-        // The outer work waits for the other thread's call to come back, so that call is made
-        // while this thread is waiting for the outer work - the interleaving under test.
-        let outerResult = coordinator.run({
-            otherReturned.wait(timeout: .now() + 5) == .success ? "outer" : "outer, without the other thread's call"
-        }, on: watcher)
-
+        XCTAssertEqual(result as? String, "this thread's", "handed over and answered, not refused")
+        XCTAssertEqual(host.timesAskedToWait, 1, "through the hand-off, waited for")
+        XCTAssertEqual(host.cancelledWorkRecorded, 0)
+        XCTAssertEqual(outerReturned.wait(timeout: .now() + 5), .success)
         XCTAssertEqual(outerResult as? String, "outer")
-        XCTAssertEqual(otherResult as? String, "other")
     }
 
     /// A session that comes up after its reconnect was given up on is retired, not kept half set
@@ -731,32 +764,105 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
     /// whose own statement was never sent, and a stop could then neither give it up nor kill it.
     func testOnlyTheStatementTheWorkIsForNotesItsAnswer() {
         let callHost = SAScriptedStatementHost()
-        let lease = callHost.sessionAccess
+        /// A statement call that notes its answer and its send, as the connection does for a write.
+        func answeredStatement() -> SAStatementRun? {
+            SAStatementCall.noteStatementSent(on: callHost)
+            SAStatementCall.noteStatementAnswered(on: callHost)
+            return SAStatementRun(result: "ok", report: callHost.reportFromTheConnectionsFields)
+        }
 
-        let check = run({
-            // Work that is no statement - a check whose setup statement is answered.
-            _ = lease.performQuery { SAStatementCall.noteStatementAnswered(on: callHost); return nil }
+        // The work's own statement: asked for outside any work, run on the worker.
+        _ = SAStatementCall.run(answeredStatement, on: callHost)
+        let own = callHost.lastOutcome
+        XCTAssertEqual(own?.statementWasSentToTheServer, true, "the work's own statement is noted")
+        XCTAssertEqual(own?.statementWasAnsweredByTheServer, true)
+
+        // A check whose setup statement is answered: work that is no statement at all.
+        let check = callHost.coordinator.run({
+            _ = SAStatementCall.run(answeredStatement, on: callHost)
             return nil
         }, whenSlow: Self.waitingForTheWork)
-        XCTAssertFalse(check.statementWasAnsweredByTheServer, "a check's statement is not the work's own")
+        XCTAssertFalse(check.statementWasSentToTheServer, "a check's statement is not the work's own")
+        XCTAssertFalse(check.statementWasAnsweredByTheServer)
 
-        let nested = run({
-            SAStatementCall.runningAStatement {
-                // The statement's session was lost; the reconnect's setup statement is answered
-                // inside it, before the statement itself is sent.
-                _ = lease.performQuery {
-                    lease.performQuery { SAStatementCall.noteStatementAnswered(on: callHost); return nil }
-                }
-            }
-        }, whenSlow: Self.waitingForTheWork)
-        XCTAssertFalse(nested.statementWasAnsweredByTheServer, "a setup statement nested in the work's own is not the work's own")
+        // A reconnect's setup statement, answered inside the statement whose session was lost,
+        // before that statement itself is sent.
+        _ = SAStatementCall.run({
+            _ = SAStatementCall.run(answeredStatement, on: callHost)
+            return SAStatementRun(result: "outer", report: callHost.reportFromTheConnectionsFields)
+        }, on: callHost)
+        let nested = callHost.lastOutcome
+        XCTAssertEqual(nested?.statementWasAnsweredByTheServer, false, "a setup statement nested in the work's own is not the work's own")
+        XCTAssertEqual(nested?.statementWasSentToTheServer, false)
 
-        let own = run({
-            SAStatementCall.runningAStatement {
-                lease.performQuery { SAStatementCall.noteStatementAnswered(on: callHost); return nil }
-            }
-        }, whenSlow: Self.waitingForTheWork)
-        XCTAssertTrue(own.statementWasAnsweredByTheServer, "the work's own statement is")
+        // And the outer statement's own notes still count once the nested one has returned.
+        _ = SAStatementCall.run({
+            _ = SAStatementCall.run(answeredStatement, on: callHost)
+            return answeredStatement()
+        }, on: callHost)
+        XCTAssertEqual(callHost.lastOutcome?.statementWasAnsweredByTheServer, true, "the work's own statement is noted after a nested one")
+    }
+
+    /// A stop that lands after the work's statement was sent to the server is reported as a stop
+    /// that may have reached the server: the kill can come too late for a write, and nobody is
+    /// told it certainly did not run. A stop before the send is a plain cancellation.
+    func testAStopAfterTheSendIsReportedAsOneThatMayHaveReachedTheServer() {
+        let host = SAScriptedWorkHost()
+        let theStatementWasSent = DispatchSemaphore(value: 0)
+        let theStopWasAccepted = DispatchSemaphore(value: 0)
+        host.whileWaiting = { [coordinator] _ in
+            XCTAssertEqual(theStatementWasSent.wait(timeout: .now() + 2), .success)
+            coordinator.abandonWorkForUserStop()
+            theStopWasAccepted.signal()
+        }
+
+        let result = coordinator.run({
+            SAConnectionWorkCoordinator.noteStatementOfCurrentWorkSent()
+            theStatementWasSent.signal()
+            _ = theStopWasAccepted.wait(timeout: .now() + 2)
+            return nil
+        }, on: host)
+
+        XCTAssertNil(result)
+        XCTAssertEqual(host.cancelledAfterSendRecorded, 1, "a stop after the send says the server may have carried the statement out")
+        XCTAssertEqual(host.cancelledWorkRecorded, 0)
+        XCTAssertEqual(host.unsettledWorkRecorded, 0)
+    }
+
+    /// Settling work that outlives the grace keeps its thread uncancelled - the statement's
+    /// clean-up may still send on it, and a cancelled thread is refused the session - and the
+    /// thread goes once the work is done; the next piece of work gets a thread of its own.
+    func testSettlingWorkPastTheGraceKeepsItsThreadUncancelledAndTheNextWorkGetsAnother() {
+        let host = SAScriptedWorkHost()
+        let theWorkIsSettling = DispatchSemaphore(value: 0)
+        let letTheWorkEnd = DispatchSemaphore(value: 0)
+        let theWorkEnded = DispatchSemaphore(value: 0)
+        var settlingThread: Thread?
+        var theThreadWasCancelledAfterTheGrace: Bool?
+        host.whileWaiting = { _ in
+            XCTAssertEqual(theWorkIsSettling.wait(timeout: .now() + 2), .success)
+        }
+
+        let result = coordinator.run({
+            settlingThread = Thread.current
+            SAConnectionWorkCoordinator.noteStatementOfCurrentWorkAnswered()
+            theWorkIsSettling.signal()
+            // The clean-up outlasts the grace; the caller has been told by the time this returns.
+            _ = letTheWorkEnd.wait(timeout: .now() + 10)
+            theThreadWasCancelledAfterTheGrace = Thread.current.isCancelled
+            theWorkEnded.signal()
+            return "late"
+        }, on: host)
+        XCTAssertNil(result, "the grace ran out")
+        XCTAssertEqual(host.unsettledWorkRecorded, 1)
+
+        let nextThread = run({ Thread.current }, whenSlow: Self.waitingForTheWork).result as? Thread
+        XCTAssertNotNil(nextThread)
+        XCTAssertFalse(nextThread === settlingThread, "the next piece of work got a thread of its own")
+
+        letTheWorkEnd.signal()
+        XCTAssertEqual(theWorkEnded.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(theThreadWasCancelledAfterTheGrace, false, "the settling work's thread was left uncancelled for its clean-up")
     }
 
     /// An answer that comes once the user's stop has been accepted is nobody's: the stop was
@@ -808,6 +914,13 @@ final class SAConnectionWorkCoordinatorTests: XCTestCase {
         XCTAssertTrue(abandoned.wasAbandoned)
         abandoned.noteStatementAnswered()
         XCTAssertFalse(abandoned.statementWasAnsweredByTheServer, "an answer after the stop is nobody's")
+
+        // Given up on first, by the user's stop; the worker stores a result afterwards.
+        let stoppedThenStored = SAConnectionWorkOutcome()
+        XCTAssertTrue(stoppedThenStored.abandon())
+        stoppedThenStored.storeResult("late")
+        XCTAssertEqual(stoppedThenStored.endWaiting(), .abandoned, "given up on first counts as given up on")
+        XCTAssertNil(stoppedThenStored.result)
     }
 
     /// Work handed over forgets a refusal that was not about it: the mark is read by the statement

@@ -118,12 +118,26 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	SAStatementReport *handedBack = [self _reportThisThreadReads];
 	@synchronized (self) {
 		// An explicit stop of the connection's work reaches every caller until the next statement
-		// starts, whichever statement's report the caller holds.
-		if (handedBack) return handedBack.wasCancelled || explicitlyCancelled;
+		// starts, whichever statement's report the caller holds - except a caller whose statement
+		// the server carried out before the stop landed: its result stands, and a statement
+		// reported cancelled would be tried again. A batch stops on -stopWasRequested instead.
+		if (handedBack) return handedBack.wasCancelled || (explicitlyCancelled && !handedBack.wasCarriedOut);
 		return lastQueryWasCancelled;
 	}
 }
 
+- (BOOL)stopWasRequested
+{
+	@synchronized (self) {
+		return explicitlyCancelled;
+	}
+}
+
+/**
+ * Marks the connection's work as stopped by the user - the document's stop, which kills the query through
+ * another connection and marks the stop here: in effect for every caller but one whose statement was
+ * carried out, and for a batch, until the next statement is asked for.
+ */
 - (void)setLastQueryWasCancelled:(BOOL)cancelled
 {
 	// Some callers issue KILL through another connection and mark cancellation here.
@@ -163,7 +177,12 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (void)markRunningQueryCancelled
 {
-	lastQueryWasCancelled = YES;
+	@synchronized (self) {
+		lastQueryWasCancelled = YES;
+		// A stop of everything: in effect for every caller - but one whose statement was carried
+		// out - and for a batch, until the next statement is asked for.
+		explicitlyCancelled = YES;
+	}
 	// And in the report of a statement that still holds the session: a download being stopped.
 	[[self _reportOfStatementHoldingTheSession] recordCancellation];
 }
@@ -411,6 +430,15 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (void)recordWorkAsCarriedOutButUnsettled
 {
 	[SAStatementCall recordWorkAsCarriedOutButUnsettledOn:self];
+}
+
+/**
+ * Records work the user stopped waiting for that was given up on after its statement had been sent:
+ * a stop, with a word that the server may have carried the statement out before the kill reached it.
+ */
+- (void)recordWorkAsCancelledAfterTheSend
+{
+	[SAStatementCall recordWorkAsCancelledAfterTheSendOn:self];
 }
 
 #pragma mark -

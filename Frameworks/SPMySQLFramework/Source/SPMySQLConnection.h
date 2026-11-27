@@ -197,6 +197,9 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 	// connection, marked here - since the last statement was asked for: every caller reads that,
 	// whichever statement's report it holds, until the next statement is asked for.
 	BOOL explicitlyCancelled;
+	// Whether the server carried the last statement out: into its report, for a stop of everything
+	// that lands afterwards to leave that statement's caller its result.
+	BOOL lastStatementWasCarriedOut;
 
 	// The report of the statement that still holds the session - a streaming statement, whose rows
 	// are read after its report was taken - attached before its result exists, let go as the
@@ -269,6 +272,11 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 @property (readwrite, assign) BOOL delegateQueryLogging;
 
 @property (readwrite, assign) BOOL lastQueryWasCancelled;
+/** Whether the user stopped the connection's work - a stop of everything, the toolbar's - since the
+ * current statement was asked for. Kept whatever the statement's own report says, so a batch running
+ * statement after statement stops on it even when the stop landed after a write was carried out; that
+ * write's caller still reads its result. Forgotten as the next statement is asked for. */
+- (BOOL)stopWasRequested;
 
 /**
  * The mysql client capability flags to set when connecting.
@@ -282,6 +290,8 @@ typedef NS_ENUM(NSInteger, SAEscapingSession) {
 #pragma mark Connection and disconnection
 
 - (BOOL)connect;
+/** Reconnects a session that was lost, asking the delegate how to proceed when an attempt fails, and
+ * restores what the session had: the database, the character set, the time zone. */
 - (BOOL)reconnect;
 - (void)disconnect;
 

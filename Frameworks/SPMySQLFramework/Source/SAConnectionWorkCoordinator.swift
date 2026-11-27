@@ -36,6 +36,10 @@ public protocol SAConnectionWorkHost: AnyObject {
     /// Records that work the user stopped waiting for had its statement answered by the server
     /// already - carried out - but did not settle within the grace, so its result was not read.
     @objc(recordWorkAsCarriedOutButUnsettled) func recordWorkAsCarriedOutButUnsettled()
+
+    /// Records that work the user stopped waiting for was given up on after its statement had been
+    /// sent to the server, which may have carried it out before the kill reached it.
+    @objc(recordWorkAsCancelledAfterTheSend) func recordWorkAsCancelledAfterTheSend()
 }
 
 /// What came of a piece of connection work, and whether it was still being waited for.
@@ -52,6 +56,40 @@ public final class SAConnectionWorkOutcome: NSObject {
     private var workHasFinished = false
     private var workWasGivenUp = false
     private var statementWasAnswered = false
+    private var statementWasSent = false
+    private var threadIsToBeLetGo = false
+
+    /// Whether the statement this work ran was sent to the server: a stop that lands afterwards
+    /// is reported as one that may have reached the server, since the kill can come too late.
+    @objc public var statementWasSentToTheServer: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return statementWasSent
+    }
+
+    /// Notes that the statement this work ran was sent to the server. Called by the worker, from
+    /// the connection, right before the send.
+    func noteStatementSent() {
+        lock.lock()
+        defer { lock.unlock() }
+        statementWasSent = true
+    }
+
+    /// Whether the thread running this work is to be let go once the work is done: settling work
+    /// that outlived the grace keeps its thread, uncancelled, for its clean-up, and the thread
+    /// goes afterwards rather than being given more work.
+    var threadIsToBeLetGoAfterwards: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return threadIsToBeLetGo
+    }
+
+    /// Notes that the thread running this work goes once the work is done.
+    func noteThreadIsToBeLetGoAfterwards() {
+        lock.lock()
+        defer { lock.unlock() }
+        threadIsToBeLetGo = true
+    }
 
     /// Whether the server has answered the statement this work ran, with nothing left to fetch:
     /// the work is settling, ends within moments, and its result - a write the server applied -
@@ -100,6 +138,11 @@ public final class SAConnectionWorkOutcome: NSObject {
     func endWaiting() -> SAWaitDisposition {
         lock.lock()
         defer { lock.unlock() }
+        // Given up on first - by the user's stop - counts as given up on, whatever the worker
+        // stored afterwards: the stop is what the caller was told.
+        if workWasGivenUp {
+            return .abandoned
+        }
         if workHasFinished {
             return .finished
         }
@@ -240,6 +283,13 @@ public final class SAConnectionWorkCoordinator: NSObject {
         (Thread.current.threadDictionary[workOutcomeKey] as? SAConnectionWorkOutcome)?.noteStatementAnswered()
     }
 
+    /// The statement the current thread's work ran is being sent to the server: a stop from here
+    /// on is reported as one that may have reached the server. Nothing happens on a thread that
+    /// runs no coordinator's work.
+    @objc public static func noteStatementOfCurrentWorkSent() {
+        (Thread.current.threadDictionary[workOutcomeKey] as? SAConnectionWorkOutcome)?.noteStatementSent()
+    }
+
     /// The token of the work the current thread is running for a coordinator, if it runs any.
     ///
     /// A worker thread runs one piece of work after another, so the thread alone does not say
@@ -369,6 +419,10 @@ public final class SAConnectionWorkCoordinator: NSObject {
         guard outcome.finished else {
             if outcome.statementWasAnsweredByTheServer {
                 host.recordWorkAsCarriedOutButUnsettled()
+            } else if outcome.statementWasSentToTheServer {
+                // Given up on after the send: the kill may have come too late, and the server
+                // may have carried the statement out - the caller is told so, as a stop.
+                host.recordWorkAsCancelledAfterTheSend()
             } else {
                 host.recordWorkAsCancelled()
             }
@@ -451,14 +505,15 @@ public final class SAConnectionWorkCoordinator: NSObject {
             case .finished:
                 outcome.finished = true
             case .settling:
-                // Settling work that outlives the grace keeps running on its thread, which the
-                // next piece of work does not wait behind; its caller is told the statement was
-                // carried out, its result unread. A result stored just as the grace ran out is a
-                // result all the same.
+                // Settling work that outlives the grace keeps running on its thread - uncancelled,
+                // since the statement's clean-up may still send on it - and the thread goes once
+                // the work is done rather than being given more; the next piece of work gets a
+                // thread of its own. The caller is told the statement was carried out, its result
+                // unread. A result stored just as the grace ran out is a result all the same.
                 if workFinished.wait(timeout: .now() + Self.settlingGrace) == .success || outcome.hasFinishedItsWork {
                     outcome.finished = true
                 } else {
-                    cancel()
+                    letTheWorkerGoAfterItsWork(outcome)
                 }
             case .abandoned:
                 // That work can hold this thread for as long as the server takes to answer, or
@@ -519,6 +574,15 @@ public final class SAConnectionWorkCoordinator: NSObject {
         workerThread = nil
     }
 
+    /// Gives up the thread this work runs on without asking the work to stop: the thread finishes
+    /// the work and its clean-up as it is, and goes afterwards; the next piece of work gets a
+    /// thread of its own rather than a place behind this one.
+    /// - Parameter outcome: The outcome of the work the thread is running.
+    private func letTheWorkerGoAfterItsWork(_ outcome: SAConnectionWorkOutcome) {
+        outcome.noteThreadIsToBeLetGoAfterwards()
+        workerThread = nil
+    }
+
     /// The thread this coordinator runs work on, started if it does not have one.
     /// - Returns: A running thread whose run loop is ready for work.
     private func startedWorkerThread() -> Thread {
@@ -567,6 +631,11 @@ public final class SAConnectionWorkCoordinator: NSObject {
         }
         autoreleasepool {
             item.run()
+        }
+        // Settling work that outlived the grace was left its thread for its clean-up; the thread
+        // goes now that the work is done.
+        if item.outcome.threadIsToBeLetGoAfterwards {
+            Thread.current.cancel()
         }
     }
 }

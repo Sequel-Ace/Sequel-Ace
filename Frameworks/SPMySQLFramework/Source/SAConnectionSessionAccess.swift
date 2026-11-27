@@ -52,13 +52,6 @@ import Darwin
         set { Thread.current.threadDictionary[operationTokensKey] = newValue.isEmpty ? nil : newValue }
     }
 
-    /// Whether the operation this thread is inside is its outermost on this lease - a statement
-    /// of its own, not one run nested inside another: a reconnect's setup inside the statement
-    /// whose session was lost, say.
-    public var thisThreadRunsItsOutermostOperation: Bool {
-        operationTokensOfThisThread.count == 1
-    }
-
     /// Gives the operation this thread is entering its identity: the cancellation generation as
     /// it stands now. A stop recorded from here on - while the operation waits for the session,
     /// or runs - moves the generation past it; one recorded before it began does not.

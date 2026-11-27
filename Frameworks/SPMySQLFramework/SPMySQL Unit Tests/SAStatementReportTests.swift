@@ -98,7 +98,10 @@ final class SAStatementReportTests: XCTestCase {
         /// Whether handed-over work is turned away before it runs, the way the coordinator turns it
         /// away while this thread waits for earlier work.
         var refusesHandedOverWork = false
-        func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? { work() }
+        /// Whether handed-over work comes back with nothing - the session needed recovering first
+        /// and the recovery failed, so the statement never ran.
+        var handsBackNothing = false
+        func runWorkKeepingInterfaceAlive(_ work: @escaping () -> Any?) -> Any? { handsBackNothing ? nil : work() }
         func runConnectionWorkKeepingInterfaceAlive(_ work: @escaping () -> Bool) -> Bool {
             if refusesHandedOverWork {
                 sessionAccess.noteThisThreadsCallWasRefused(whileWaitingForEarlierWork: true)
@@ -199,26 +202,86 @@ final class SAStatementReportTests: XCTestCase {
     func testTheFieldsAreReadUnderTheHoldsLockSoAReleaseCannotSlipInBetween() {
         let hold = SAStatementReportHold()
         hold.attach(insertID: 0)
-        let releaseAttempted = DispatchSemaphore(value: 0)
+        let releaseTookTheLock = DispatchSemaphore(value: 0)
         let releaseReturned = DispatchSemaphore(value: 0)
-        var theReleaseWaitedForTheReading: Bool?
+        var fieldsAreBeingRead = false
+        var theReleaseTookTheLockWhileTheFieldsWereBeingRead: Bool?
+        // The hold says when the release holds the lock: a reading still under way then would
+        // have been slipped past. No clock is involved - the release waits as long as it waits.
+        hold.afterTakingTheLockOnRelease = {
+            theReleaseTookTheLockWhileTheFieldsWereBeingRead = fieldsAreBeingRead
+            releaseTookTheLock.signal()
+        }
         let fields = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
 
         _ = hold.reportOfStatement(settledWith: {
+            fieldsAreBeingRead = true
             // The download lets the session go while the fields are being read.
             Thread.detachNewThread {
-                releaseAttempted.signal()
                 hold.sessionWasReleased()
                 releaseReturned.signal()
             }
-            XCTAssertEqual(releaseAttempted.wait(timeout: .now() + 2), .success)
-            theReleaseWaitedForTheReading = releaseReturned.wait(timeout: .now() + 0.2) == .timedOut
+            // Gives the release every chance to take the lock now, were it free; with the lock
+            // held by the reading, it takes it only after the reading has ended.
+            _ = releaseTookTheLock.wait(timeout: .now() + 1)
+            fieldsAreBeingRead = false
             return fields
         })
 
-        XCTAssertEqual(theReleaseWaitedForTheReading, true, "the release waited for the reading to end")
-        XCTAssertEqual(releaseReturned.wait(timeout: .now() + 2), .success, "and went through once it had")
+        XCTAssertEqual(releaseReturned.wait(timeout: .now() + 2), .success, "the release went through once the reading had ended")
+        XCTAssertEqual(theReleaseTookTheLockWhileTheFieldsWereBeingRead, false, "and not while the fields were being read")
         XCTAssertNil(hold.current)
+    }
+
+    /// A statement whose session needed recovering first, and whose recovery failed, never ran: its
+    /// caller reads the connection's error with no rows and no insert ID - not the rows of the
+    /// statement before, which a count read as success would take for this one's.
+    func testAStatementWhoseRecoveryFailedReportsTheConnectionsErrorAndNoRows() {
+        let host = SAScriptedCallHost()
+        defer { SAStatementReport.forgetReportHandedBackToThisThread(for: host) }
+        host.fields = SAStatementReport(errorMessage: "Can't connect to MySQL server", errorID: 2003, sqlState: "HY000",
+                                        affectedRows: 1, insertID: 42, wasCancelled: false)
+        host.insertIDCarried = 42
+        host.handsBackNothing = true
+
+        let result = SAStatementCall.run({
+            XCTFail("the statement does not run")
+            return nil
+        }, on: host)
+
+        XCTAssertNil(result)
+        let report = SAStatementReport.reportHandedBackToThisThread(for: host)
+        XCTAssertEqual(report?.errorID, 2003, "the connection's error")
+        XCTAssertEqual(report?.errorMessage, "Can't connect to MySQL server")
+        XCTAssertEqual(report?.affectedRows, 0, "no rows: the statement did nothing")
+        XCTAssertEqual(report?.insertID, 0)
+        XCTAssertEqual(report?.wasCancelled, false)
+    }
+
+    /// A stop of everything - the toolbar's - is in effect for every caller until the next statement
+    /// is asked for, except a caller whose statement the server carried out before the stop landed:
+    /// its result stands. A batch stops on the stop being in effect, whichever statement it read.
+    func testAnExplicitStopSparesACarriedOutStatementsCallerAndStillStopsABatch() {
+        let connection = SPMySQLConnection()
+        connection.useKeepAlive = false
+        defer { SAStatementReport.forgetReportHandedBackToThisThread(for: connection) }
+
+        let carriedOut = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 1, insertID: 0, wasCancelled: false)
+        carriedOut.recordCarriedOut()
+        SAStatementReport.handBack(carriedOut, for: connection)
+        connection.lastQueryWasCancelled = true
+        XCTAssertFalse(connection.lastQueryWasCancelled, "the carried-out statement's caller keeps its result")
+        XCTAssertTrue(connection.stopWasRequested(), "while the stop is in effect for a batch")
+
+        // The connection's host methods are private to the framework; reached by selector.
+        connection.perform(NSSelectorFromString("forgetAnExplicitStop"))
+        XCTAssertFalse(connection.stopWasRequested(), "until the next statement is asked for")
+
+        let notCarriedOut = SAStatementReport(errorMessage: nil, errorID: 0, sqlState: nil, affectedRows: 0, insertID: 0, wasCancelled: false)
+        SAStatementReport.handBack(notCarriedOut, for: connection)
+        connection.perform(NSSelectorFromString("markRunningQueryCancelled"))
+        XCTAssertTrue(connection.lastQueryWasCancelled, "a stop reaches a caller whose statement was not carried out")
+        XCTAssertTrue(connection.stopWasRequested(), "and is in effect for a batch")
     }
 
     /// A delegate that shows the wait, which is what has the connection hand work over from the

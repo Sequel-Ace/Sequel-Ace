@@ -2302,6 +2302,12 @@
 /* Error shown when the user stopped waiting after the server had carried the statement out and the connection could not settle it in time */
 "The statement was carried out, but its result could not be read in time." = "The statement was carried out, but its result could not be read in time.";
 
+/* Error shown when the user stopped waiting for a statement after it had been sent to the server */
+"Query cancelled. The statement had reached the server, which may have carried it out." = "Query cancelled. The statement had reached the server, which may have carried it out.";
+
+/* Error shown for a statement whose connection was lost and could not be reconnected before the statement was sent */
+"The connection could not be restored, so the statement was not sent." = "The connection could not be restored, so the statement was not sent.";
+
 /* connection wait sheet note while a finished wait is held up by another window's wait */
 "Continues once the other window has finished waiting." = "Continues once the other window has finished waiting.";
 

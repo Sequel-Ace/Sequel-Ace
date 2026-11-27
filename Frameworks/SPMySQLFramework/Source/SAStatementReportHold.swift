@@ -18,6 +18,10 @@ public final class SAStatementReportHold: NSObject {
     private let lock = NSLock()
     private var held: SAStatementReport?
 
+    /// Called by a release once it holds the lock, before it lets the report go. A seam for the
+    /// tests, which need to see that a release waits for a reading of the fields to end.
+    var afterTakingTheLockOnRelease: (() -> Void)?
+
     /// The report of the statement holding the session, or nil when none does.
     @objc public var current: SAStatementReport? {
         lock.lock()
@@ -46,6 +50,7 @@ public final class SAStatementReportHold: NSObject {
     @objc public func sessionWasReleased() {
         lock.lock()
         defer { lock.unlock() }
+        afterTakingTheLockOnRelease?()
         held = nil
     }
 

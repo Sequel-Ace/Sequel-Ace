@@ -392,6 +392,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	NSString *theSqlstate;
 	lastQueryWasCancelled = NO;
 	explicitlyCancelled = NO;
+	lastStatementWasCarriedOut = NO;
 
 	// If a disconnect was requested, cancel the action
 	if (userTriggeredDisconnect) {
@@ -537,6 +538,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		}
 
 		if (!queryStatus) {
+			// From here the statement may reach the server: a stop that lands now is reported as one
+			// that may have been carried out - for the statement the work is for alone.
+			[SAStatementCall noteStatementSentOn:[self _statementCallHost]];
 			queryStatus = mysql_real_query(mySQLConnection, queryData.bytes, queryData.length);
 		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
@@ -593,18 +597,21 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 			}
 		}
 
-		// Query has failed - check the connection
+		// Query has failed - check the connection. A statement that ends here did nothing: its report
+		// says so, rather than carrying the rows of the statement before.
 		[self _unlockConnection];
 		if (![self checkConnection]) {
 			[self _updateLastErrorMessage:theErrorMessage];
 			[self _updateLastErrorID:theErrorID];
 			[self _updateLastSqlstate:theSqlstate];
+			lastQueryAffectedRowCount = 0;
 			return nil;
 		}
 		if (![self _lockUsableConnectionForQuery]) {
 			[self _updateLastErrorMessage:theErrorMessage];
 			[self _updateLastErrorID:theErrorID];
 			[self _updateLastSqlstate:theSqlstate];
+			lastQueryAffectedRowCount = 0;
 			return nil;
 		}
 		NSAssert(mySQLConnection != NULL, @"mySQLConnection has disappeared while checking it!");
@@ -673,8 +680,11 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 	}
 
 	// If the query was cancelled, override the error state - unless the statement had been carried
-	// out by the time the stop landed, which the completion decides.
+	// out by the time the stop landed, which the completion decides. Whether it was carried out goes
+	// into its report: a stop of everything that lands afterwards does not reach this statement's
+	// caller, whose result stands, while a batch running on the connection stops on it.
 	lastQueryWasCancelled = [completion isReportedCancelledWithStopLanded:self.sessionAccess.currentQueryWasCancelled];
+	lastStatementWasCarriedOut = completion.wasCarriedOut;
 	if (lastQueryWasCancelled) {
 		theErrorMessage = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
 		theErrorID = 1317;
@@ -879,12 +889,14 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
  */
 - (SAStatementReport *)_reportFromTheConnectionsFields
 {
-	return [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
-	                                               errorID:queryErrorID
-	                                              sqlState:querySqlstate
-	                                          affectedRows:lastQueryAffectedRowCount
-	                                              insertID:lastQueryInsertID
-	                                          wasCancelled:lastQueryWasCancelled];
+	SAStatementReport *report = [[SAStatementReport alloc] initWithErrorMessage:queryErrorMessage
+	                                                                     errorID:queryErrorID
+	                                                                    sqlState:querySqlstate
+	                                                                affectedRows:lastQueryAffectedRowCount
+	                                                                    insertID:lastQueryInsertID
+	                                                                wasCancelled:lastQueryWasCancelled];
+	if (lastStatementWasCarriedOut) [report recordCarriedOut];
+	return report;
 }
 
 /**

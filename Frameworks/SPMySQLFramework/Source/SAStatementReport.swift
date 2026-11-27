@@ -144,6 +144,23 @@ public final class SAStatementReport: NSObject {
         return storedWasCancelled
     }
 
+    private var storedWasCarriedOut = false
+
+    /// Whether the server carried the statement out: a stop of everything that lands afterwards
+    /// does not reach this statement's caller, whose result stands.
+    @objc public var wasCarriedOut: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedWasCarriedOut
+    }
+
+    /// Records that the server carried the statement out.
+    @objc public func recordCarriedOut() {
+        lock.lock()
+        defer { lock.unlock() }
+        storedWasCarriedOut = true
+    }
+
     /// Keeps what the connection reports now.
     /// - Parameters:
     ///   - errorMessage: The error message, or nil.
